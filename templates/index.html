@@ -1,9 +1,31 @@
 {% extends 'base.html' %}
-
-{% block header %}
-<h2>{% block title %}Abas WebApp{% endblock %}</h2>
-
+{% block head %}
+<style>
+@media screen and (min-width: 300px) and (orientation: portrait) {
+    body {
+        background: url("/static/images/kasa50thlogoVsm2.png") no-repeat center;
+    }
+}
+@media screen and (min-width: 600px) and (orientation: landscape) {
+    body {
+        background: url("/static/images/kasa50thlogoSm2.png") no-repeat center;
+    }
+}
+@media screen and (min-width: 800px) and (orientation: portrait) {
+    body {
+        background: url("/static/images/kasa50thlogoV.png") no-repeat center;
+    }
+}
+@media screen and (min-width: 1000px) and (orientation: landscape) {
+    body {
+        background: url("/static/images/kasa50thlogo.png") no-repeat center;
+    }
+}
+</style>
 {% endblock %}
+{% block title %}Home{% endblock %}
+{% block nav_home %}active{% endblock %}
+{% block header %}{% endblock %}
 {% block content %}
 
 

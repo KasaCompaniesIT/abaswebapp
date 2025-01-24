@@ -1,10 +1,12 @@
 {% extends 'base.html' %}
-
+{% block nav_admin %}active{% endblock %}
 {% block header %}
-<h2>{% block title %}Abas WebApp Admin{% endblock %}</h2>
+<div class="navbar-brand">{% block title %}Admin Zone{% endblock %}</div>
 
 {% endblock %}
 {% block content %}
-
-
+<div class="align-items-center justify-content-center">
+    <p></p>
+    <p><a href="{{ url_for('admin.importCSV') }}" class="btn btn-info" role="button">Import CSV Data</a></p>
+</div>
 {% endblock %}

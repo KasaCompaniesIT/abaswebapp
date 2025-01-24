@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block nav_admin %}active{% endblock %}
+{% block header %}
+<div class="navbar-brand">{% block title %}Data Import Results{% endblock %}</div>
+
+{% endblock %}
+{% block content %}
+
+<h4>{{ results }}</h4>
+
+<p><a href="{{ url_for('admin.importCSV') }}" class="btn btn-info" role="button">Back to CSV Import</a> <a href="{{ url_for('admin.index') }}" class="btn btn-info" role="button">Back to Admin</a> <a href="/" class="btn btn-info" role="button">Back to Home</a></p>
+
+{% endblock %}
