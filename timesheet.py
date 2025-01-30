@@ -1,10 +1,55 @@
+import pandas as pd
+import pyodbc
+
 from flask import (
     Blueprint, flash, g, redirect, render_template, request, url_for
 )
 from werkzeug.exceptions import abort
+from db import get_db
 
 bp = Blueprint('timesheet', __name__)
 
 @bp.route("/timesheet")
 def lookup():
-    return render_template('timesheet/index.html')
+    db = get_db()
+    dbc = db.cursor()
+
+    projects = dbc.execute("select * from projects order by projectnumber")
+
+    return render_template('timesheet/index.html', projects=projects)
+
+# get wo data for selected project and return to ajax query 
+@bp.route("/timesheet/wo", methods=['POST'])
+def getWO():
+    print("getWO")
+
+    selected_project = ""
+    if request.method == 'POST':
+        print("POST")
+        selected_project = request.form.get('project_list')
+        print("select project: " + selected_project)
+    
+    db = get_db()
+    dbc = db.cursor()
+    
+    workorders = dbc.execute("select * from workorders where projectid = ? order by wonumber", selected_project)
+    # print(workorders)
+    return render_template('timesheet/_wo.html', workorders=workorders)
+
+# get ws data for selected workorder and return to ajax query
+@bp.route("/timesheet/ws", methods=['POST'])
+def getWS():
+    print("getWS")
+    
+    if request.method == 'POST':
+        print("POST")
+        selected_wo = request.form.get('wo_list')
+        print("select wo: " + selected_wo)
+    
+    db = get_db()
+    dbc = db.cursor()
+    
+    workslips = dbc.execute("select WSNumber, WONumber, WSDescription, Operations.OpID, OpCode, OpName, OpNameExtended from workslips inner join operations on WorkSlips.OpID = operations.OpID where wonumber = ? order by wsnumber", selected_wo)
+    # print(workslips)
+    return render_template('timesheet/_ws.html', workslips=workslips)
+    

@@ -1,10 +1,16 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, g
+# from turbo_flask import Turbo
 
 app = Flask(__name__)
+# turbo = Turbo(app)
 
 app.config.from_mapping(
         SECRET_KEY='dev'
     )
+
+# @app.before_request
+# def before_request():
+#     g.turbo = turbo
 
 @app.route("/")
 def home():

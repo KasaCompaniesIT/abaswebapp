@@ -1,0 +1,28 @@
+<form method="post" id="fWO">
+    <input type="hidden" name="form_id" value="fWO">
+    <div class="form-floating">
+        <select class="form-select" id="wolist" aria-label="Select Your WorkOrder">
+            <option disabled selected value> ---- </option>
+            {% for w in workorders %}
+            <option value="{{ w.WONumber }}">{{ w.WONumber }} - {{ w.WOPart }} - {{ w.WODescription }}</option>    
+            {% endfor %}
+        </select>
+        <label for="wolist">Select Your WorkOrder</label>
+    </div>
+</form>
+<script>
+    $(document).on('change', '#wolist', function() {
+        var selectedWO = $(this).val();
+        $.ajax({
+            url: '/timesheet/ws',
+            type: 'POST',
+            data: { 'wo_list': selectedWO },
+            success: function(data) {
+                $('#ws_content').html(data);
+            },
+            error: function(error) {
+                console.log('An error occurred:', error);
+            }
+        });
+    });
+</script>

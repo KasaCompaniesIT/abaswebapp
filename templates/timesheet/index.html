@@ -5,7 +5,59 @@
 
 {% endblock %}
 {% block content %}
+<p></p>
+<div id="project_content" class="w-100">
+    <form method="post" id="fProject">    
+        <input type="hidden" name="form_id" value="fProject">
+        <div class="form-floating">
+            <select class="form-select" id="plist" aria-label="Select Your Project">
+                <option disabled selected value> ---- </option>
+                {% for p in projects %}
+                <option value="{{ p.ProjectID }}">{{ p.ProjectNumber }} - {{ p.ProjectDescription }}</option>    
+                {% endfor %}
+            </select>
+            <label for="plist">Select Your Project</label>
+        </div>
+    </form>
+</div>
+<div id="wo_content" class="w-100">
+    
+</div>
+<div id="ws_content" class="w-100">
 
+</div>
+<script type=text/javascript>
+    $(document).ready(function() {
+        $('#plist').on('change', function() {
+            var selectedProject = $(this).val();
+            $.ajax({
+                url: '/timesheet/wo',
+                type: 'POST',
+                data: { 'project_list': selectedProject },
+                success: function(data) {
+                    $('#wo_content').html(data);
+                    $('#ws_content').html("");                    
+                },
+                error: function(error) {
+                    console.log('An error occurred:', error);
+                }
+            });
+        });
+        // $('#wolist').on('change', function() {
+        //     var selectedWO = $(this).val();
+        //     $.ajax({
+        //         url: '/timesheet/ws',
+        //         type: 'POST',
+        //         data: { 'wo_list': selectedWO },
+        //         success: function(data) {
+        //             $('#ws_content').html(data);
+        //         },
+        //         error: function(error) {
+        //             console.log('An error occurred:', error);
+        //         }
+        //     });
+        // });
+    });
 
-
+</script>
 {% endblock %}

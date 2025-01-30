@@ -38,18 +38,18 @@ def importUserCSV():
             # flash("Importing Employee Data...")
             
             for index, row in df.iterrows():
-                if not existingEmployee(row['number']):
+                if not existingEmployee(row['ID']):
                     # insert new employee record
                     dbc.execute(
                         "INSERT INTO Employee (EmpID, Emp, EmpName, Dept, Supervisor, Wagegroup) VALUES (?, ?, ?, ?, ?, ?)",
-                        (row['number'], row['emp'], row['employee name'], row['department'], row['supervisor'], row['wage group'])
+                        (row['ID'], row['EMP'], row['NAME'], row['DEPT'], row['SUPERVISOR'], row['WG'])
                     )
                     dbc.commit()
                 else:
                     # update existing employee record
                     dbc.execute(
                         "UPDATE Employee SET Emp=?, EmpName=?, Dept=?, Supervisor=?, Wagegroup=? WHERE empid=?",
-                        (row['emp'], row['employee name'], row['department'], row['supervisor'], row['wage group'], row['number'])
+                        (row['EMP'], row['NAME'], row['DEPT'], row['SUPERVISOR'], row['WG'], row['ID'])
                     )
                     dbc.commit()
                 
