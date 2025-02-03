@@ -64,13 +64,19 @@ def importUserCSV():
 
             currentTime = time.time()
             elapsedSeconds = currentTime - startTime
-
+            print(f"Importing Employee Data......Finished  in {elapsedSeconds:.2f} seconds")        
+            print(f"{newCount} new employee records.  {updateCount} updated employee records.")
+        
             return render_template('admin/results.html', results="File imported successfully", elapsed=elapsedSeconds, newcount=newCount, updatedcount=updateCount)
         except IOError:
             pass         
         except pyodbc.DatabaseError as err:
-             error = err
-             return str(error)
+            error = err
+            print("Importing Employee Data......Incomplete")            
+            print(f"{newCount} new employee records.  {updateCount} updated employee records.")
+            print(error)            
+                        
+            return str(error)
 
         return render_template('admin/results.html', results="Unable to read file")
 
@@ -175,14 +181,24 @@ def importCSV():
 
             currentTime = time.time()
             elapsedSeconds = currentTime - startTime
+            print(f"Importing Labor Ops Data......Finished in {elapsedSeconds:.2f} seconds")        
+            print(f"{newProjectCount} new project records.  {updateProjectCount} updated project records.")
+            print(f"{newWOCount} new workorder records.  {updateWOCount} updated workorder records.")        
+            print(f"{newWSCount} new workslip records.  {updateWSCount} updated workslip records.")        
 
             return render_template('admin/results.html', results="File imported successfully", elapsed=elapsedSeconds, newprojects=newProjectCount, updatedprojects=updateProjectCount, newwo=newWOCount, updatewo=updateWOCount, newws=newWSCount, updatews=updateWSCount)          
         
         except IOError:
             pass         
         except pyodbc.DatabaseError as err:
-             error = err
-             return str(error)
+            error = err
+            print("Importing Labor Ops Data......Incomplete")            
+            print(f"{newProjectCount} new project records.  {updateProjectCount} updated project records.")
+            print(f"{newWOCount} new workorder records.  {updateWOCount} updated workorder records.")
+            print(f"{newWSCount} new workslip records.  {updateWSCount} updated workslip records.")
+            print(error)
+            
+            return str(error)
 
         return render_template('admin/results.html', results="Unable to read file")
 
