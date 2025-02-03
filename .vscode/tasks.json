@@ -4,9 +4,15 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "publish",
+            "label": "Publish to webserver",
             "type": "shell",
             "command": "robocopy ./ //abas-webapp/abaswebapp$/ *.* /E /R:0 /XD '.venv' '.vscode' '.git'",
+            "problemMatcher": []
+        },
+        {
+            "label": "Save to network",
+            "type": "shell",
+            "command": "robocopy ./ '//kasa-storage/IT/Code Repository/repos/abaswebapp/' *.* /E /R:0",
             "problemMatcher": []
         }
     ]

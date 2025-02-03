@@ -1,14 +1,14 @@
 <p></p>
 {% for w in workslips %}
     <div class="list-group">
-        <a href="#" class="list-group-item list-group-item-action" aria-current="true">
-        <div class="d-flex w-100 justify-content-between">
-            <h6 class="mb-1">{{ w.WSDescription }}</h6>
-            <small>{{ w.WSNumber }}</small>
+        <div class="list-group-item list-group-item-action" aria-current="true">
+          <div class="d-flex w-100 justify-content-between">
+              <h6 class="mb-1">{{ w.WSDescription }}</h6>
+              <small>{{ w.WSNumber }}</small>
+          </div>
+          <p class="mb-1">{{ w.OpNameExtended }}</p>
+          <small>{{ w.OpID }}</small>
         </div>
-        <p class="mb-1">{{ w.OpNameExtended }}</p>
-        <small>{{ w.OpID }}</small>
-        </a>
         <br />
     </div>  
     <!-- <div class="accordion accordion-flush" id="accordionWS">
