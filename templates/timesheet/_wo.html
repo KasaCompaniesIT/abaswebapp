@@ -1,6 +1,13 @@
 <form method="post" id="fWO">
     <input type="hidden" name="form_id" value="fWO">
-    <div class="form-floating">
+    <div class="dropdown bootstrap-select form-control">
+        <select class="selectpicker form-control" id="wolist" data-style="btn-dark" data-container="body" data-live-search="true" title="Select a Work Order" >
+            {% for w in workorders %}
+            <option value="{{ w.WONumber }}">{{ w.WONumber }} - {{ w.WOPart }} - {{ w.WODescription }}</option>    
+            {% endfor %}
+        </select>
+    </div>
+    <!-- <div class="form-floating">
         <select class="form-select" id="wolist" aria-label="Select Your WorkOrder">
             <option disabled selected value> ---- </option>
             {% for w in workorders %}
@@ -8,10 +15,10 @@
             {% endfor %}
         </select>
         <label for="wolist">Select Your WorkOrder</label>
-    </div>
+    </div> -->
 </form>
 <script>
-    $(document).on('change', '#wolist', function() {
+    $(document).on('changed.bs.select', '#wolist', function() {
         var selectedWO = $(this).val();
         $.ajax({
             url: '/timesheet/ws',

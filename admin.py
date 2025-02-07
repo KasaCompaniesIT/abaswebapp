@@ -67,7 +67,7 @@ def importUserCSV():
             print(f"Importing Employee Data......Finished  in {elapsedSeconds:.2f} seconds")        
             print(f"{newCount} new employee records.  {updateCount} updated employee records.")
         
-            return render_template('admin/results.html', results="File imported successfully", elapsed=elapsedSeconds, newcount=newCount, updatedcount=updateCount)
+            return render_template('admin/results.html', results="Employee File imported successfully", elapsed=elapsedSeconds, newcount=newCount, updatedcount=updateCount)
         except IOError:
             pass         
         except pyodbc.DatabaseError as err:
@@ -186,7 +186,7 @@ def importCSV():
             print(f"{newWOCount} new workorder records.  {updateWOCount} updated workorder records.")        
             print(f"{newWSCount} new workslip records.  {updateWSCount} updated workslip records.")        
 
-            return render_template('admin/results.html', results="File imported successfully", elapsed=elapsedSeconds, newprojects=newProjectCount, updatedprojects=updateProjectCount, newwo=newWOCount, updatewo=updateWOCount, newws=newWSCount, updatews=updateWSCount)          
+            return render_template('admin/results.html', results="Labor Ops File imported successfully", elapsed=elapsedSeconds, newcount=newProjectCount+newWOCount+newWSCount, updatedcount=updateProjectCount+updateWOCount+updateWSCount)          
         
         except IOError:
             pass         
@@ -197,7 +197,7 @@ def importCSV():
             print(f"{newWOCount} new workorder records.  {updateWOCount} updated workorder records.")
             print(f"{newWSCount} new workslip records.  {updateWSCount} updated workslip records.")
             print(error)
-            
+
             return str(error)
 
         return render_template('admin/results.html', results="Unable to read file")

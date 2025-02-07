@@ -49,7 +49,15 @@ def getWS():
     db = get_db()
     dbc = db.cursor()
     
+    project_wo = dbc.execute("select * from workorders inner join projects on workorders.projectid = projects.projectid where wonumber = ?", selected_wo).fetchone()
+    if project_wo:
+        project = project_wo.ProjectNumber
+        projectDesc = project_wo.ProjectDescription
+        wo = project_wo.WONumber
+        woDesc = project_wo.WODescription
+        print(projectDesc)
+
     workslips = dbc.execute("select WSNumber, WONumber, WSDescription, Operations.OpID, OpCode, OpName, OpNameExtended from workslips inner join operations on WorkSlips.OpID = operations.OpID where wonumber = ? order by wsnumber", selected_wo)
     # print(workslips)
-    return render_template('timesheet/_ws.html', workslips=workslips)
+    return render_template('timesheet/_ws.html', workslips=workslips, project=project, projectDesc=projectDesc, wo=wo, woDesc=woDesc)
     

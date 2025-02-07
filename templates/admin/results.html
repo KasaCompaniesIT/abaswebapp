@@ -7,7 +7,10 @@
 {% block content %}
 
 <h4>{{ results }}</h4>
-
+<p></p>
+<p>Importing Data......Finished in {{ "%0.2f"|format(elapsed) }} seconds</p>        
+<p>{{ newcount }} new records.  {{ updatedcount }} updated records.</p>
+<p></p>
 <p><a href="{{ url_for('admin.importCSV') }}" class="btn btn-info" role="button">Back to CSV Import</a> <a href="{{ url_for('admin.index') }}" class="btn btn-info" role="button">Back to Admin</a> <a href="/" class="btn btn-info" role="button">Back to Home</a></p>
 
 {% endblock %}

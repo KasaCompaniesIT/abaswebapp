@@ -41,3 +41,23 @@ header a { margin: 1rem 0.5rem; }
 .content form a { margin: 0.5em; } 
 .content td a { padding: 0.1rem 0.6rem; }
 .content td { padding-top: 1rem; }
+.list-group.bg-dark-custom {
+    background-color: #212529; /* This color matches Bootstrap's default dark navbar */
+}
+.list-group.bg-dark-custom .list-group-item {
+    background-color: transparent; /* Make list items transparent to show the list group's background */
+    color: #fff; /* Text color for contrast */
+}
+.list-group.bg-dark-custom .list-group-item:hover {
+    background-color: rgba(255, 255, 255, 0.1); /* subtle highlight on hover */
+}
+.modal-header.bg-dark-custom {
+    background-color: #212529; /* This color matches Bootstrap's default dark navbar */
+}
+.modal-header.bg-dark-custom .modal-title {
+    background-color: transparent; /* Make list items transparent to show the list group's background */
+    color: #fff; /* Text color for contrast */
+}
+.modal-footer.bg-dark-custom {
+    background-color: #212529; /* This color matches Bootstrap's default dark navbar */
+}
