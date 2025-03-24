@@ -10,13 +10,17 @@ from db import get_db
 bp = Blueprint('timesheet', __name__)
 
 @bp.route("/timesheet")
+def index():
+    return render_template('timesheet/index.html')
+
+@bp.route("/timesheet/lookup")
 def lookup():
     db = get_db()
     dbc = db.cursor()
 
-    projects = dbc.execute("select * from projects order by projectnumber")
+    projects = dbc.execute("select * from projects where projectcomplete = 0 and projectclosed = 0 order by projectnumber")
 
-    return render_template('timesheet/index.html', projects=projects)
+    return render_template('timesheet/lookup.html', projects=projects)
 
 # get wo data for selected project and return to ajax query 
 @bp.route("/timesheet/wo", methods=['POST'])

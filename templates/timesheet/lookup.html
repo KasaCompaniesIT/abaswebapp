@@ -1,10 +1,74 @@
 {% extends 'base.html' %}
 {% block nav_timesheet %}active{% endblock %}
 {% block header %}
-<div class="navbar-brand">{% block title %}Op Lookup{% endblock %}</div>
+<div class="navbar-brand navbar-text">{% block title %} Timesheet Operation Lookup {% endblock %}</div>
 
 {% endblock %}
 {% block content %}
+    <p></p>
+    <div id="project_content" class="w-100">
+        <form method="post" id="fProject">    
+            <input type="hidden" name="form_id" value="fProject">
+            <div class="dropdown bootstrap-select form-control">
+                <select class="selectpicker form-control" id="plist" data-style="btn-dark" data-container="body" data-live-search="true" title="Select a Project" >
+                    <!-- <option class="bs-title-option" value=""></option> -->
+                    <!-- <option disabled selected value> ---- </option> -->
+                    {% for p in projects %}
+                    <option value="{{ p.ProjectID }}">{{ p.ProjectNumber }} - {{ p.ProjectDescription }}</option>    
+                    {% endfor %}                 
+                </select>         
+            </div>
+            <!-- <div class="form-floating">            
+                <select class="form-select selectpicker" id="plist" aria-label="Select Your Project">
+                    <option disabled selected value> ---- </option>
+                    {% for p in projects %}
+                    <option value="{{ p.ProjectID }}">{{ p.ProjectNumber }} - {{ p.ProjectDescription }}</option>    
+                    {% endfor %}
+                </select>
+                <label for="plist">Select Your Project</label>
+            </div> -->
+        </form>
+    </div>
+    <div id="wo_content" class="w-100">
+        
+    </div>
+    <div id="ws_content" class="w-100">
 
-
-{% endblock %}
+    </div>
+    <script>
+        $(document).ready(function() {
+            $('#plist').on('changed.bs.select', function() {
+                var selectedProject = $(this).val();
+                getWOData(selectedProject);
+                // $.ajax({
+                //     url: '/timesheet/wo',
+                //     type: 'POST',
+                //     data: { 'project_list': selectedProject },
+                //     success: function(data) {
+                //         $('#wo_content').html(data);
+                //         $('#ws_content').html("");                    
+                //     },
+                //     error: function(error) {
+                //         console.log('An error occurred:', error);
+                //     }
+                // });
+            });
+        });
+        function getWOData(project) {
+            $.ajax({
+                url: '/timesheet/wo',
+                type: 'POST',
+                data: { 'project_list': project },
+                success: function(data) {
+                    // alert(data);
+                    $('#wo_content').html(data);
+                    $('.selectpicker').selectpicker('refresh');
+                    $('#ws_content').html("");                    
+                },
+                error: function(error) {
+                    console.log('An error occurred:', error);
+                }
+            });
+        }
+    </script>
+{% endblock %} <!-- end content block -->

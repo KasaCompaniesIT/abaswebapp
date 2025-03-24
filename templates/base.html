@@ -36,7 +36,7 @@
         <div class="collapse navbar-collapse justify-content-end" id="navbarNavDropdown">            
             <div class="navbar-nav">              	
               <a href="{{ url_for('home') }}" class="nav-item nav-link {% block nav_home %}{% endblock %} .fs-4">Home</a>  
-              <a href="{{ url_for('timesheet.lookup') }}" class="nav-item nav-link {% block nav_timesheet %}{% endblock %}">Timesheet</a>  
+              <a href="{{ url_for('timesheet.index') }}" class="nav-item nav-link {% block nav_timesheet %}{% endblock %}">Timesheet</a>  
               {% if g.user %}
               <a href="{{ url_for('admin.index') }}" class="nav-item nav-link {% block nav_admin %}{% endblock %}">Admin</a>  
               <a href="{{ url_for('auth.logout') }}" class="nav-item nav-link">Logout</a>
