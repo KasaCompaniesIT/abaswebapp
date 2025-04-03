@@ -1,26 +1,28 @@
 {% extends 'base.html' %}
 {% block nav_admin %}active{% endblock %}
 {% block header %}
-<h2>{% block title %}Abas Data Import from CSV{% endblock %}</h2>
+<div class="navbar-brand navbar-text">{% block title %}Abas Data CSV Import{% endblock %}</div>
 
 {% endblock %}
 {% block content %}
-<form method="post" enctype="multipart/form-data">
+<div class="container">
+    <form method="post" enctype="multipart/form-data">
     <div class="row mb-3">
         <div class="input-group custom-file-button">
-            <label class="input-group-text" for="inputGroupFile">Select Labor Ops CSV File to Import</label>
+            <label class="input-group-text" for="inputGroupFile">Select Labor Ops CSV File</label>
             <input type="file" class="form-control" accept=".csv" required name="csvFile">
-            <button type="submit" class="btn btn-primary" value="Import">Import Labor Ops Data</button>
+            <button type="submit" class="btn btn-abas btn-block btn-max-width-400" value="Import">Import Labor Ops Data</button>
         </div>
     </div>
 </form>
 <form method="post" enctype="multipart/form-data" action="{{ url_for('admin.importUserCSV') }}">
     <div class="row mb-3">
         <div class="input-group custom-file-button">
-            <label class="input-group-text" for="inputGroupFile">Select Employee CSV File to Import</label>
+            <label class="input-group-text" for="inputGroupFile">Select Employee CSV File</label>
             <input type="file" class="form-control" accept=".csv" required name="csvEFile">
-            <button type="submit" class="btn btn-primary" value="Import">Import Employee User Data</button>
+            <button type="submit" class="btn btn-abas btn-block btn-max-width-400" value="Import">Import Employee User Data</button>
         </div>
     </div>
 </form>
+</div>
 {% endblock %}
