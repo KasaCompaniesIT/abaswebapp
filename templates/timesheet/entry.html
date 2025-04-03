@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% block nav_timesheet %}active{% endblock %}
+{% block header %}
+<div class="navbar-brand navbar-text">{% block title %}Timesheet Entry{% endblock %}</div>
+{% endblock %}
+{% block subheader %}
+<nav aria-label="breadcrumb" class="breadcrumb-bg">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('home') }}">Home</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('timesheet.index') }}">Timesheet</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Entry</li>
+    </ol>
+</nav>
+<p></p>
+{% endblock %}
+{% block content %}
+
+<div class="container">
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-4">
+        <!-- Card 1 -->
+        <div class="col my-2">
+            <div class="card bg-light border-dark " >
+                <div class="card-header text-center bg-abas fw-bold">03/31/2025 - Mon</div>
+                <div class="card-body">
+                    <h5 class="card-title">Card 1 Title</h5>
+                    <p class="card-text">Current day card. Some quick example text to build on the card title and make up the bulk of the card's content. Here is more text to make the card taller and taller.</p>
+                </div>
+            </div>
+        </div>
+        <!-- Card 2 -->
+        <div class="col my-2">
+            <div class="card bg-light border-dark">
+                <div class="card-header text-center bg-dark text-light fw-bold">04/01/2025 - Tues</div>
+                <div class="card-body">
+                    <h5 class="card-title">Card 2 Title</h5>
+                    <p class="card-text">Weekday card. Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+                </div>
+            </div>
+        </div>
+        <!-- Card 3 -->
+        <div class="col my-2">
+            <div class="card bg-light border-dark ">
+                <div class="card-header text-center bg-dark text-light fw-bold">04/02/2025 - Wed</div>
+                <div class="card-body">
+                    <h5 class="card-title">Card 3 Title</h5>
+                    <p class="card-text">Weekday card. Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+                </div>
+            </div>
+        </div>
+        <!-- Card 4 -->
+        <div class="col my-2">
+            <div class="card bg-light border-dark " >
+                <div class="card-header text-center bg-warning fw-bold">04/03/2025 - Thurs</div>
+                <div class="card-body">
+                    <h5 class="card-title">Card 4 Title</h5>
+                    <p class="card-text">Holiday card. quick example text to build on the card title and make up the bulk of the card's content.</p>
+                </div>
+            </div>
+        </div>
+        <!-- Card 5 -->
+        <div class="col my-2">
+            <div class="card bg-light border-dark ">
+                <div class="card-header text-center bg-dark text-light fw-bold">04/04/2025 - Fri</div>
+                <div class="card-body">
+                    <h5 class="card-title">Card 5 Title</h5>
+                    <p class="card-text">Weekday card. Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+                </div>
+            </div>
+        </div>
+        <!-- Card 6 -->
+        <div class="col my-2">
+            <div class="card bg-light border-dark ">
+                <div class="card-header text-center bg-secondary text-light fw-bold">04/05/2025 - Sat</div>
+                <div class="card-body">
+                    <h5 class="card-title">Card 6 Title</h5>
+                    <p class="card-text">Weekend day card. Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+                </div>
+            </div>
+        </div>
+        <!-- Card 7 -->
+        <div class="col my-2">
+            <div class="card bg-light border-dark ">
+                <div class="card-header text-center bg-secondary text-light fw-bold">04/06/2025 - Sun</div>
+                <div class="card-body">
+                    <h5 class="card-title">Card 7 Title</h5>
+                    <p class="card-text">Weekend day card. Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<p></p>
+{% endblock %} <!-- end content block -->

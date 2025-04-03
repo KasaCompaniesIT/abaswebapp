@@ -1,20 +1,41 @@
 {% extends 'base.html' %}
 {% block nav_timesheet %}active{% endblock %}
+{% block head %}
+<style>
+    /* Apply max-width on larger screens */
+    @media (min-width: 768px) { /* Bootstrap's 'md' breakpoint */
+        .bootstrap-select .dropdown-menu .dropdown {
+        max-width: 500px; /* Set your desired max-width for larger screens */
+        }
+    }
+</style>
+{% endblock %}
 {% block header %}
-<div class="navbar-brand navbar-text">{% block title %} Timesheet Operation Lookup {% endblock %}</div>
+<div class="navbar-brand navbar-text">{% block title %} Operation Lookup {% endblock %}</div>
 
 {% endblock %}
+{% block subheader %}
+<nav aria-label="breadcrumb" class="breadcrumb-bg">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('home') }}">Home</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('timesheet.index') }}">Timesheet</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Operation Lookup</li>
+    </ol>
+</nav>
+<p></p>
+{% endblock %}
 {% block content %}
-    <p></p>
-    <div id="project_content" class="w-100">
+<div class="container mt3"></div>
+    <div id="project_content" class="text-center">
+        <!-- <div class="col-12 col-md-6"> -->
         <form method="post" id="fProject">    
             <input type="hidden" name="form_id" value="fProject">
             <div class="dropdown bootstrap-select form-control">
-                <select class="selectpicker form-control" id="plist" data-style="btn-dark" data-container="body" data-live-search="true" title="Select a Project" >
+                <select class="selectpicker form-control" id="plist" data-style="btn-abas border-dark btn-lg" data-width="100%" data-size="10" data-container="body" data-live-search="true" title="Select a Project" >
                     <!-- <option class="bs-title-option" value=""></option> -->
                     <!-- <option disabled selected value> ---- </option> -->
                     {% for p in projects %}
-                    <option value="{{ p.ProjectID }}">{{ p.ProjectNumber }} - {{ p.ProjectDescription }}</option>    
+                    <option class="lead" value="{{ p.ProjectID }}">{{ p.ProjectNumber }} - {{ p.ProjectDescription }}</option>    
                     {% endfor %}                 
                 </select>         
             </div>
@@ -28,13 +49,15 @@
                 <label for="plist">Select Your Project</label>
             </div> -->
         </form>
+        <!-- </div>   -->
     </div>
-    <div id="wo_content" class="w-100">
+    <div id="wo_content" class="text-center">
         
     </div>
-    <div id="ws_content" class="w-100">
+    <div id="ws_content" class="">
 
     </div>
+</div>
     <script>
         $(document).ready(function() {
             $('#plist').on('changed.bs.select', function() {

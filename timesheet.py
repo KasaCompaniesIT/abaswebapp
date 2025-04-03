@@ -13,6 +13,10 @@ bp = Blueprint('timesheet', __name__)
 def index():
     return render_template('timesheet/index.html')
 
+@bp.route("/timesheet/entry")
+def entry():
+    return render_template('timesheet/entry.html')
+
 @bp.route("/timesheet/lookup")
 def lookup():
     db = get_db()

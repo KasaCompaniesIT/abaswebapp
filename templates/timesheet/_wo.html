@@ -1,9 +1,9 @@
 <form method="post" id="fWO">
     <input type="hidden" name="form_id" value="fWO">
     <div class="dropdown bootstrap-select form-control">
-        <select class="selectpicker form-control" id="wolist" data-style="btn-dark" data-container="body" data-live-search="true" title="Select a Work Order" >
+        <select class="selectpicker form-control" id="wolist" data-style="btn-abas border-dark btn-lg" data-container="body" data-live-search="true" title="Select a Work Order" >
             {% for w in workorders %}
-            <option value="{{ w.WONumber }}">{{ w.WONumber }} - {{ w.WOPart }} - {{ w.WODescription }}</option>    
+            <option class="lead" value="{{ w.WONumber }}">{{ w.WONumber }} - {{ w.WOPart }} - {{ w.WODescription }}</option>    
             {% endfor %}
         </select>
     </div>

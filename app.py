@@ -16,6 +16,10 @@ app.config.from_mapping(
 def home():
     return render_template("index.html")
 
+@app.route('/manifest.json')
+def manifest():
+    return app.send_from_directory('static', 'manifest.json')
+
 from . import db
 
 from . import auth

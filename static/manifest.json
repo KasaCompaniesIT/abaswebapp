@@ -1,0 +1,12 @@
+{
+    "name": "Abas WebApp",
+    "icons": [
+      {
+        "src": "images/k-blue-sq-512x.png",
+        "type": "image/png",
+        "sizes": "512x512"
+      }
+    ],
+    "start_url": "/",
+    "display": "standalone"
+  }

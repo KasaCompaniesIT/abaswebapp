@@ -1,5 +1,5 @@
 html { font-family: sans-serif; background: #eee; padding: 0;}
-body { margin: 0 0; background: white;}
+body { margin: 0 0; background: whitesmoke;}
 /* @media screen and (min-width: 300px) and (orientation: portrait) {
     body {
         background: url("/static/images/kasa50thlogoVsm2.png") no-repeat center;
@@ -20,27 +20,44 @@ body { margin: 0 0; background: white;}
         background: url("/static/images/kasa50thlogo.png") no-repeat center;
     }
 } */
-h1 { font-family: serif; color: #377ba8; margin: 1rem 0; }
-a { color: #377ba8; }
+
+
+/* a { color: #377ba8; } */
+a { color: #009FAA; }
+.navbar-nav { font-size: larger;}
+.bg-dark {
+    background-color: #212529 !important;
+}
+.navbar-dark .navbar-nav .nav-link {
+    color: #009FAA;
+}
+/* h1 { font-family: serif; color: #377ba8; margin: 1rem 0; }
 hr { border: none; border-top: 1px solid lightgray; }
 nav { display: flex; align-items: center; padding: 0 1rem; }
 nav h1 { flex: auto; margin: 0; }
 nav h1 a { text-decoration: none; padding: 0.25rem 0.5rem; }
 nav ul  { display: flex; list-style: none; margin: 0; padding: 0; }
 nav ul li a, nav ul li span, header .action { display: block; padding: 0.5rem;}
-.navbar-nav { font-size: larger;}
-.content { padding: 0 1rem 1rem;}
+
+.content { padding: 0 1rem 1rem;} */
+
 /* .content > header { border-bottom: 1px solid lightgray; display: flex; align-items: flex-end; } */
 /* .content > header h2 h4 { flex: auto; margin: 1rem 0; } */
 /* .content > header a { margin: 1rem 0.5rem; } */
-header { color: lightgray; } */
+
+/* header { color: lightgray; }
 header h2 h4 { flex: auto; margin: 0 0; }
-header a { margin: 1rem 0.5rem; }
+header a { margin: 1rem 0.5rem; } */
 .flash { margin: 1em 0; padding: 1em; background: #cae6f6; border: 1px solid #377ba8; }
-.content form { margin: 1em 0; }
+/* .content form { margin: 0.5em 0; }
 .content form a { margin: 0.5em; } 
 .content td a { padding: 0.1rem 0.6rem; }
-.content td { padding-top: 1rem; }
+.content td { padding-top: 1rem; } */
+.content form { margin: 0.5em 0; }
+.list-group-item.padding-custom {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+}
 .list-group.bg-dark-custom {
     background-color: #212529; /* This color matches Bootstrap's default dark navbar */
 }
@@ -50,6 +67,12 @@ header a { margin: 1rem 0.5rem; }
 }
 .list-group.bg-dark-custom .list-group-item:hover {
     background-color: rgba(255, 255, 255, 0.1); /* subtle highlight on hover */
+}
+.list-group {
+    border-color: #212529; /* This color matches Bootstrap's default dark navbar */
+}
+.list-group-item {
+    border-color: #212529; /* This color matches Bootstrap's default dark navbar */
 }
 .modal-header.bg-dark-custom {
     background-color: #212529; /* This color matches Bootstrap's default dark navbar */
@@ -61,3 +84,99 @@ header a { margin: 1rem 0.5rem; }
 .modal-footer.bg-dark-custom {
     background-color: #212529; /* This color matches Bootstrap's default dark navbar */
 }
+.list-group-item-light {
+    color: #212529;
+    background-color: #fdfdfe;
+}
+
+.list-group .list-group-item:hover{
+    background-color: #009FAA;
+    color: #212529;
+}
+
+.breadcrumb-bg {
+    background-color: #e6e6e6;
+    border-bottom: #999 1px solid;
+}
+
+.breadcrumb {
+    /* --bs-breadcrumb-margin-bottom: 0.5rem;  */
+    padding-left: 1rem;
+    padding-top: 0.9rem;
+    padding-bottom: 0;
+    line-height: 0.6;
+    background-color: #e6e6e6;
+}
+
+.breadcrumb a {
+    text-decoration: none;
+}
+
+.bg-abas {
+    background-color: #009FAA;
+}
+
+.bg-abas-dark {
+    background-color: #00757e;
+}
+
+/* Custom button style */
+.btn-abas {
+    background-color: #009FAA; /* Purple background */
+    border-color: #212529;
+    color: #212529; /* White text */
+}
+
+.btn-abas:hover {
+    background-color: #00757e; /* Darker purple on hover */
+    border-color: #212529;
+    color: #fff;
+}
+
+.btn-abas:focus {
+    box-shadow: 0 0 0 0.2rem rgba(0, 117, 126, 0.5); /* Focus ring matching purple */
+}
+
+.btn-abas:active,
+.btn-abas.active {
+    background-color: #00757e; /* Even darker purple when active */
+    border-color: #212529;
+}
+
+.btn-abas:disabled,
+.btn-abas.disabled {
+    background-color: #009FAA;
+    border-color: #212529;
+    opacity: 0.65; /* Mimics Bootstrap’s disabled opacity */
+}
+
+  /* Change the default text color */
+.bootstrap-select .dropdown-toggle .filter-option {
+    color: #000; /* Replace with your desired color, e.g., black */
+}
+
+/* Optional: Ensure it applies even when a placeholder is shown */
+.bootstrap-select .dropdown-toggle[title] .filter-option {
+    color: #000; /* Same color for consistency */
+}
+
+/* Optional: Hover state (if you want it to stay the same) */
+.bootstrap-select .dropdown-toggle:hover .filter-option {
+    color: #000;
+}
+
+.bootstrap-select .dropdown {
+    max-width: 600px;    
+  }
+
+.bootstrap-select.form-control {
+    max-width: 600px;
+}
+
+.list-group {
+    max-width: 600px;
+}
+
+.centered-list {
+    margin:auto;
+  }

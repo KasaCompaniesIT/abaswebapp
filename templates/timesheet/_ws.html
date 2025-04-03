@@ -1,16 +1,17 @@
-<p></p>    
-    <ul class="list-group bg-dark-custom" id="wsListgroup">
+  
+    <ul class="list-group centered-list" id="wsListgroup">
       {% for w in workslips %}
-      <li class="list-group-item list-group-item-action" data-wsdesc="{{ w.WSDescription }}" data-wsnum="{{ w.WSNumber }}" data-opname="{{ w.OpNameExtended }}" data-opid="{{ w.OpID }}" data-project="{{ project }}" data-projectdesc="{{ projectDesc }}" data-wo="{{ wo }}" data-wodesc="{{ woDesc }}" >
-        <div class="d-flex w-100 justify-content-between">
-            <h6 class="mb-1">{{ w.WSDescription }}</h6>
-            <small>{{ w.WSNumber }}</small>
+      <li class="list-group-item list-group-item-action padding-custom list-group-item-light" data-wsdesc="{{ w.WSDescription }}" data-wsnum="{{ w.WSNumber }}" data-opname="{{ w.OpNameExtended }}" data-opid="{{ w.OpID }}" data-project="{{ project }}" data-projectdesc="{{ projectDesc }}" data-wo="{{ wo }}" data-wodesc="{{ woDesc }}" >
+        <div class="d-flex justify-content-between">
+            <h5 class="mb-1">{{ w.WSDescription }}</h6>
+              <small>{{ w.WSNumber }}</small>      
         </div>
         <p class="mb-1">{{ w.OpNameExtended }}</p>
-        <small>{{ w.OpID }}</small>
+        <!-- <small>{{ w.OpID }}</small> -->
       </li>
       {% endfor %}       
     </ul>  
+    <p></p>
     <!-- Modal -->
 <div class="modal fade" id="wsModal" tabindex="-1" aria-labelledby="wsBackdropLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
@@ -24,7 +25,7 @@
       <div class="modal-body">
         <p><span id="mProject"></span> - <span id="mProjectDesc"></span></p>
         <p>WO<span id="mWO"></span> - <span id="mWODesc"></span></p>
-        <p>Op - <span id="mOpName"></span> (<small id="mOpName2"></small>)</p>
+        <p><span id="mOpName"></span> (<small id="mOpName2"></small>)</p>
         <p>OpCode - <span id="mOpID"></span></p>
       </div>
       <div class="modal-footer bg-dark-custom">
@@ -52,7 +53,7 @@
           $('#mWODesc').text(wodesc);
           $('#mOpName').text(opname);
           $('#mOpName2').text(desc);
-          $('#mOpID').text(opid);
+          $('#mOpID').text(num);
           // Show the modal
           $('#wsModal').modal('show');
       });
