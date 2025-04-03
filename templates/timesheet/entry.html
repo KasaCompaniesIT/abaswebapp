@@ -16,6 +16,19 @@
 {% block content %}
 
 <div class="container">
+    <form method="post" class="abasid-lookup">
+        <div class="input-group mb-3">
+            <div class="input-group-prepend">
+              <span class="input-group-text" id="inputGroup-sizing-default">Abas User ID</span>
+            </div>
+            <input type="text" class="form-control" id="abasID" aria-label="Abas User ID Input" aria-describedby="inputGroup-sizing-default">
+            <div class="input-group-append">
+                <button class="btn btn-abas" type="button" id="btn-abasid">Lookup</button>
+              </div>
+          </div>
+
+    </form> 
+    
     <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-4">
         <!-- Card 1 -->
         <div class="col my-2">

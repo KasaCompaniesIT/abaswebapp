@@ -206,3 +206,8 @@ header a { margin: 1rem 0.5rem; } */
     margin: 0 auto; /* Center the container horizontally */
     padding: 15px; /* Optional: Add some padding for better spacing */
   }
+
+  .abasid-lookup {
+    max-width: 400px; /* Set the maximum width for the input group */
+    margin: 0 auto; /* Center the input group horizontally */
+  }
