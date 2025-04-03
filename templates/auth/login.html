@@ -5,6 +5,7 @@
 {% endblock %}
 
 {% block content %}
+<div class="login-container">
   <form method="post">
     <!-- <div class="row mb-3">
       <label class="form-label" for="username">Username</label>
@@ -15,14 +16,15 @@
       <input class="form-control" type="password" name="password" id="password" required>
     </div> -->
     <div class="form-floating mb-3">
-      <input class="form-control" name="username" id="username" required>
       <label for="username">Username</label>
+      <input class="form-control" name="username" id="username" required>
     </div>
     <div class="form-floating mb-3">
-      <input class="form-control" type="password" name="password" id="Password" required>
       <label for="password">Password</label>
+      <input class="form-control" type="password" name="password" id="Password" required>
     </div>
-    <button class="btn btn-primary" type="submit" value="Log In">Log In</button><a class="btn btn-secondary" role="button" href="/">Cancel</a>
+    <button class="btn btn-abas" type="submit" value="Log In">Log In</button> <a class="btn btn-secondary" role="button" href="/">Cancel</a>
   </form>
   <!-- <a href="{{ url_for('auth.register') }}" class="btn btn-info" role="button">Register</a> -->
+</div>  
 {% endblock %}

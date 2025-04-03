@@ -1,5 +1,20 @@
-html { font-family: sans-serif; background: #eee; padding: 0;}
-body { margin: 0 0; background: whitesmoke;}
+html { 
+    font-family: sans-serif; 
+    background: whitesmoke; 
+    padding: 0;
+    height: 100%;
+}
+body { 
+    margin: 0 0; 
+    background: whitesmoke;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    margin: 0;
+}
+#bodyContainer {
+    flex: 1;
+}
 /* @media screen and (min-width: 300px) and (orientation: portrait) {
     body {
         background: url("/static/images/kasa50thlogoVsm2.png") no-repeat center;
@@ -179,4 +194,15 @@ header a { margin: 1rem 0.5rem; } */
 
 .centered-list {
     margin:auto;
+}
+
+.btn-max-width-400 {
+    max-width: 400px; /* Set your desired max width */
+    margin: 0 auto; /* Center the button horizontally */
+  }
+
+.login-container {
+    max-width: 400px; /* Set the maximum width */
+    margin: 0 auto; /* Center the container horizontally */
+    padding: 15px; /* Optional: Add some padding for better spacing */
   }
