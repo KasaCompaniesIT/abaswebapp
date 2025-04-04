@@ -13,9 +13,38 @@ bp = Blueprint('timesheet', __name__)
 def index():
     return render_template('timesheet/index.html')
 
-@bp.route("/timesheet/entry")
+@bp.route("/timesheet/entry", methods=('GET', 'POST'))
 def entry():
+    print("getUserID")
+
+    abas_ID = ""
+    abasUser = None
+
+    if request.method == 'POST':
+        print("POST")
+        abas_ID = request.form['abas_ID']
+        print("selected ID: " + abas_ID)
+
+        # Validate that abas_ID is an integer
+        if not abas_ID.isdigit():
+            flash("Abas User ID must be a valid integer.", "error")
+            return render_template('timesheet/entry.html', abasID=abas_ID)
+
+        db = get_db()
+        dbc = db.cursor()
+
+        abasUser = dbc.execute("select e.*, s.EmpName as SupervisorName from employee as e inner join employee as s on e.Supervisor = s.Emp where e.empid = ?", abas_ID).fetchone()
+        print (abasUser)
+     
+        return render_template('timesheet/entry.html', abasID=abas_ID, abasUser=abasUser)
+    
     return render_template('timesheet/entry.html')
+
+# #get timesheet data for selected user and return to ajax query
+# @bp.route("/timesheet/card", methods=['POST'])
+# def getCard():
+
+#     return render_template('timesheet/_card.html')
 
 @bp.route("/timesheet/lookup")
 def lookup():

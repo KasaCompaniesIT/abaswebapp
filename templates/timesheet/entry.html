@@ -16,32 +16,62 @@
 {% block content %}
 
 <div class="container">
+    <!-- User Lookup Form -->
     <form method="post" class="abasid-lookup">
         <div class="input-group mb-3">
             <div class="input-group-prepend">
               <span class="input-group-text" id="inputGroup-sizing-default">Abas User ID</span>
             </div>
-            <input type="text" class="form-control" id="abasID" aria-label="Abas User ID Input" aria-describedby="inputGroup-sizing-default">
+            <input type="text" class="form-control" name="abas_ID" id="abas_ID" aria-label="Abas User ID Input" aria-describedby="inputGroup-sizing-default" value="{{ abasID }}">
             <div class="input-group-append">
-                <button class="btn btn-abas" type="button" id="btn-abasid">Lookup</button>
+                <button class="btn btn-abas" type="submit" id="btn-abasid">Lookup</button>
               </div>
           </div>
 
     </form> 
-    
-    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-4">
+    <!-- 
+    {{ abasUser}}
+    ID = 0
+    Emp = 1
+    EmpName = 2
+    Dept = 3
+    Supervisor = 4
+    Wagegroup = 5
+    SupervisorName = 6 
+    -->
+
+    <!-- Info Panel -->
+    {% if abasUser %}
+    <div class="info-panel card mb-4 border-dark">
+        <div class="card-header bg-abas-info text-white">
+            User Information
+        </div>
+        <div class="card-body compact-info-panel">
+            <p><strong>Abas ID:</strong> {{ abasUser.EmpID }} | {{ abasUser.Emp }}</p>
+            <p><strong>Name:</strong> {{ abasUser.EmpName }}</p>
+            <p><strong>Department:</strong> {{ abasUser.Dept }}</p>
+            <p><strong>Supervisor:</strong> {{ abasUser.SupervisorName }}</p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Timecard Section -->
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-4" id="timecard">
         <!-- Card 1 -->
         <div class="col my-2">
-            <div class="card bg-light border-dark " >
-                <div class="card-header text-center bg-abas font-weight-bold">03/31/2025 - Mon</div>
-                <div class="card-body">
-                    <h5 class="card-title">Card 1 Title</h5>
-                    <p class="card-text">Current day card. Some quick example text to build on the card title and make up the bulk of the card's content. Here is more text to make the card taller and taller.</p>
+            <div class="card bg-light border-dark card-shadow" >
+                <div class="card-header text-center bg-abas">03/31/2025 - Mon</div>
+                <div class="card-body">                        
+                    <div class="d-flex justify-content-between">
+                        <p>1002002 <br> Indirect - Others</p>                             
+                        <h5><span class="badge badge-secondary">8</span></h5> 
+                    </div>
+                       
                 </div>
             </div>
         </div>
         <!-- Card 2 -->
-        <div class="col my-2">
+        <!-- <div class="col my-2">
             <div class="card bg-light border-dark">
                 <div class="card-header text-center bg-dark text-light font-weight-bold">04/01/2025 - Tues</div>
                 <div class="card-body">
@@ -49,9 +79,9 @@
                     <p class="card-text">Weekday card. Some quick example text to build on the card title and make up the bulk of the card's content.</p>
                 </div>
             </div>
-        </div>
+        </div> -->
         <!-- Card 3 -->
-        <div class="col my-2">
+        <!-- <div class="col my-2">
             <div class="card bg-light border-dark ">
                 <div class="card-header text-center bg-dark text-light font-weight-bold">04/02/2025 - Wed</div>
                 <div class="card-body">
@@ -59,9 +89,9 @@
                     <p class="card-text">Weekday card. Some quick example text to build on the card title and make up the bulk of the card's content.</p>
                 </div>
             </div>
-        </div>
+        </div> -->
         <!-- Card 4 -->
-        <div class="col my-2">
+        <!-- <div class="col my-2">
             <div class="card bg-light border-dark " >
                 <div class="card-header text-center bg-warning font-weight-bold">04/03/2025 - Thurs</div>
                 <div class="card-body">
@@ -69,9 +99,9 @@
                     <p class="card-text">Holiday card. quick example text to build on the card title and make up the bulk of the card's content.</p>
                 </div>
             </div>
-        </div>
+        </div> -->
         <!-- Card 5 -->
-        <div class="col my-2">
+        <!-- <div class="col my-2">
             <div class="card bg-light border-dark ">
                 <div class="card-header text-center bg-dark text-light font-weight-bold">04/04/2025 - Fri</div>
                 <div class="card-body">
@@ -79,9 +109,9 @@
                     <p class="card-text">Weekday card. Some quick example text to build on the card title and make up the bulk of the card's content.</p>
                 </div>
             </div>
-        </div>
+        </div> -->
         <!-- Card 6 -->
-        <div class="col my-2">
+        <!-- <div class="col my-2">
             <div class="card bg-light border-dark ">
                 <div class="card-header text-center bg-secondary text-light font-weight-bold">04/05/2025 - Sat</div>
                 <div class="card-body">
@@ -89,9 +119,9 @@
                     <p class="card-text">Weekend day card. Some quick example text to build on the card title and make up the bulk of the card's content.</p>
                 </div>
             </div>
-        </div>
+        </div> -->
         <!-- Card 7 -->
-        <div class="col my-2">
+        <!-- <div class="col my-2">
             <div class="card bg-light border-dark ">
                 <div class="card-header text-center bg-secondary text-light font-weight-bold">04/06/2025 - Sun</div>
                 <div class="card-body">
@@ -99,7 +129,7 @@
                     <p class="card-text">Weekend day card. Some quick example text to build on the card title and make up the bulk of the card's content.</p>
                 </div>
             </div>
-        </div>
+        </div> -->
     </div>
 </div>
 <p></p>

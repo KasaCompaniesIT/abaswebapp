@@ -211,3 +211,27 @@ header a { margin: 1rem 0.5rem; } */
     max-width: 400px; /* Set the maximum width for the input group */
     margin: 0 auto; /* Center the input group horizontally */
   }
+
+.bg-abas-info {
+    background-color: #343a40; /* Example dark color */
+    color: white;
+}
+
+.info-panel {
+    /* border: 1px solid #ddd; */
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    max-width: 400px;
+}
+
+.compact-info-panel p {
+    margin-bottom: 0.5rem; /* Reduce the bottom margin of paragraphs */
+}
+
+.compact-info-panel {
+    padding: 0.75rem; /* Reduce the padding inside the card body */
+}
+
+.card-shadow {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
