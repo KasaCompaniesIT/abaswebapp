@@ -58,40 +58,42 @@
 
     </div>
 </div>
-    <script>
-        $(document).ready(function() {
-            $('#plist').on('changed.bs.select', function() {
-                var selectedProject = $(this).val();
-                getWOData(selectedProject);
-                // $.ajax({
-                //     url: '/timesheet/wo',
-                //     type: 'POST',
-                //     data: { 'project_list': selectedProject },
-                //     success: function(data) {
-                //         $('#wo_content').html(data);
-                //         $('#ws_content').html("");                    
-                //     },
-                //     error: function(error) {
-                //         console.log('An error occurred:', error);
-                //     }
-                // });
-            });
-        });
-        function getWOData(project) {
-            $.ajax({
-                url: '/timesheet/wo',
-                type: 'POST',
-                data: { 'project_list': project },
-                success: function(data) {
-                    // alert(data);
-                    $('#wo_content').html(data);
-                    $('.selectpicker').selectpicker('refresh');
-                    $('#ws_content').html("");                    
-                },
-                error: function(error) {
-                    console.log('An error occurred:', error);
-                }
-            });
-        }
-    </script>
 {% endblock %} <!-- end content block -->
+{% block script %}
+<script>
+    $(document).ready(function() {
+        $('#plist').on('changed.bs.select', function() {
+            var selectedProject = $(this).val();
+            getWOData(selectedProject);
+            // $.ajax({
+            //     url: '/timesheet/wo',
+            //     type: 'POST',
+            //     data: { 'project_list': selectedProject },
+            //     success: function(data) {
+            //         $('#wo_content').html(data);
+            //         $('#ws_content').html("");                    
+            //     },
+            //     error: function(error) {
+            //         console.log('An error occurred:', error);
+            //     }
+            // });
+        });
+    });
+    function getWOData(project) {
+        $.ajax({
+            url: '/timesheet/wo',
+            type: 'POST',
+            data: { 'project_list': project },
+            success: function(data) {
+                // alert(data);
+                $('#wo_content').html(data);
+                $('.selectpicker').selectpicker('refresh');
+                $('#ws_content').html("");                    
+            },
+            error: function(error) {
+                console.log('An error occurred:', error);
+            }
+        });
+    }
+</script>
+{% endblock %}
