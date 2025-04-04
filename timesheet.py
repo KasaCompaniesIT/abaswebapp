@@ -1,5 +1,6 @@
 import pandas as pd
 import pyodbc
+from datetime import datetime, timedelta, date
 
 from flask import (
     Blueprint, flash, g, redirect, render_template, request, url_for
@@ -34,17 +35,92 @@ def entry():
         dbc = db.cursor()
 
         abasUser = dbc.execute("select e.*, s.EmpName as SupervisorName from employee as e inner join employee as s on e.Supervisor = s.Emp where e.empid = ?", abas_ID).fetchone()
-        print (abasUser)
-     
-        return render_template('timesheet/entry.html', abasID=abas_ID, abasUser=abasUser)
+        print (abasUser)        
+
+        def get_previous_week():
+            today = datetime.now().date()  # Get today's date without the time
+            # Move back 7 days to ensure we're in the previous week
+            last_week = today - timedelta(days=7)
+            # Calculate the start (Monday) of the previous week
+            start_of_week = last_week - timedelta(days=last_week.weekday())
+            # Calculate the end (Sunday) of the previous week
+            end_of_week = start_of_week + timedelta(days=6)
+            return start_of_week, end_of_week
+
+        # Usage
+        startOfPrevWeek, endOfPrevWeek = get_previous_week()
+        print("Start of the previous week:", startOfPrevWeek.strftime("%m/%d/%y"))
+        print("End of the previous week:", endOfPrevWeek.strftime("%m/%d/%y"))
+
+        # Generate a list of dates for the previous week
+        dateRangePrevWeek = [
+            (startOfPrevWeek + timedelta(days=i)).strftime("%m/%d/%y")
+            for i in range((endOfPrevWeek - startOfPrevWeek).days + 1)
+        ]
+
+        # Fetch timecard data for each date
+        timecard_data = {}
+        for date in dateRangePrevWeek:
+            rows = dbc.execute("""
+                        select EmpID, WorkDate, TimeEntryAbas.WSNumber, WSDescription, OpName, OpNameExtended, sum(TimeWorked) as tHoursWorked 
+                        from TimeEntryAbas 
+                        inner join WorkSlips on TimeEntryAbas.WSNumber = WorkSlips.WSNumber 
+                        inner join Operations on WorkSlips.OpID = Operations.OpID
+                        where EmpID = ? and WorkDate = ? 
+                        group by EmpID, TimeEntryAbas.WSNumber, WSDescription, OpName, OpNameExtended, WorkDate 
+                        order by EmpID, WorkDate
+                        """
+                        , abas_ID, date).fetchall()
+            timecard_data[date] = rows
+            print(f"Date: {date}, Rows: {rows}")
+
+        # Pass the data to the template
+        return render_template('timesheet/entry.html',
+                                abasID=abas_ID,
+                                abasUser=abasUser,
+                                startOfPrevWeek=startOfPrevWeek, 
+                                endOfPrevWeek=endOfPrevWeek,
+                                dateRangePrevWeek=dateRangePrevWeek,
+                                timecard_data=timecard_data
+        )
+
+        # return render_template('timesheet/entry.html', abasID=abas_ID, abasUser=abasUser, startOfPrevWeek=startOfPrevWeek, endOfPrevWeek=endOfPrevWeek, dateRangePrevWeek=dateRangePrevWeek)
     
     return render_template('timesheet/entry.html')
 
-# #get timesheet data for selected user and return to ajax query
-# @bp.route("/timesheet/card", methods=['POST'])
-# def getCard():
+#get timesheet data for selected user and return to ajax query
+@bp.route("/timesheet/card", methods=['POST'])
+def getCard():
+    print("getCard")
 
-#     return render_template('timesheet/_card.html')
+    if request.method == 'POST':
+        print("POST")
+        abas_ID = request.form.get['abas_ID']
+        print("selected ID: " + abas_ID)
+
+        tsDate = request.form.get['tsDate']
+        print("selected date: " + tsDate)
+
+        db = get_db()
+        dbc = db.cursor()
+
+    timecard_data = dbc.execute("""
+                                    select EmpID, WorkDate, TimeEntryAbas.WSNumber, WSDescription, OpName, OpNameExtended, sum(TimeWorked) as tHoursWorked 
+                                    from TimeEntryAbas 
+                                    inner join WorkSlips on TimeEntryAbas.WSNumber = WorkSlips.WSNumber 
+                                    inner join Operations on WorkSlips.OpID = Operations.OpID
+                                    where EmpID = ? and WorkDate = ? 
+                                    group by EmpID, TimeEntryAbas.WSNumber, WSDescription, OpName, OpNameExtended, WorkDate 
+                                    order by EmpID, WorkDate
+                                    """
+                                    , abas_ID, tsDate.strftime("%m/%d/%Y"))
+
+    if timecard_data:
+        # Render the _card.html template with the fetched data
+        return render_template('timesheet/_card.html', timeData=timecard_data)
+    else:
+        # Return an empty response with a 204 status code
+        return render_template('timesheet/_card.html', timeData=None)
 
 @bp.route("/timesheet/lookup")
 def lookup():
