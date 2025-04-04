@@ -1,0 +1,11 @@
+
+    {% if timeData %}
+        {% for t in timeData %}
+        <div class="d-flex justify-content-between">
+            <p>{{ t.WSNumber }} <br> {{ t.OpNameExtended }}</p>                             
+            <h5><span class="badge badge-secondary">8</span></h5> 
+        </div>
+        {% endfor %}
+    {% else %}
+    <p>No data available for this date.</p>
+    {% endif %}

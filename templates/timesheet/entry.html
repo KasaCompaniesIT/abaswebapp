@@ -15,7 +15,7 @@
 {% endblock %}
 {% block content %}
 
-<div class="container">
+<div class="container-fluid">
     <!-- User Lookup Form -->
     <form method="post" class="abasid-lookup">
         <div class="input-group mb-3">
@@ -53,23 +53,70 @@
             <p><strong>Supervisor:</strong> {{ abasUser.SupervisorName }}</p>
         </div>
     </div>
-    {% endif %}
+     
+    <form >
+        <div class="input-group date-group">
+            <div class="input-group-prepend">
+            <button class="btn btn-abas" type="button" id="btnPrev">Prev</button>          
+            <span class="input-group-text" id="startDate">{{ startOfPrevWeek }}</span>
+        </div>
+        <!-- <input id="startDate" type="text" class="form-control text-center" placeholder="" aria-label="" aria-describedby="btnPrev" value="{{ startOfPrevWeek }}" readonly> -->
+        <!-- <input id="endDate" type="text" class="form-control text-center" placeholder="" aria-label="" aria-describedby="btnNext" value="{{ endOfPrevWeek }}" readonly>         -->
+        <div class="input-group-append">
+            <span class="input-group-text" id="endDate">{{ endOfPrevWeek }}</span>        
+            <button class="btn btn-abas" type="button" id="btnNext">Next</button>
+            </div>
+        </div>
+    </form>
 
     <!-- Timecard Section -->
     <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-4" id="timecard">
         <!-- Card 1 -->
-        <div class="col my-2">
-            <div class="card bg-light border-dark card-shadow" >
-                <div class="card-header text-center bg-abas">03/31/2025 - Mon</div>
-                <div class="card-body">                        
+        {% for date in dateRangePrevWeek %}
+        <div id="card_{{ date.replace('/', '_') }}" class="col my-2">
+            <div class="card bg-light border-dark card-shadow">
+                <div class="card-header text-center 
+                    {% if date | dateformat('%A') in ['Saturday', 'Sunday'] %}
+                        bg-secondary text-light
+                    {% else %}
+                        bg-dark2 text-light
+                    {% endif %}
+                ">
+                    {{ date }} - {{ date | dateformat("%A") }}
+                </div>
+                <div class="card-body">                                    
+                {% if timecard_data[date] %}
+                    {% for t in timecard_data[date] %}
                     <div class="d-flex justify-content-between">
-                        <p>1002002 <br> Indirect - Others</p>                             
-                        <h5><span class="badge badge-secondary">8</span></h5> 
+                        <p>{{ t.WSNumber }} <br> {{ t.OpNameExtended }}</p>
+                        <h5><span class="badge badge-secondary">{{ t.tHoursWorked }}</span></h5>
                     </div>
-                       
+                    {% endfor %}
+                {% else %}
+                    <p>No data available for this date.</p>
+                {% endif %}
                 </div>
             </div>
         </div>
+        {% endfor %}
+
+
+<!-- 
+        {% for t in timesheetPrev %}
+        <div class="col my-2">
+            <div class="card bg-light border-dark card-shadow" >
+                <div class="card-header text-center bg-dark2 text-light">{{ t.WorkDate }} - {{ t.WorkDate | dateformat("%A") }}</div>
+                <div class="card-body compact-card">
+                    <div class="d-flex justify-content-between">
+                        <p>{{ t.WSNumber }} <br> {{ t.OpNameExtended }}</p>                             
+                        <h5><span class="badge badge-secondary">8</span></h5> 
+                    </div>
+                </div>  
+            </div>
+        </div> 
+        
+    
+         {% endfor %} -->
         <!-- Card 2 -->
         <!-- <div class="col my-2">
             <div class="card bg-light border-dark">
@@ -131,6 +178,41 @@
             </div>
         </div> -->
     </div>
+    {% endif %}
 </div>
 <p></p>
 {% endblock %} <!-- end content block -->
+{% block script %}
+<!-- <script>
+    function getTimeCardData(date, abasID) {
+        // Sanitize the date for use in the HTML ID
+        const sanitizedDate = date.replace(/\//g, '_');
+
+        // Show a loading indicator while fetching data
+        $('#card_' + sanitizedDate).find('.card-body').html('<p>Loading...</p>');
+
+        $.ajax({
+            url: '/timesheet/card', // Flask endpoint to fetch timecard data
+            type: 'POST',
+            data: { 'tsDate': date, 'abas_ID': abasID }, // Send date and user ID
+            success: function(data) {
+                if (data) {
+                    // Update the card body with the fetched data
+                    $('#card_' + sanitizedDate).find('.card-body').html(data);
+                } else {
+                    // Handle empty response
+                    $('#card_' + sanitizedDate).find('.card-body').html('<p>No data available for this date.</p>');
+                }
+            },
+            error: function(xhr, status, error) {
+                // Handle errors gracefully
+                console.error('AJAX Error:', status, error);
+                console.error('Response:', xhr.responseText);
+                $('#card_' + sanitizedDate).find('.card-body').html('<p>An error occurred while fetching data.</p>');
+            }
+        });
+    }
+
+
+</script> -->
+{% endblock %}

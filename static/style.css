@@ -135,6 +135,10 @@ header a { margin: 1rem 0.5rem; } */
     background-color: #00757e;
 }
 
+.bg-dark2 {
+    background-color: #343a40;
+}
+
 /* Custom button style */
 .btn-abas {
     background-color: #009FAA; /* Purple background */
@@ -234,4 +238,32 @@ header a { margin: 1rem 0.5rem; } */
 
 .card-shadow {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.compact-card p {
+    margin-bottom: 0.5rem; /* Reduce the bottom margin of paragraphs */
+}
+
+.compact-card {
+    padding: 0.75rem; /* Reduce the padding inside the card body */
+}
+
+.badge-abas {
+    background-color: #009FAA; /* Replace with your desired color */
+    color: #343a40; /* Text color */
+    font-size: 1rem; /* Optional: Adjust font size */
+    padding: 0.3em 0.5em; /* Optional: Adjust padding */
+    border-radius: 0.25rem; /* Optional: Adjust border radius */
+}
+
+.badge-dark2 {
+    background-color: #343a40; /* Replace with your desired color */
+    color: whitesmoke; /* Text color */
+    font-size: 1rem; /* Optional: Adjust font size */
+    padding: 0.3em 0.5em; /* Optional: Adjust padding */
+    border-radius: 0.25rem; /* Optional: Adjust border radius */
+}
+
+.date-group {
+    width: 400px;
 }
