@@ -68,7 +68,8 @@ header a { margin: 1rem 0.5rem; } */
 .content form a { margin: 0.5em; } 
 .content td a { padding: 0.1rem 0.6rem; }
 .content td { padding-top: 1rem; } */
-.content form { margin: 0.5em 0; }
+.container-fluid { padding: 0 .5rem; }
+.content form { margin: 0.25em 0; }
 .list-group-item.padding-custom {
     padding-top: 1rem;
     padding-bottom: 1rem;
@@ -139,27 +140,33 @@ header a { margin: 1rem 0.5rem; } */
     background-color: #343a40;
 }
 
+.btn-secondary {
+    border-color: #212529;
+}
+
 /* Custom button style */
 .btn-abas {
-    background-color: #009FAA; /* Purple background */
+    background-color: #009FAA;
     border-color: #212529;
-    color: #212529; /* White text */
+    color: #212529;
+    /* color: #222222; */
 }
 
 .btn-abas:hover {
-    background-color: #00757e; /* Darker purple on hover */
+    background-color: #00757e;
     border-color: #212529;
     color: #fff;
 }
 
 .btn-abas:focus {
-    box-shadow: 0 0 0 0.2rem rgba(0, 117, 126, 0.5); /* Focus ring matching purple */
+    box-shadow: 0 0 0 0.2rem rgba(0, 117, 126, 0.5); 
 }
 
 .btn-abas:active,
 .btn-abas.active {
-    background-color: #00757e; /* Even darker purple when active */
+    background-color: #00757e; 
     border-color: #212529;
+    color: #fff;
 }
 
 .btn-abas:disabled,
@@ -211,9 +218,10 @@ header a { margin: 1rem 0.5rem; } */
     padding: 15px; /* Optional: Add some padding for better spacing */
   }
 
-  .abasid-lookup {
-    max-width: 400px; /* Set the maximum width for the input group */
-    margin: 0 auto; /* Center the input group horizontally */
+.abasid-lookup {
+    max-width: 400px; /* Set the maximum width */
+    width: 100%; /* Ensure it fills the available width */
+    margin: 0 auto; /* Center it horizontally (optional) */
   }
 
 .bg-abas-info {
@@ -248,6 +256,11 @@ header a { margin: 1rem 0.5rem; } */
     padding: 0.75rem; /* Reduce the padding inside the card body */
 }
 
+.compact-card-footer {
+    padding-top: 0.25rem; /* Reduce the padding inside the card footer */
+    padding-bottom: 0.25rem; /* Reduce the padding inside the card footer */
+}
+
 .badge-abas {
     background-color: #009FAA; /* Replace with your desired color */
     color: #343a40; /* Text color */
@@ -265,5 +278,11 @@ header a { margin: 1rem 0.5rem; } */
 }
 
 .date-group {
-    width: 400px;
+    max-width: 400px; /* Set the maximum width */
+    width: 100%; /* Ensure it fills the available width */
+    margin: 0 auto; /* Center it horizontally (optional) */
+}
+
+#btnToday {
+    flex-grow: 1; /* Allow the button to grow and fill the available space */
 }

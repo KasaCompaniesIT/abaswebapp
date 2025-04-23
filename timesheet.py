@@ -23,32 +23,61 @@ def entry():
 
     if request.method == 'POST':
         print("POST")
+        button_clicked = request.form.get('button')
+        startDate = request.form.get('startDate')  # Get the startDate from the form
         abas_ID = request.form['abas_ID']
         print("selected ID: " + abas_ID)
 
         # Validate that abas_ID is an integer
+        lookupByName = False
         if not abas_ID.isdigit():
-            flash("Abas User ID must be a valid integer.", "error")
-            return render_template('timesheet/entry.html', abasID=abas_ID)
+            lookupByName = True
+            abas_ID += '%'
+            # flash("Abas User ID must be a valid integer.", "error")
+            # return render_template('timesheet/entry.html', abasID=abas_ID)
 
         db = get_db()
         dbc = db.cursor()
 
-        abasUser = dbc.execute("select e.*, s.EmpName as SupervisorName from employee as e inner join employee as s on e.Supervisor = s.Emp where e.empid = ?", abas_ID).fetchone()
+        if lookupByName:
+            abasUser = dbc.execute("select e.*, s.EmpName as SupervisorName from employee as e inner join employee as s on e.Supervisor = s.Emp where e.emp like ?", (abas_ID,)).fetchone()
+            abas_ID = abasUser.Emp.strip()
+        else:
+            abasUser = dbc.execute("select e.*, s.EmpName as SupervisorName from employee as e inner join employee as s on e.Supervisor = s.Emp where e.empid = ?", abas_ID).fetchone()
+
         print (abasUser)        
 
-        def get_previous_week():
-            today = datetime.now().date()  # Get today's date without the time
-            # Move back 7 days to ensure we're in the previous week
-            last_week = today - timedelta(days=7)
-            # Calculate the start (Monday) of the previous week
-            start_of_week = last_week - timedelta(days=last_week.weekday())
-            # Calculate the end (Sunday) of the previous week
-            end_of_week = start_of_week + timedelta(days=6)
-            return start_of_week, end_of_week
+       # Parse the startDate into a datetime object
+        if startDate:
+            startDate = datetime.strptime(startDate, "%Y-%m-%d").date()
+        else:
+            startDate = datetime.now().date()
 
-        # Usage
-        startOfPrevWeek, endOfPrevWeek = get_previous_week()
+        # Adjust the startDate based on the button clicked
+        if button_clicked == "btnPrev":
+            startDate -= timedelta(days=7)
+        elif button_clicked == "btnNext":
+            startDate += timedelta(days=7)
+        else:
+            startDate = datetime.now().date()
+            
+        # Calculate the start and end of the week
+        startOfPrevWeek = startDate - timedelta(days=startDate.weekday())
+        endOfPrevWeek = startOfPrevWeek + timedelta(days=6)
+
+
+        # def get_previous_week(start_date):
+        #     #today = datetime.now().date()  # Get today's date without the time
+        #     # Move back 7 days to ensure we're in the previous week
+        #     last_week = start_date - timedelta(days=7)
+        #     # Calculate the start (Monday) of the previous week
+        #     start_of_week = last_week - timedelta(days=last_week.weekday())
+        #     # Calculate the end (Sunday) of the previous week
+        #     end_of_week = start_of_week + timedelta(days=6)
+        #     return start_of_week, end_of_week
+
+        # # Usage
+        # startOfPrevWeek, endOfPrevWeek = get_previous_week(startDate)
         print("Start of the previous week:", startOfPrevWeek.strftime("%m/%d/%y"))
         print("End of the previous week:", endOfPrevWeek.strftime("%m/%d/%y"))
 
@@ -70,7 +99,7 @@ def entry():
                         group by EmpID, TimeEntryAbas.WSNumber, WSDescription, OpName, OpNameExtended, WorkDate 
                         order by EmpID, WorkDate
                         """
-                        , abas_ID, date).fetchall()
+                        , abasUser.EmpID, date).fetchall()
             timecard_data[date] = rows
             print(f"Date: {date}, Rows: {rows}")
 

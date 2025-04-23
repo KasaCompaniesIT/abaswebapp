@@ -38,6 +38,7 @@
               <a href="{{ url_for('auth.logout') }}" class="nav-item nav-link">Logout</a>
               {% else %}
                 <a href="/admin" class="nav-item nav-link">Admin</a>                 	
+                <a href="{{ url_for('auth.login') }}" class="nav-item nav-link {% block nav_login %}{% endblock %}">Login</a>
               {% endif %}
             </div>
         </div>
@@ -48,14 +49,21 @@
     {% block subheader %}{% endblock %}
   <div class="container-fluid" id="bodyContainer">    
     <section class="content">        
-        {% for message in get_flashed_messages() %}
+        <!-- {% for message in get_flashed_messages() %}
           <div class="flash">{{ message }}</div>
+        {% endfor %} -->
+        {% for message in get_flashed_messages() %}
+          <div class="alert alert-info alert-dismissible fade show flash" role="alert">
+              {{ message }}
+              <button type="button" class="btn-close" data-dismiss="alert" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+              </button>
+          </div>
         {% endfor %}
-        <!-- <div class="container d-flex align-items-center justify-content-center flex-column w-auto"> -->
-          {% block content %}{% endblock %}
-        <!-- </div>   -->
+        
+        {% block content %}{% endblock %}
     </section>
-  </div>  
+  </div>   
   
   
   {% block footer %}
