@@ -17,193 +17,204 @@ ALLOWED_EXTENSIONS = set(['csv'])
 @bp.route('/admin')
 @login_required
 def index():
-    return render_template('admin/index.html')
+    if g.user.isAdmin:
+        return render_template('admin/index.html')
+    else:
+        return "Unauthorized access"
 
 @bp.route('/admin/import/results')
 @login_required
 def importResults():
-
-    return render_template('admin/results.html')
-
+    if g.user.isAdmin:
+        return render_template('admin/results.html')
+    else:
+        return "Unauthorized access"
+    
 @bp.route('/admin/importUsers', methods=('GET', 'POST'))
 @login_required
 def importUserCSV():    
-    if request.method == 'POST':        
-        updateCount = 0
-        newCount = 0
+    if g.user.isAdmin:
+        if request.method == 'POST':        
+            updateCount = 0
+            newCount = 0
 
-        startTime = time.time()
+            startTime = time.time()
 
-        try:
-            file = request.files['csvEFile']
-            db = get_db()
-            dbc = db.cursor()
-            df = pd.read_csv(file, keep_default_na=False)   
+            try:
+                file = request.files['csvEFile']
+                db = get_db()
+                dbc = db.cursor()
+                df = pd.read_csv(file, keep_default_na=False)   
+                
+                # flash("Importing Employee Data...")
+                
+                for index, row in df.iterrows():
+                    if not existingEmployee(row['ID']):
+                        # insert new employee record
+                        dbc.execute(
+                            "INSERT INTO Employee (EmpID, Emp, EmpName, Dept, Supervisor, Wagegroup) VALUES (?, ?, ?, ?, ?, ?)",
+                            (row['ID'], row['EMP'], row['NAME'], row['DEPT'], row['SUPERVISOR'], row['WG'])
+                        )
+                        dbc.commit()
+                        print(f"Inserting new employee record: {row['EMP']}")
+                        newCount += 1
+                    else:
+                        # update existing employee record
+                        dbc.execute(
+                            "UPDATE Employee SET Emp=?, EmpName=?, Dept=?, Supervisor=?, Wagegroup=? WHERE empid=?",
+                            (row['EMP'], row['NAME'], row['DEPT'], row['SUPERVISOR'], row['WG'], row['ID'])
+                        )
+                        dbc.commit()
+                        print(f"Updating employee record: {row['EMP']}")
+                        updateCount += 1
+
+                currentTime = time.time()
+                elapsedSeconds = currentTime - startTime
+                print(f"Importing Employee Data......Finished  in {elapsedSeconds:.2f} seconds")        
+                print(f"{newCount} new employee records.  {updateCount} updated employee records.")
             
-            # flash("Importing Employee Data...")
-            
-            for index, row in df.iterrows():
-                if not existingEmployee(row['ID']):
-                    # insert new employee record
-                    dbc.execute(
-                        "INSERT INTO Employee (EmpID, Emp, EmpName, Dept, Supervisor, Wagegroup) VALUES (?, ?, ?, ?, ?, ?)",
-                        (row['ID'], row['EMP'], row['NAME'], row['DEPT'], row['SUPERVISOR'], row['WG'])
-                    )
-                    dbc.commit()
-                    print(f"Inserting new employee record: {row['EMP']}")
-                    newCount += 1
-                else:
-                    # update existing employee record
-                    dbc.execute(
-                        "UPDATE Employee SET Emp=?, EmpName=?, Dept=?, Supervisor=?, Wagegroup=? WHERE empid=?",
-                        (row['EMP'], row['NAME'], row['DEPT'], row['SUPERVISOR'], row['WG'], row['ID'])
-                    )
-                    dbc.commit()
-                    print(f"Updating employee record: {row['EMP']}")
-                    updateCount += 1
+                return render_template('admin/results.html', results="Employee File imported successfully", elapsed=elapsedSeconds, newcount=newCount, updatedcount=updateCount)
+            except IOError:
+                pass         
+            except pyodbc.DatabaseError as err:
+                error = err
+                print("Importing Employee Data......Incomplete")            
+                print(f"{newCount} new employee records.  {updateCount} updated employee records.")
+                print(error)            
+                            
+                return str(error)
 
-            currentTime = time.time()
-            elapsedSeconds = currentTime - startTime
-            print(f"Importing Employee Data......Finished  in {elapsedSeconds:.2f} seconds")        
-            print(f"{newCount} new employee records.  {updateCount} updated employee records.")
-        
-            return render_template('admin/results.html', results="Employee File imported successfully", elapsed=elapsedSeconds, newcount=newCount, updatedcount=updateCount)
-        except IOError:
-            pass         
-        except pyodbc.DatabaseError as err:
-            error = err
-            print("Importing Employee Data......Incomplete")            
-            print(f"{newCount} new employee records.  {updateCount} updated employee records.")
-            print(error)            
-                        
-            return str(error)
+            return render_template('admin/results.html', results="Unable to read file")
 
-        return render_template('admin/results.html', results="Unable to read file")
-
-    return render_template('admin/importCSV.html')
-
+        return render_template('admin/importCSV.html')
+    else:
+        return "Unauthorized access"
+    
 @bp.route('/admin/import', methods=('GET', 'POST'))
 @login_required
 def importCSV():    
-    if request.method == 'POST':        
-        updateProjectCount = 0
-        newProjectCount = 0
+    if g.user.isAdmin:
+        if request.method == 'POST':        
+            updateProjectCount = 0
+            newProjectCount = 0
 
-        updateWOCount = 0
-        newWOCount = 0
+            updateWOCount = 0
+            newWOCount = 0
 
-        updateWSCount = 0
-        newWSCount = 0
+            updateWSCount = 0
+            newWSCount = 0
 
-        startTime = time.time()
+            startTime = time.time()
 
-        try:
-            file = request.files['csvFile']
-            db = get_db()
-            dbc = db.cursor()
-            df = pd.read_csv(file, keep_default_na=False)        
+            try:
+                file = request.files['csvFile']
+                db = get_db()
+                dbc = db.cursor()
+                df = pd.read_csv(file, keep_default_na=False)        
+                
+                # flash("Importing Labor Ops Data...")
+                
+                currentProject = ""
+                currentWO = ""
+                currentWS = ""
+
+                for index, row in df.iterrows():
+                    projectID = row['project'].replace("P", "")
+                    if currentProject != projectID:
+                        if not existingProject(projectID):
+                            # insert new project record
+                            dbc.execute(
+                                "INSERT INTO projects (ProjectID, ProjectNumber, ProjectDescription) VALUES (?, ?, ?)",
+                                (projectID, row['project'], row['prjdesc'])
+                            )
+                            dbc.commit()
+                            print(f"Inserting new project record: {row['project']}")
+                            newProjectCount += 1
+                            currentProject = projectID
+                        else:
+                            # update existing project record
+                            dbc.execute(
+                                "UPDATE projects SET ProjectDescription=? WHERE projectid=?",
+                                (row['prjdesc'], projectID)
+                            )
+                            dbc.commit()
+                            print(f"Updating project record: {row['project']}")
+                            updateProjectCount += 1
+                            currentProject = projectID
+
+                    workorderID = row['wo']
+                    if currentWO != workorderID:
+                        if not existingWO(row['wo']):
+                            # insert new workorder
+                            dbc.execute(
+                                "INSERT INTO workorders (ProjectID, WONumber, WODescription, WOPart) VALUES (?, ?, ?, ?)",
+                                (projectID, row['wo'], row['wodesc'], row['wopart'])
+                            )
+                            dbc.commit()
+                            print(f"Inserting new workorder record: {row['wo']}")
+                            newWOCount += 1
+                            currentWO = workorderID
+                        else:
+                            # update existing workorder
+                            dbc.execute(
+                                "UPDATE workorders SET WODescription=?, WOPart=? WHERE wonumber=?",
+                                (row['wodesc'], row['wopart'], row['wo'])
+                            )
+                            dbc.commit()
+                            print(f"Updating workorder record: {row['wo']}")
+                            updateWOCount += 1
+                            currentWO = workorderID
+
+                    workslipID = row['wrkslp']
+                    if workslipID != currentWS:
+                        if not existingWS(row['wrkslp']):
+                            # insert new workslip
+                            dbc.execute(
+                                "INSERT INTO workslips (WSNumber, WONumber, WSDescription, WSDockDate, OpID) VALUES (?, ?, ?, ?, ?)",
+                                (row['wrkslp'], row['wo'], row['wsdesc'], row['wsdockdate'], row['wslabop'])
+                            )
+                            dbc.commit()
+                            print(f"Inserting new workslip record: {row['wrkslp']}")
+                            newWSCount += 1
+                            currentWS = workslipID
+                        else:
+                            # update new workslip
+                            dbc.execute(
+                                "UPDATE workslips SET WSDescription=?, WSDockDate=?, OpID=? WHERE WSNumber=?",
+                                (row['wsdesc'], row['wsdockdate'], row['wslabop'], row['wrkslp'])
+                            )
+                            dbc.commit()
+                            print(f"Updating workslip record: {row['wrkslp']}")
+                            updateWSCount += 1
+                            currentWS = workslipID
+
+                currentTime = time.time()
+                elapsedSeconds = currentTime - startTime
+                print(f"Importing Labor Ops Data......Finished in {elapsedSeconds:.2f} seconds")        
+                print(f"{newProjectCount} new project records.  {updateProjectCount} updated project records.")
+                print(f"{newWOCount} new workorder records.  {updateWOCount} updated workorder records.")        
+                print(f"{newWSCount} new workslip records.  {updateWSCount} updated workslip records.")        
+
+                return render_template('admin/results.html', results="Labor Ops File imported successfully", elapsed=elapsedSeconds, newcount=newProjectCount+newWOCount+newWSCount, updatedcount=updateProjectCount+updateWOCount+updateWSCount)          
             
-            # flash("Importing Labor Ops Data...")
-            
-            currentProject = ""
-            currentWO = ""
-            currentWS = ""
+            except IOError:
+                pass         
+            except pyodbc.DatabaseError as err:
+                error = err
+                print("Importing Labor Ops Data......Incomplete")            
+                print(f"{newProjectCount} new project records.  {updateProjectCount} updated project records.")
+                print(f"{newWOCount} new workorder records.  {updateWOCount} updated workorder records.")
+                print(f"{newWSCount} new workslip records.  {updateWSCount} updated workslip records.")
+                print(error)
 
-            for index, row in df.iterrows():
-                projectID = row['project'].replace("P", "")
-                if currentProject != projectID:
-                    if not existingProject(projectID):
-                        # insert new project record
-                        dbc.execute(
-                            "INSERT INTO projects (ProjectID, ProjectNumber, ProjectDescription) VALUES (?, ?, ?)",
-                            (projectID, row['project'], row['prjdesc'])
-                        )
-                        dbc.commit()
-                        print(f"Inserting new project record: {row['project']}")
-                        newProjectCount += 1
-                        currentProject = projectID
-                    else:
-                        # update existing project record
-                        dbc.execute(
-                            "UPDATE projects SET ProjectDescription=? WHERE projectid=?",
-                            (row['prjdesc'], projectID)
-                        )
-                        dbc.commit()
-                        print(f"Updating project record: {row['project']}")
-                        updateProjectCount += 1
-                        currentProject = projectID
+                return str(error)
 
-                workorderID = row['wo']
-                if currentWO != workorderID:
-                    if not existingWO(row['wo']):
-                        # insert new workorder
-                        dbc.execute(
-                            "INSERT INTO workorders (ProjectID, WONumber, WODescription, WOPart) VALUES (?, ?, ?, ?)",
-                            (projectID, row['wo'], row['wodesc'], row['wopart'])
-                        )
-                        dbc.commit()
-                        print(f"Inserting new workorder record: {row['wo']}")
-                        newWOCount += 1
-                        currentWO = workorderID
-                    else:
-                        # update existing workorder
-                        dbc.execute(
-                            "UPDATE workorders SET WODescription=?, WOPart=? WHERE wonumber=?",
-                            (row['wodesc'], row['wopart'], row['wo'])
-                        )
-                        dbc.commit()
-                        print(f"Updating workorder record: {row['wo']}")
-                        updateWOCount += 1
-                        currentWO = workorderID
+            return render_template('admin/results.html', results="Unable to read file")
 
-                workslipID = row['wrkslp']
-                if workslipID != currentWS:
-                    if not existingWS(row['wrkslp']):
-                        # insert new workslip
-                        dbc.execute(
-                            "INSERT INTO workslips (WSNumber, WONumber, WSDescription, WSDockDate, OpID) VALUES (?, ?, ?, ?, ?)",
-                            (row['wrkslp'], row['wo'], row['wsdesc'], row['wsdockdate'], row['wslabop'])
-                        )
-                        dbc.commit()
-                        print(f"Inserting new workslip record: {row['wrkslp']}")
-                        newWSCount += 1
-                        currentWS = workslipID
-                    else:
-                        # update new workslip
-                        dbc.execute(
-                            "UPDATE workslips SET WSDescription=?, WSDockDate=?, OpID=? WHERE WSNumber=?",
-                            (row['wsdesc'], row['wsdockdate'], row['wslabop'], row['wrkslp'])
-                        )
-                        dbc.commit()
-                        print(f"Updating workslip record: {row['wrkslp']}")
-                        updateWSCount += 1
-                        currentWS = workslipID
-
-            currentTime = time.time()
-            elapsedSeconds = currentTime - startTime
-            print(f"Importing Labor Ops Data......Finished in {elapsedSeconds:.2f} seconds")        
-            print(f"{newProjectCount} new project records.  {updateProjectCount} updated project records.")
-            print(f"{newWOCount} new workorder records.  {updateWOCount} updated workorder records.")        
-            print(f"{newWSCount} new workslip records.  {updateWSCount} updated workslip records.")        
-
-            return render_template('admin/results.html', results="Labor Ops File imported successfully", elapsed=elapsedSeconds, newcount=newProjectCount+newWOCount+newWSCount, updatedcount=updateProjectCount+updateWOCount+updateWSCount)          
-        
-        except IOError:
-            pass         
-        except pyodbc.DatabaseError as err:
-            error = err
-            print("Importing Labor Ops Data......Incomplete")            
-            print(f"{newProjectCount} new project records.  {updateProjectCount} updated project records.")
-            print(f"{newWOCount} new workorder records.  {updateWOCount} updated workorder records.")
-            print(f"{newWSCount} new workslip records.  {updateWSCount} updated workslip records.")
-            print(error)
-
-            return str(error)
-
-        return render_template('admin/results.html', results="Unable to read file")
-
-    return render_template('admin/importCSV.html')
-
+        return render_template('admin/importCSV.html')
+    else:
+        return "Unauthorized access"
+    
 # CSV file columns
 # 
 # M|project','M|prjdesc','M|wo','M|wopart','M|wodesc','M|wrkslp','M|wsdesc','M|wslabop','M|wslodpt','M|wsdockdate','M|wsopdesc'
