@@ -23,19 +23,23 @@ def register():
         error = None
 
         if not username:
-            error = 'Username is required.'
+            error = 'AbasID is required.'
         elif not password:
             error = 'Password is required.'
 
         if error is None:
             try:
+                # cursor.execute(
+                #     "INSERT INTO login (username, password) VALUES (?, ?)",
+                #     (username, generate_password_hash(password))
+                # )
                 cursor.execute(
-                    "INSERT INTO login (username, password) VALUES (?, ?)",
-                    (username, generate_password_hash(password))
+                    "UPDATE Employee SET Password = ? WHERE EmpID = ?",
+                    (generate_password_hash(password), username)
                 )
                 cursor.commit()
             except pyodbc.DatabaseError as err:
-                error = f"User {username} is already registered."
+                error = f"AbasID {username} is invalid."
             else:
                 return redirect(url_for("auth.login"))
 
@@ -52,22 +56,26 @@ def login():
         db = get_db()
         cursor = db.cursor()
         error = None
+        # user = cursor.execute(
+        #     'SELECT * FROM login WHERE username = ?', (username,)
+        # ).fetchone()
         user = cursor.execute(
-            'SELECT * FROM login WHERE username = ?', (username,)
+            'SELECT * FROM employee WHERE empid = ?', (username,)
         ).fetchone()
-
+        print(user)
         try:
             if username is None:
                 error = 'Invalid Login.'
-            elif not check_password_hash(user.password, password):
+            elif not check_password_hash(user.Password, password):
                 error = 'Invalid Login.'
         except TypeError:
             error = 'Invalid Login.'
 
         if error is None:
             session.clear()
-            session['user_id'] = user.id
-            return redirect(url_for('admin.index'))
+            session['user_id'] = user.EmpID
+            session['isAdmin'] = user.isAdmin
+            return redirect(url_for('app.home'))
 
         flash(error)
 
@@ -81,9 +89,9 @@ def load_logged_in_user():
     if user_id is None:
         g.user = None
     else:
-        g.user = 'admin'
+        g.user = user_id
         g.user = get_db().cursor().execute(
-            'SELECT * FROM login WHERE id = ?', (user_id,)
+            'SELECT EmpID, Emp, EmpName, Dept, Supervisor, isAdmin FROM employee WHERE empid = ?', (user_id,)
         ).fetchone()
 
 

@@ -1,9 +1,18 @@
 {% extends 'base.html' %}
 {% block title %}Log In{% endblock %}
+{% block nav_login %}active{% endblock %}
 {% block header %}
 
 {% endblock %}
-
+{% block subheader %}
+<nav aria-label="breadcrumb" class="breadcrumb-bg">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('home') }}">Home</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Login</li>
+    </ol>
+</nav>
+<p></p>
+{% endblock %}
 {% block content %}
 <div class="login-container">
   <form method="post">
@@ -16,15 +25,21 @@
       <input class="form-control" type="password" name="password" id="password" required>
     </div> -->
     <div class="form-floating mb-3">
-      <label for="username">Username</label>
+      <label for="username">AbasID</label>
       <input class="form-control" name="username" id="username" required>
     </div>
     <div class="form-floating mb-3">
       <label for="password">Password</label>
       <input class="form-control" type="password" name="password" id="Password" required>
     </div>
-    <button class="btn btn-abas" type="submit" value="Log In">Log In</button> <a class="btn btn-secondary" role="button" href="/">Cancel</a>
+    <div class="d-flex justify-content-between">
+      <div>
+        <button class="btn btn-abas" type="submit" value="Log In">Log In</button>
+        <a class="btn btn-secondary" role="button" href="/">Cancel</a>
+      </div>
+      <a href="{{ url_for('auth.register') }}" class="btn btn-abas ms-auto" role="button">Register</a>
+    </div>
   </form>
-  <!-- <a href="{{ url_for('auth.register') }}" class="btn btn-info" role="button">Register</a> -->
+ 
 </div>  
 {% endblock %}
