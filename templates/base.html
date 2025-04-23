@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.18/css/bootstrap-select.min.css" integrity="sha512-ARJR74swou2y0Q2V9k0GbzQ/5vJ2RBSoCWokg4zkfM29Fb3vZEQyv0iWBMW/yvKgyHSR/7D64pFMmU8nYmbRkg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.14.0-beta3/css/bootstrap-select.min.css" integrity="sha512-g2SduJKxa4Lbn3GW+Q7rNz+pKP9AWMR++Ta8fgwsZRCUsawjPvF/BxSMkGS61VsR9yinGoEgrHPGPn2mrj8+4w==" crossorigin="anonymous" referrerpolicy="no-referrer" /> -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <meta name="theme-color" content="#712cf9">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="manifest" href="/manifest.json">
@@ -33,11 +34,12 @@
             <div class="navbar-nav">              	
               <a href="{{ url_for('home') }}" class="nav-item nav-link {% block nav_home %}{% endblock %} .fs-4">Home</a>  
               <a href="{{ url_for('timesheet.index') }}" class="nav-item nav-link {% block nav_timesheet %}{% endblock %}">Timesheet</a>  
-              {% if g.user %}
-              <a href="{{ url_for('admin.index') }}" class="nav-item nav-link {% block nav_admin %}{% endblock %}">Admin</a>  
-              <a href="{{ url_for('auth.logout') }}" class="nav-item nav-link">Logout</a>
-              {% else %}
-                <a href="/admin" class="nav-item nav-link">Admin</a>                 	
+              {% if g.user %}              
+                {% if g.user.isAdmin %}
+                  <a href="{{ url_for('admin.index') }}" class="nav-item nav-link {% block nav_admin %}{% endblock %}">Admin</a>  
+                {% endif %}
+                <a href="{{ url_for('auth.logout') }}" class="nav-item nav-link">Logout</a>
+              {% else %}                	
                 <a href="{{ url_for('auth.login') }}" class="nav-item nav-link {% block nav_login %}{% endblock %}">Login</a>
               {% endif %}
             </div>
@@ -60,7 +62,6 @@
               </button>
           </div>
         {% endfor %}
-        
         {% block content %}{% endblock %}
     </section>
   </div>   

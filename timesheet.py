@@ -5,7 +5,8 @@ from datetime import datetime, timedelta, date
 from flask import (
     Blueprint, flash, g, redirect, render_template, request, url_for
 )
-from werkzeug.exceptions import abort
+from werkzeug.exceptions import abort, Unauthorized, Forbidden, NotFound
+from auth import login_required
 from db import get_db
 
 bp = Blueprint('timesheet', __name__)
@@ -15,11 +16,13 @@ def index():
     return render_template('timesheet/index.html')
 
 @bp.route("/timesheet/entry", methods=('GET', 'POST'))
+@login_required
 def entry():
     print("getUserID")
 
     abas_ID = ""
     abasUser = None
+    error = None
 
     if request.method == 'POST':
         print("POST")
@@ -40,85 +43,108 @@ def entry():
         dbc = db.cursor()
 
         if lookupByName:
-            abasUser = dbc.execute("select e.*, s.EmpName as SupervisorName from employee as e inner join employee as s on e.Supervisor = s.Emp where e.emp like ?", (abas_ID,)).fetchone()
-            abas_ID = abasUser.Emp.strip()
+            abasUser = dbc.execute(
+                "SELECT e.*, s.EmpName as SupervisorName FROM employee as e "
+                "INNER JOIN employee as s ON e.Supervisor = s.Emp WHERE e.emp LIKE ?", 
+                (abas_ID,)
+            ).fetchone()
+            if abasUser:
+                abas_ID = abasUser.Emp.strip()
+            else:
+                error = "No user found with the given name."
         else:
-            abasUser = dbc.execute("select e.*, s.EmpName as SupervisorName from employee as e inner join employee as s on e.Supervisor = s.Emp where e.empid = ?", abas_ID).fetchone()
+            abasUser = dbc.execute(
+                "SELECT e.*, s.EmpName as SupervisorName FROM employee as e "
+                "INNER JOIN employee as s ON e.Supervisor = s.Emp WHERE e.empid = ?", 
+                abas_ID
+            ).fetchone()
+            if not abasUser:
+                error = "No user found with the given ID."
+        
+        #print (abasUser)        
+        if abasUser:     
+            # check if logged in user matches the selected user
+            if g.user.EmpID != abasUser.EmpID and g.user.Emp != abasUser.Supervisor:       
+                if g.user.isAdmin == 0:
+                    error = "You are not authorized to view this user's timesheet."
+                    flash(error)
+                    return render_template('timesheet/entry.html')
+                
+            # Parse the startDate into a datetime object
+            if startDate:
+                startDate = datetime.strptime(startDate, "%Y-%m-%d").date()
+            else:
+                startDate = datetime.now().date()
 
-        print (abasUser)        
+            # Adjust the startDate based on the button clicked
+            if button_clicked == "btnPrev":
+                startDate -= timedelta(days=7)
+            elif button_clicked == "btnNext":
+                startDate += timedelta(days=7)
+            else:
+                startDate = datetime.now().date()
+                
+            # Calculate the start and end of the week
+            startOfPrevWeek = startDate - timedelta(days=startDate.weekday())
+            endOfPrevWeek = startOfPrevWeek + timedelta(days=6)
 
-       # Parse the startDate into a datetime object
-        if startDate:
-            startDate = datetime.strptime(startDate, "%Y-%m-%d").date()
+
+            # def get_previous_week(start_date):
+            #     #today = datetime.now().date()  # Get today's date without the time
+            #     # Move back 7 days to ensure we're in the previous week
+            #     last_week = start_date - timedelta(days=7)
+            #     # Calculate the start (Monday) of the previous week
+            #     start_of_week = last_week - timedelta(days=last_week.weekday())
+            #     # Calculate the end (Sunday) of the previous week
+            #     end_of_week = start_of_week + timedelta(days=6)
+            #     return start_of_week, end_of_week
+
+            # # Usage
+            # startOfPrevWeek, endOfPrevWeek = get_previous_week(startDate)
+            print("Start of the previous week:", startOfPrevWeek.strftime("%m/%d/%y"))
+            print("End of the previous week:", endOfPrevWeek.strftime("%m/%d/%y"))
+
+            # Generate a list of dates for the previous week
+            dateRangePrevWeek = [
+                (startOfPrevWeek + timedelta(days=i)).strftime("%m/%d/%y")
+                for i in range((endOfPrevWeek - startOfPrevWeek).days + 1)
+            ]
+
+            # Fetch timecard data for each date
+            timecard_data = {}
+            for date in dateRangePrevWeek:
+                rows = dbc.execute("""
+                            select EmpID, WorkDate, TimeEntryAbas.WSNumber, WSDescription, OpName, OpNameExtended, sum(TimeWorked) as tHoursWorked 
+                            from TimeEntryAbas 
+                            inner join WorkSlips on TimeEntryAbas.WSNumber = WorkSlips.WSNumber 
+                            inner join Operations on WorkSlips.OpID = Operations.OpID
+                            where EmpID = ? and WorkDate = ? 
+                            group by EmpID, TimeEntryAbas.WSNumber, WSDescription, OpName, OpNameExtended, WorkDate 
+                            order by EmpID, WorkDate
+                            """
+                            , abasUser.EmpID, date).fetchall()
+                timecard_data[date] = rows
+                print(f"Date: {date}, Rows: {rows}")
+
+            # Pass the data to the template
+            return render_template('timesheet/entry.html',
+                                    abasID=abas_ID,
+                                    abasUser=abasUser,
+                                    startOfPrevWeek=startOfPrevWeek, 
+                                    endOfPrevWeek=endOfPrevWeek,
+                                    dateRangePrevWeek=dateRangePrevWeek,
+                                    timecard_data=timecard_data
+            )
+
+            # return render_template('timesheet/entry.html', abasID=abas_ID, abasUser=abasUser, startOfPrevWeek=startOfPrevWeek, endOfPrevWeek=endOfPrevWeek, dateRangePrevWeek=dateRangePrevWeek)
         else:
-            startDate = datetime.now().date()
-
-        # Adjust the startDate based on the button clicked
-        if button_clicked == "btnPrev":
-            startDate -= timedelta(days=7)
-        elif button_clicked == "btnNext":
-            startDate += timedelta(days=7)
-        else:
-            startDate = datetime.now().date()
+            flash(error)
             
-        # Calculate the start and end of the week
-        startOfPrevWeek = startDate - timedelta(days=startDate.weekday())
-        endOfPrevWeek = startOfPrevWeek + timedelta(days=6)
-
-
-        # def get_previous_week(start_date):
-        #     #today = datetime.now().date()  # Get today's date without the time
-        #     # Move back 7 days to ensure we're in the previous week
-        #     last_week = start_date - timedelta(days=7)
-        #     # Calculate the start (Monday) of the previous week
-        #     start_of_week = last_week - timedelta(days=last_week.weekday())
-        #     # Calculate the end (Sunday) of the previous week
-        #     end_of_week = start_of_week + timedelta(days=6)
-        #     return start_of_week, end_of_week
-
-        # # Usage
-        # startOfPrevWeek, endOfPrevWeek = get_previous_week(startDate)
-        print("Start of the previous week:", startOfPrevWeek.strftime("%m/%d/%y"))
-        print("End of the previous week:", endOfPrevWeek.strftime("%m/%d/%y"))
-
-        # Generate a list of dates for the previous week
-        dateRangePrevWeek = [
-            (startOfPrevWeek + timedelta(days=i)).strftime("%m/%d/%y")
-            for i in range((endOfPrevWeek - startOfPrevWeek).days + 1)
-        ]
-
-        # Fetch timecard data for each date
-        timecard_data = {}
-        for date in dateRangePrevWeek:
-            rows = dbc.execute("""
-                        select EmpID, WorkDate, TimeEntryAbas.WSNumber, WSDescription, OpName, OpNameExtended, sum(TimeWorked) as tHoursWorked 
-                        from TimeEntryAbas 
-                        inner join WorkSlips on TimeEntryAbas.WSNumber = WorkSlips.WSNumber 
-                        inner join Operations on WorkSlips.OpID = Operations.OpID
-                        where EmpID = ? and WorkDate = ? 
-                        group by EmpID, TimeEntryAbas.WSNumber, WSDescription, OpName, OpNameExtended, WorkDate 
-                        order by EmpID, WorkDate
-                        """
-                        , abasUser.EmpID, date).fetchall()
-            timecard_data[date] = rows
-            print(f"Date: {date}, Rows: {rows}")
-
-        # Pass the data to the template
-        return render_template('timesheet/entry.html',
-                                abasID=abas_ID,
-                                abasUser=abasUser,
-                                startOfPrevWeek=startOfPrevWeek, 
-                                endOfPrevWeek=endOfPrevWeek,
-                                dateRangePrevWeek=dateRangePrevWeek,
-                                timecard_data=timecard_data
-        )
-
-        # return render_template('timesheet/entry.html', abasID=abas_ID, abasUser=abasUser, startOfPrevWeek=startOfPrevWeek, endOfPrevWeek=endOfPrevWeek, dateRangePrevWeek=dateRangePrevWeek)
-    
     return render_template('timesheet/entry.html')
 
 #get timesheet data for selected user and return to ajax query
 @bp.route("/timesheet/card", methods=['POST'])
+@login_required
 def getCard():
     print("getCard")
 

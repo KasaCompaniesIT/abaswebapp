@@ -286,3 +286,48 @@ header a { margin: 1rem 0.5rem; } */
 #btnToday {
     flex-grow: 1; /* Allow the button to grow and fill the available space */
 }
+
+.text-titlecase {
+    text-transform: lowercase; /* Convert all text to lowercase first */
+}
+.text-titlecase::first-letter {
+    text-transform: capitalize; /* Capitalize the first letter of each word */
+}
+
+.feedback-icon {
+    position: absolute; /* Ensure the icon is positioned relative to the input field */
+    top: 72%; /* Vertically center the icon */
+    right: -25px; /* Position the icon 10px from the right edge of the input field */
+    transform: translateY(-50%); /* Adjust for vertical centering */
+    pointer-events: none; /* Prevent the icon from blocking input clicks */
+    font-size: 1.25rem; /* Optional: Adjust the icon size */
+}
+
+.flash {
+    margin-bottom: 1rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+}
+
+.flash .btn-close {
+    position: absolute;
+    top: 0;
+    right: 0.5rem;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #6c757d;
+    cursor: pointer;
+}
+
+.flash .btn-close:hover {
+    color: #000;
+}
+
+.flash i {
+    font-size: 1.5rem;
+    margin-right: 0.75rem;
+}

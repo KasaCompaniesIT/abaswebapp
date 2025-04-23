@@ -29,6 +29,21 @@
 <div class="navbar-brand navbar-text">Abas WebApp</div>
 
 {% endblock %}
+{% block subheader %}
+{% if g.user %}
+<nav aria-label="breadcrumb" class="breadcrumb-bg">
+    <div class="d-flex justify-content-between align-items-center">
+        <ol class="breadcrumb">
+            
+        </ol>
+        
+        <span class="text-muted py-2 pr-2">{{ g.user.EmpName.title() }}</span>
+        
+    </div>
+</nav>
+<p></p>
+{% endif %}
+{% endblock %}
 {% block content %}
 
 {% endblock %}
