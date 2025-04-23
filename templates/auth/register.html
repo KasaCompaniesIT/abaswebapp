@@ -16,9 +16,10 @@
 {% block content %}
 <div class="login-container">
   <form method="post">
-    <div class="form-floating mb-3">
+    <div class="form-floating mb-3 position-relative">
       <label for="username">AbasID</label>
       <input class="form-control" name="username" id="username" required>
+      <div id="username-feedback-icon" class="position-absolute feedback-icon"></div> <!-- Icon container -->
     </div>
     <div class="form-floating mb-3">
       <label for="password">Password</label>
@@ -32,4 +33,36 @@
     </div>
   </form>
 </div>
+{% endblock %}
+{% block script %}
+<script>
+  document.getElementById('username').addEventListener('input', function () {
+      const username = this.value.trim();
+      const feedbackIcon = document.getElementById('username-feedback-icon');
+
+      if (username) {
+          fetch('/auth/validate_username', {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ username: username }),
+          })
+          .then(response => response.json())
+          .then(data => {
+              if (data.exists) {
+                  feedbackIcon.innerHTML = '<i class="fa-solid fa-check text-success"></i>'; // Green checkmark
+              } else {
+                  feedbackIcon.innerHTML = '<i class="fa-solid fa-xmark text-danger"></i>'; // Red X
+              }
+          })
+          .catch(error => {
+              console.error('Error:', error);
+              feedbackIcon.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-danger"></i>'; // Error icon
+          });
+      } else {
+          feedbackIcon.innerHTML = ''; // Clear the icon if input is empty
+      }
+  });
+</script>
 {% endblock %}
