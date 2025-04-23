@@ -1,4 +1,7 @@
 app.log*
 *.vsidx
+# Ignore Python cache files and folders
 __pycache__/
+*.pyc
+*.pyo
 
