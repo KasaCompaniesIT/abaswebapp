@@ -88,31 +88,27 @@ def entry():
             startOfPrevWeek = startDate - timedelta(days=startDate.weekday())
             endOfPrevWeek = startOfPrevWeek + timedelta(days=6)
 
-
-            # def get_previous_week(start_date):
-            #     #today = datetime.now().date()  # Get today's date without the time
-            #     # Move back 7 days to ensure we're in the previous week
-            #     last_week = start_date - timedelta(days=7)
-            #     # Calculate the start (Monday) of the previous week
-            #     start_of_week = last_week - timedelta(days=last_week.weekday())
-            #     # Calculate the end (Sunday) of the previous week
-            #     end_of_week = start_of_week + timedelta(days=6)
-            #     return start_of_week, end_of_week
-
-            # # Usage
-            # startOfPrevWeek, endOfPrevWeek = get_previous_week(startDate)
-            print("Start of the previous week:", startOfPrevWeek.strftime("%m/%d/%y"))
-            print("End of the previous week:", endOfPrevWeek.strftime("%m/%d/%y"))
-
             # Generate a list of dates for the previous week
+            # dateRangePrevWeek = [
+            #     (startOfPrevWeek + timedelta(days=i)).strftime("%m/%d/%y")
+            #     for i in range((endOfPrevWeek - startOfPrevWeek).days + 1)
+            # ]
             dateRangePrevWeek = [
-                (startOfPrevWeek + timedelta(days=i)).strftime("%m/%d/%y")
+                {
+                    "date": (startOfPrevWeek + timedelta(days=i)).strftime("%m/%d/%y"),
+                    "isHoliday": dbc.execute(
+                        "SELECT 1 FROM Holidays WHERE holidayDate = ?",
+                        ((startOfPrevWeek + timedelta(days=i)).strftime("%Y-%m-%d"),)
+                    ).fetchone() is not None  # Check if the date exists in the Holidays table
+                }
                 for i in range((endOfPrevWeek - startOfPrevWeek).days + 1)
             ]
 
             # Fetch timecard data for each date
             timecard_data = {}
-            for date in dateRangePrevWeek:
+            for day in dateRangePrevWeek:
+                print(day["date"])
+                # Fetch timecard data for the specific date
                 rows = dbc.execute("""
                             select EmpID, WorkDate, TimeEntryAbas.WSNumber, WSDescription, OpName, OpNameExtended, sum(TimeWorked) as tHoursWorked 
                             from TimeEntryAbas 
@@ -122,10 +118,11 @@ def entry():
                             group by EmpID, TimeEntryAbas.WSNumber, WSDescription, OpName, OpNameExtended, WorkDate 
                             order by EmpID, WorkDate
                             """
-                            , abasUser.EmpID, date).fetchall()
-                timecard_data[date] = rows
-                print(f"Date: {date}, Rows: {rows}")
+                            , abasUser.EmpID, day["date"]).fetchall()
+                timecard_data[day["date"]] = rows
+                # print(f"Date: {date}, Rows: {rows}")
 
+            today = datetime.now().strftime("%m/%d/%y")  # Format today's date as MM/DD/YY
             # Pass the data to the template
             return render_template('timesheet/entry.html',
                                     abasID=abas_ID,
@@ -133,7 +130,8 @@ def entry():
                                     startOfPrevWeek=startOfPrevWeek, 
                                     endOfPrevWeek=endOfPrevWeek,
                                     dateRangePrevWeek=dateRangePrevWeek,
-                                    timecard_data=timecard_data
+                                    timecard_data=timecard_data,
+                                    today=today
             )
 
             # return render_template('timesheet/entry.html', abasID=abas_ID, abasUser=abasUser, startOfPrevWeek=startOfPrevWeek, endOfPrevWeek=endOfPrevWeek, dateRangePrevWeek=dateRangePrevWeek)

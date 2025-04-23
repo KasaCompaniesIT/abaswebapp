@@ -81,22 +81,26 @@
     <!-- Timecard Section -->
     <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-4 px-2" id="timecard">
         <!-- Card 1 -->
-        {% for date in dateRangePrevWeek %}
-        <div id="card_{{ date.replace('/', '_') }}" class="col my-2 px-2">
+        {% for day in dateRangePrevWeek %}
+        <div id="card_{{ day.date.replace('/', '_') }}" class="col my-2 px-2">
             <div class="card bg-light border-dark card-shadow">
                 <div class="card-header text-center 
-                    {% if date | dateformat('%A') in ['Saturday', 'Sunday'] %}
-                        bg-secondary text-light
+                    {% if day.date == today %}
+                        bg-abas
+                    {% elif day.isHoliday %}
+                        bg-warning
+                    {% elif day.date | dateformat('%A') in ['Saturday', 'Sunday'] %}
+                        bg-secondary text-light                    
                     {% else %}
                         bg-dark2 text-light
                     {% endif %}
                 ">
-                    {{ date }} - {{ date | dateformat("%A") }}
+                    {{ day.date }} - {{ day.date | dateformat("%A") }}
                 </div>
                 <div class="card-body compact-card">
                     {% set ns = namespace(total_hours=0) %} <!-- Create a mutable namespace object -->
-                    {% if timecard_data[date] %}
-                        {% for t in timecard_data[date] %}
+                    {% if timecard_data[day.date] %}
+                        {% for t in timecard_data[day.date] %}
                         <div class="d-flex justify-content-between">
                             <p>{{ t.WSNumber }} {{ t.OpNameExtended }}</p>
                             <h5><span class="badge badge-secondary">{{ t.tHoursWorked }}</span></h5>
