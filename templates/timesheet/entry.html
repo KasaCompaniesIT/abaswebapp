@@ -62,17 +62,21 @@
     <!-- <form method="post"> -->
         <div class="input-group">
             <div class="input-group-prepend">
-                <button class="btn btn-abas" type="submit" name="button" id="btnPrev" value="btnPrev"><<</button>          
-                <span class="input-group-text" id="startDate">{{ startOfPrevWeek }}</span>
+                <button class="btn btn-abas" type="submit" name="button" id="btnPrev" value="btnPrev">
+                    <i class="fas fa-chevron-left"></i> <!-- Font Awesome left arrow icon -->
+                </button>
             </div>
             <input type="hidden" name="startDate" id="startDateInput" value="{{ startOfPrevWeek }}">
-            <input type="hidden" name="endDate" id="startDateInput" value="{{ endOfPrevWeek }}">
-            <!-- <input id="startDate" type="text" class="form-control text-center" placeholder="" aria-label="" aria-describedby="btnPrev" value="{{ startOfPrevWeek }}" readonly> -->
-            <!-- <input id="endDate" type="text" class="form-control text-center" placeholder="" aria-label="" aria-describedby="btnNext" value="{{ endOfPrevWeek }}" readonly>         -->
+            <input type="hidden" name="endDate" id="endDateInput" value="{{ endOfPrevWeek }}">
+            <input id="startDate" type="text" class="form-control text-center" placeholder="" aria-label="" aria-describedby="btnPrev" value="{{ startOfPrevWeek }}" disabled>
+            <input id="endDate" type="text" class="form-control text-center" placeholder="" aria-label="" aria-describedby="btnNext" value="{{ endOfPrevWeek }}" disabled>
             <div class="input-group-append">
-                <span class="input-group-text" id="endDate">{{ endOfPrevWeek }}</span>        
-                <button class="btn btn-abas" type="submit" name="button" id="btnNext" value="btnNext">>></button>
-                <button class="btn btn-abas" type="submit" name="button" id="btnToday" value="btnToday">Today</button>
+                <button class="btn btn-abas" type="submit" name="button" id="btnNext" value="btnNext">
+                    <i class="fas fa-chevron-right"></i> <!-- Font Awesome right arrow icon -->
+                </button>
+                <button class="btn btn-abas" type="submit" name="button" id="btnToday" value="btnToday">
+                    Today
+                </button>
             </div>
         </div>
         <p></p>
@@ -101,9 +105,16 @@
                     {% set ns = namespace(total_hours=0) %} <!-- Create a mutable namespace object -->
                     {% if timecard_data[day.date] %}
                         {% for t in timecard_data[day.date] %}
-                        <div class="d-flex justify-content-between">
+                        <div class="d-flex justify-content-between align-items-center time-entry">
                             <p>{{ t.WSNumber }} {{ t.OpNameExtended }}</p>
-                            <h5><span class="badge badge-secondary">{{ t.tHoursWorked }}</span></h5>
+                            <h5>
+                                <span class="badge badge-secondary">{{ t.tHoursWorked }}</span>
+                            </h5>
+                            {% if t.TimeEntryID %}
+                            <button class="btn btn-danger btn-sm delete-entry-btn" data-timeentryid="{{ t.TimeEntryID }}" title="Delete Entry">
+                                <i class="fas fa-times"></i>
+                            </button>
+                            {% endif %}
                         </div>
                         {% set ns.total_hours = ns.total_hours + t.tHoursWorked %} <!-- Accumulate the total -->
                         {% endfor %}
@@ -126,119 +137,393 @@
         </div>
         {% endfor %}
 
+        <button id="addTimeButton" class="btn btn-abas btn-floating" title="Add Time">
+            <i class="fas fa-plus"></i> <!-- Font Awesome icon -->
+        </button>
 
-<!-- 
-        {% for t in timesheetPrev %}
-        <div class="col my-2">
-            <div class="card bg-light border-dark card-shadow" >
-                <div class="card-header text-center bg-dark2 text-light">{{ t.WorkDate }} - {{ t.WorkDate | dateformat("%A") }}</div>
-                <div class="card-body compact-card">
-                    <div class="d-flex justify-content-between">
-                        <p>{{ t.WSNumber }} <br> {{ t.OpNameExtended }}</p>                             
-                        <h5><span class="badge badge-secondary">8</span></h5> 
-                    </div>
-                </div>  
-            </div>
-        </div> 
-        
-    
-         {% endfor %} -->
-        <!-- Card 2 -->
-        <!-- <div class="col my-2">
-            <div class="card bg-light border-dark">
-                <div class="card-header text-center bg-dark text-light font-weight-bold">04/01/2025 - Tues</div>
-                <div class="card-body">
-                    <h5 class="card-title">Card 2 Title</h5>
-                    <p class="card-text">Weekday card. Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+    </div>
+
+    <!-- Add Time Modal -->
+    <div class="modal fade" id="addTimeModal" data-backdrop="static" data-keyboard="false" tabindex="-1" aria-labelledby="addTimeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-dark-custom">
+                    <h5 class="modal-title" id="addTimeModalLabel">Time Entry</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
                 </div>
+                <div class="modal-body">
+                    <form id="dateForm" method="post" action="{{ url_for('timesheet.save_entry') }}">
+                        <input type="hidden" id="selectedDateInput" name="selectedDate">
+                        <input type="hidden" id="abasIDInput" name="abasID" value="{{ abasUser.EmpID }}">
+                        <input type="hidden" id="workSlipIDInput" name="workSlipID">
+                        <!-- Grid of Dates -->
+                        <div class="container">
+                            <div class="row text-center">
+                                {% for day in dateRangePrevWeek %}
+                                <div class="col date-card-col">
+                                    <div class="date-card p-2 border rounded select-date-card 
+                                        {% if day.date == today %} bg-success text-white 
+                                        {% elif day.date | dateformat('%A') in ['Saturday', 'Sunday'] %} bg-light-grey 
+                                        {% endif %}" 
+                                        data-date="{{ day.date }}" 
+                                        data-selected="{% if day.date == today %}true{% else %}false{% endif %}">
+                                        <div class="day-of-week font-weight-bold">{{ day.date | dateformat('%a') }}</div>
+                                        <div class="date-value">{{ day.date | dateformat('%d') }}</div> <!-- Display only the day number -->
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <div class="row text-center mt-2" id="selProject">
+                                <div class="col">
+                                    <select id="projectDropdown" class="form-control selectpicker" data-live-search="true" title="Select a Project" required>
+                                        <!-- Options will be dynamically populated -->
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row text-center mt-2" id="selWorkOrder">
+                                <div class="col">
+                                    <select id="workOrderDropdown" class="form-control selectpicker" data-live-search="true" title="Select a Work Order" style="display: none;" required>
+                                        <!-- Options will be dynamically populated -->
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row text-center mt-2" id="selWorkSlip">
+                                <div class="col">
+                                    <select id="workSlipDropdown" class="form-control selectpicker" data-live-search="true" title="Select an Operation" style="display: none;" required>
+                                        <!-- Options will be dynamically populated -->
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row text-center mt-2">
+                                <div class="col">
+                                    <div class="d-flex justify-content-center">
+                                        <div class="input-group mb-3">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text" id="hoursLabel">Hours Worked</span>
+                                            </div>
+                                            <input type="text" class="form-control" name="hoursWorked" id="hoursWorked" placeholder="Hours Worked" aria-label="Hours Worked Input" aria-describedby="hoursLabel" required>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <p></p>
+                            <div class="row text-right mt-2">
+                                <div class="col col-button">
+                                    <button type="submit" class="btn btn-abas" id="btnAddTime">Add to Timesheet</button>
+                                </div>
+                            </div>
+                        </div>
+                    </form> 
+                </div>                           
             </div>
-        </div> -->
-        <!-- Card 3 -->
-        <!-- <div class="col my-2">
-            <div class="card bg-light border-dark ">
-                <div class="card-header text-center bg-dark text-light font-weight-bold">04/02/2025 - Wed</div>
-                <div class="card-body">
-                    <h5 class="card-title">Card 3 Title</h5>
-                    <p class="card-text">Weekday card. Some quick example text to build on the card title and make up the bulk of the card's content.</p>
-                </div>
-            </div>
-        </div> -->
-        <!-- Card 4 -->
-        <!-- <div class="col my-2">
-            <div class="card bg-light border-dark " >
-                <div class="card-header text-center bg-warning font-weight-bold">04/03/2025 - Thurs</div>
-                <div class="card-body">
-                    <h5 class="card-title">Card 4 Title</h5>
-                    <p class="card-text">Holiday card. quick example text to build on the card title and make up the bulk of the card's content.</p>
-                </div>
-            </div>
-        </div> -->
-        <!-- Card 5 -->
-        <!-- <div class="col my-2">
-            <div class="card bg-light border-dark ">
-                <div class="card-header text-center bg-dark text-light font-weight-bold">04/04/2025 - Fri</div>
-                <div class="card-body">
-                    <h5 class="card-title">Card 5 Title</h5>
-                    <p class="card-text">Weekday card. Some quick example text to build on the card title and make up the bulk of the card's content.</p>
-                </div>
-            </div>
-        </div> -->
-        <!-- Card 6 -->
-        <!-- <div class="col my-2">
-            <div class="card bg-light border-dark ">
-                <div class="card-header text-center bg-secondary text-light font-weight-bold">04/05/2025 - Sat</div>
-                <div class="card-body">
-                    <h5 class="card-title">Card 6 Title</h5>
-                    <p class="card-text">Weekend day card. Some quick example text to build on the card title and make up the bulk of the card's content.</p>
-                </div>
-            </div>
-        </div> -->
-        <!-- Card 7 -->
-        <!-- <div class="col my-2">
-            <div class="card bg-light border-dark ">
-                <div class="card-header text-center bg-secondary text-light font-weight-bold">04/06/2025 - Sun</div>
-                <div class="card-body">
-                    <h5 class="card-title">Card 7 Title</h5>
-                    <p class="card-text">Weekend day card. Some quick example text to build on the card title and make up the bulk of the card's content.</p>
-                </div>
-            </div>
-        </div> -->
+        </div>
     </div>
     {% endif %}
 </div>
 <p></p>
 {% endblock %} <!-- end content block -->
 {% block script %}
-<!-- <script>
-    function getTimeCardData(date, abasID) {
-        // Sanitize the date for use in the HTML ID
-        const sanitizedDate = date.replace(/\//g, '_');
+<script>
+    document.getElementById('addTimeButton').addEventListener('click', function () {
+        var addTimeModal = new bootstrap.Modal(document.getElementById('addTimeModal'));
+        addTimeModal.show();
 
-        // Show a loading indicator while fetching data
-        $('#card_' + sanitizedDate).find('.card-body').html('<p>Loading...</p>');
+        // Fetch data from the server
+        fetch('/timesheet/entry/getProjects')
+            .then(response => response.json())
+            .then(data => {
+                const projectDropdown = document.getElementById('projectDropdown');
+                projectDropdown.innerHTML = ''; // Clear existing options
 
-        $.ajax({
-            url: '/timesheet/card', // Flask endpoint to fetch timecard data
-            type: 'POST',
-            data: { 'tsDate': date, 'abas_ID': abasID }, // Send date and user ID
-            success: function(data) {
-                if (data) {
-                    // Update the card body with the fetched data
-                    $('#card_' + sanitizedDate).find('.card-body').html(data);
-                } else {
-                    // Handle empty response
-                    $('#card_' + sanitizedDate).find('.card-body').html('<p>No data available for this date.</p>');
-                }
-            },
-            error: function(xhr, status, error) {
-                // Handle errors gracefully
-                console.error('AJAX Error:', status, error);
-                console.error('Response:', xhr.responseText);
-                $('#card_' + sanitizedDate).find('.card-body').html('<p>An error occurred while fetching data.</p>');
+                data.projects.forEach(project => {
+                    const option = document.createElement('option');
+                    option.value = project.id;
+                    option.textContent = project.number + " - " + project.desc;
+                    projectDropdown.appendChild(option);
+                });
+
+                // Refresh the Bootstrap Select dropdown
+                $('.selectpicker').selectpicker('refresh');
+            })
+            .catch(error => console.error('Error fetching projects:', error));
+    });
+
+    // Event listener for project selection
+    document.getElementById('projectDropdown').addEventListener('change', function () {
+        const selectedProjectId = this.value;
+
+        if (selectedProjectId) {
+            // Fetch work orders for the selected project
+            fetch('/timesheet/entry/getWorkOrders', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ projectId: selectedProjectId }),
+            })
+                .then(response => response.json())
+                .then(data => {
+                    const workOrderDropdown = document.getElementById('workOrderDropdown');
+                    workOrderDropdown.innerHTML = ''; // Clear existing options
+
+                    if (data.workOrders && data.workOrders.length > 0) {
+                        // Populate the dropdown with work orders
+                        data.workOrders.forEach(workOrder => {
+                            const option = document.createElement('option');
+                            option.value = workOrder.id;
+                            option.textContent = workOrder.id + " - " + workOrder.part + " - " + workOrder.desc;
+                            workOrderDropdown.appendChild(option);
+                        });
+
+                        // Show the dropdown and refresh Bootstrap Select
+                        workOrderDropdown.style.display = 'block';
+                        $('.selectpicker').selectpicker('refresh');
+                    } else {
+                        // Hide the dropdown if no work orders are available
+                        workOrderDropdown.style.display = 'none';
+                    }
+                })
+                .catch(error => console.error('Error fetching work orders:', error));
+        }
+    });
+
+    // Event listener for work order selection
+    document.getElementById('workOrderDropdown').addEventListener('change', function () {
+        const selectedWorkOrderId = this.value;
+
+        if (selectedWorkOrderId) {
+            // Fetch workslips for the selected work order
+            fetch('/timesheet/entry/getWorkSlips', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ workOrderId: selectedWorkOrderId }),
+            })
+                .then(response => response.json())
+                .then(data => {
+                    const workSlipDropdown = document.getElementById('workSlipDropdown');
+                    workSlipDropdown.innerHTML = ''; // Clear existing options
+
+                    if (data.workSlips && data.workSlips.length > 0) {
+                        // Populate the dropdown with workslips
+                        data.workSlips.forEach(workSlip => {
+                            const option = document.createElement('option');
+                            option.value = workSlip.id;
+                            option.textContent = workSlip.id + " - " + workSlip.nameExtended + " (" + workSlip.name + ")";
+                            workSlipDropdown.appendChild(option);
+                        });
+
+                        // Show the dropdown and refresh Bootstrap Select
+                        workSlipDropdown.style.display = 'block';
+                        $('.selectpicker').selectpicker('refresh');
+                    } else {
+                        // Hide the dropdown if no workslips are available
+                        workSlipDropdown.style.display = 'none';
+                    }
+                })
+                .catch(error => console.error('Error fetching workslips:', error));
+        }
+    });
+
+    // Event listener for workslip selection
+    document.getElementById('workSlipDropdown').addEventListener('change', function () {
+        const selectedWorkSlipId = this.value;
+
+        if (selectedWorkSlipId) {
+            // Populate the hidden field with the selected workslip ID
+            document.getElementById('workSlipIDInput').value = selectedWorkSlipId;
+
+            // Log the selected workslip ID (optional)
+            console.log('Selected Work Slip ID:', selectedWorkSlipId);
+        }
+    });
+
+    // Event listener for date card selection
+    // Select the first date card by default (current day)
+    document.querySelectorAll('.select-date-card').forEach(card => {
+        card.addEventListener('click', function () {
+            // Deselect all cards
+            document.querySelectorAll('.select-date-card').forEach(item => {
+                item.classList.remove('bg-success', 'text-white'); // Remove selected style
+                item.setAttribute('data-selected', 'false'); // Mark as not selected
+            });
+
+            // Select the clicked card
+            this.classList.add('bg-success', 'text-white'); // Highlight the selected card
+            this.setAttribute('data-selected', 'true'); // Mark as selected
+
+            // Log the selected date (optional)
+            console.log('Selected date:', this.getAttribute('data-date'));
+
+            // Example: Update a hidden input field with the selected date
+            document.getElementById('selectedDateInput').value = this.getAttribute('data-date');
+        });
+    });
+
+    // Set the hidden input field to the preselected date (current day)
+    const preselectedCard = document.querySelector('.select-date-card[data-selected="true"]');
+    if (preselectedCard) {
+        document.getElementById('selectedDateInput').value = preselectedCard.getAttribute('data-date');
+    }
+
+    // Event listener for time entry deletion
+    document.addEventListener('DOMContentLoaded', function () {
+    // Add event listener to all delete buttons
+    document.querySelectorAll('.delete-entry-btn').forEach(button => {
+        button.addEventListener('click', function () {
+            const timeEntryID = this.getAttribute('data-timeentryid');
+
+            if (confirm('Are you sure you want to delete this time entry?')) {
+                // Send a request to delete the time entry
+                fetch(`/timesheet/entry/delete/${timeEntryID}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ id: timeEntryID }),
+                })
+                    .then(response => {
+                        if (response.ok) {
+                            // Remove the time entry from the UI
+                            const timeEntryElement = this.closest('.time-entry');
+                            const cardBody = timeEntryElement.closest('.card-body');
+                            timeEntryElement.remove();
+
+                            // Recalculate the total hours
+                            let totalHours = 0;
+                            cardBody.querySelectorAll('.time-entry').forEach(entry => {
+                                const hours = parseFloat(entry.querySelector('.badge').textContent);
+                                totalHours += hours;
+                            });
+
+                            // Update the total hours in the card footer
+                            const cardFooter = cardBody.nextElementSibling; // Assuming footer is the next sibling
+                            const totalHoursElement = cardFooter.querySelector('.font-weight-bold');
+                            totalHoursElement.textContent = totalHours.toFixed(2);
+
+                            // Check if the card is now empty
+                            if (cardBody.querySelectorAll('.time-entry').length === 0) {
+                                // Add a "No data available" message
+                                const noDataMessage = document.createElement('p');
+                                noDataMessage.textContent = 'No data available for this date.';
+                                cardBody.appendChild(noDataMessage);
+                            }
+
+                            // alert('Time entry deleted successfully.');
+                        } else {
+                            alert('Failed to delete time entry.');
+                        }
+                    })
+                    .catch(error => console.error('Error deleting time entry:', error));
+            }
+        });
+    });
+});
+
+    // Function to attach delete event to dynamically created buttons
+    function attachDeleteEvent(button) {
+        button.addEventListener('click', function () {
+            const timeEntryID = this.getAttribute('data-timeentryid');
+
+            if (confirm('Are you sure you want to delete this time entry?')) {
+                fetch(`/timesheet/entry/delete/${timeEntryID}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ id: timeEntryID }),
+                })
+                    .then(response => {
+                        if (response.ok) {
+                            const timeEntryElement = this.closest('.time-entry');
+                            const cardBody = timeEntryElement.closest('.card-body');
+                            timeEntryElement.remove();
+
+                            if (cardBody.querySelectorAll('.time-entry').length === 0) {
+                                const noDataMessage = document.createElement('p');
+                                noDataMessage.textContent = 'No data available for this date.';
+                                cardBody.appendChild(noDataMessage);
+                            }
+
+                            // alert('Time entry deleted successfully.');
+                        } else {
+                            alert('Failed to delete time entry.');
+                        }
+                    })
+                    .catch(error => console.error('Error deleting time entry:', error));
             }
         });
     }
 
+    // Event listener for form submission
+    document.getElementById('dateForm').addEventListener('submit', function (event) {
+        event.preventDefault(); // Prevent the default form submission
 
-</script> -->
+        // Gather form data
+        const formData = new FormData(this);
+        const data = Object.fromEntries(formData.entries());
+
+        // Send the data to the server
+        fetch(this.action, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+        })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    // Update the UI with the new time entry
+                    const cardBody = document.querySelector(`#card_${data.selectedDate.replace(/\//g, '_')} .card-body`);
+
+                    // Remove "No data available" message if it exists
+                    const noDataMessage = cardBody.querySelector('p');
+                    if (noDataMessage && noDataMessage.textContent === 'No data available for this date.') {
+                        noDataMessage.remove();
+                    }
+
+                    // Add the new time entry to the card
+                    const timeEntryDiv = document.createElement('div');
+                    timeEntryDiv.classList.add('d-flex', 'justify-content-between', 'align-items-center', 'time-entry');
+                    timeEntryDiv.innerHTML = `
+                        <p>${result.data.WSNumber} ${result.data.OpNameExtended}</p>
+                        <h5><span class="badge badge-secondary">${result.data.tHoursWorked}</span></h5>
+                        <button class="btn btn-danger btn-sm delete-entry-btn" data-timeentryid="${result.data.TimeEntryID}" title="Delete Entry">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    `;
+                    cardBody.appendChild(timeEntryDiv);
+
+                    // Recalculate the total hours
+                    let totalHours = 0;
+                    cardBody.querySelectorAll('.time-entry').forEach(entry => {
+                        const hours = parseFloat(entry.querySelector('.badge').textContent);
+                        totalHours += hours;
+                    });
+
+                    // Update the total hours in the card footer
+                    const cardFooter = cardBody.nextElementSibling; // Assuming footer is the next sibling
+                    const totalHoursElement = cardFooter.querySelector('.font-weight-bold');
+                    totalHoursElement.textContent = totalHours.toFixed(2);
+
+                    // Reattach the delete button event listener
+                    attachDeleteEvent(timeEntryDiv.querySelector('.delete-entry-btn'));
+
+                    // Close the modal
+                    const addTimeModal = bootstrap.Modal.getInstance(document.getElementById('addTimeModal'));
+                    addTimeModal.hide();
+
+                    // alert('Time entry added successfully.');
+                } else {
+                    alert('Failed to add time entry: ' + result.error);
+                }
+            })
+            .catch(error => console.error('Error adding time entry:', error));
+    });
+</script>
 {% endblock %}

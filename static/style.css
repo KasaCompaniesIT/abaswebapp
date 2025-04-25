@@ -298,7 +298,7 @@ header a { margin: 1rem 0.5rem; } */
 .feedback-icon {
     position: absolute; /* Ensure the icon is positioned relative to the input field */
     top: 72%; /* Vertically center the icon */
-    right: -25px; /* Position the icon 10px from the right edge of the input field */
+    right: 10px; /* Position the icon 10px from the right edge of the input field */
     transform: translateY(-50%); /* Adjust for vertical centering */
     pointer-events: none; /* Prevent the icon from blocking input clicks */
     font-size: 1.25rem; /* Optional: Adjust the icon size */
@@ -331,4 +331,251 @@ header a { margin: 1rem 0.5rem; } */
 .flash i {
     font-size: 1.5rem;
     margin-right: 0.75rem;
+}
+
+.btn-floating {
+    position: fixed;
+    bottom: 20px; /* Distance from the bottom of the page */
+    right: 20px; /* Distance from the right side of the page */
+    z-index: 1000; /* Ensure it stays on top of other elements */
+    background-color: #009FAA; /* Customize button color */
+    color: #212529; /* Text/icon color */
+    border-radius: 50%; /* Make it circular */
+    width: 60px; /* Button width */
+    height: 60px; /* Button height */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Add a shadow */
+    border: none; /* Remove border */
+    cursor: pointer;
+}
+
+.btn-floating:hover {
+    background-color: #007B8A; /* Darken the button on hover */
+}
+
+.btn-floating i {
+    font-size: 1.5rem; /* Adjust icon size */
+}
+
+.modal-header .close {
+    color: white; /* Change the color of the close button to white */
+    opacity: 1; /* Ensure the button is fully visible */
+}
+
+.modal-header .close:hover {
+    color: #f8f9fa; /* Optional: Slightly lighter white on hover */
+}
+
+.modal-body {
+    background-color: whitesmoke; /* Light background for the modal body */
+    color: #212529; /* Dark text for contrast */
+}
+
+.select-date-card {
+    cursor: pointer; /* Make the grid item clickable */
+    transition: background-color 0.3s, color 0.3s; /* Smooth transition for hover and selection */
+}
+
+.select-date-card:hover {
+    background-color: #e9ecef; /* Light gray on hover */
+}
+
+.select-date-card.bg-success {
+    background-color: #009FAA !important; /* Green background for selected item */
+    color: white !important; /* White text for selected item */
+}
+
+.date-card {
+    cursor: pointer; /* Make the grid item clickable */
+    transition: background-color 0.3s, color 0.3s; /* Smooth transition for hover and selection */
+    text-align: center;
+    background-color: white;
+}
+
+.date-card .day-of-week {
+    font-size: .7rem;
+    color: #009FAA; /* Blue text for the day of the week */
+}
+
+.date-card.bg-success .day-of-week {
+    font-size: .7rem;
+    color:#eeeeee; /* Blue text for the day of the week */
+}
+
+.date-card .date-value {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #212529; /* Gray text for the day number */
+}
+
+.date-card:hover {
+    background-color: #e9ecef; /* Light gray on hover */
+}
+
+.date-card.bg-success {
+    background-color: #009FAA !important; /* Green background for selected item */
+    color: white !important; /* White text for selected item */
+    border-color: #212529 !important;
+}
+
+.date-card-col {
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+.bg-light-grey {
+    color: #212529; /* Default text color */
+}
+
+.bg-light-grey .day-of-week {
+    color: #6c757d; /* Muted grey for the day of the week */
+}
+
+.bg-light-grey .date-value {
+    color: #495057; /* Slightly darker grey for the day number */
+}
+
+/* Adjust the grid for smaller screens */
+@media (max-width: 576px) { /* Target screens smaller than 576px (Bootstrap's xs breakpoint) */
+    .date-card-col {
+        padding-left: 2px;
+        padding-right: 2px;
+    }
+
+    .col {
+        padding-left: 2px;
+        padding-right: 2px;
+    }
+}
+
+.col-button {
+    padding-right: 2px;
+    padding-left: 2px;
+}
+
+/* Ensure the dropdown fills the width of the modal */
+.bootstrap-select {
+    width: 100% !important; /* Force the dropdown to take the full width */
+}
+
+.bootstrap-select .dropdown-menu {
+    width: 100% !important; /* Ensure the dropdown menu matches the width of the button */
+    max-width: none; /* Remove any max-width restrictions */
+}
+
+.bootstrap-select .bs-searchbox input {
+    width: 100%; /* Ensure the search box fills the dropdown width */
+}
+
+/* Style the dropdown container */
+.bootstrap-select {
+    width: 100% !important; /* Ensure it takes the full width of the parent container */
+    font-family: inherit; /* Match the font with the rest of the project */
+    font-size: 1rem; /* Adjust font size */
+}
+
+/* Style the dropdown button */
+.bootstrap-select .dropdown-toggle {
+    background-color: white; /* Match your project's primary color */
+    color: #212529; /* White text */
+    border: 1px solid #ddd; /* Border color to match the theme */
+    border-radius: 0.25rem; /* Rounded corners */
+    padding: 0.5rem 1rem; /* Adjust padding */
+    transition: background-color 0.3s ease, color 0.3s ease; /* Smooth transitions */
+}
+
+/* Hover and focus styles for the dropdown button */
+.bootstrap-select .dropdown-toggle:hover,
+.bootstrap-select .dropdown-toggle:focus {
+    background-color: #009FAA; /* Darker shade for hover */
+    color: white !important; /* Keep text white */
+    border-color: #005f66; /* Darker border on hover */
+}
+
+/* Style the dropdown menu */
+.bootstrap-select .dropdown-menu {
+    background-color: #f8f9fa; /* Light background for the dropdown */
+    border: 1px solid #ddd; /* Subtle border */
+    border-radius: 0.25rem; /* Rounded corners */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Add a subtle shadow */
+}
+
+/* Style the dropdown items */
+.bootstrap-select .dropdown-menu .dropdown-item {
+    color: #212529; /* Dark text for items */
+    padding: 0.5rem 1rem; /* Adjust padding */
+    transition: background-color 0.3s ease, color 0.3s ease; /* Smooth transitions */
+}
+
+/* Hover and active styles for dropdown items */
+.bootstrap-select .dropdown-menu .dropdown-item:hover,
+.bootstrap-select .dropdown-menu .dropdown-item:focus {
+    background-color: #009FAA; /* Match the primary color */
+    color: #212529; /* White text on hover */
+}
+
+/* Style the search box (if live search is enabled) */
+.bootstrap-select .bs-searchbox input {
+    width: 100%; /* Full width */
+    padding: 0.5rem; /* Adjust padding */
+    border: 1px solid #ddd; /* Subtle border */
+    border-radius: 0.25rem; /* Rounded corners */
+    font-size: 1rem; /* Match font size */
+}
+
+/* Focus style for the search box */
+.bootstrap-select .bs-searchbox input:focus {
+    border-color: #009FAA; /* Highlight border on focus */
+    box-shadow: 0 0 0 0.2rem rgba(0, 159, 170, 0.25); /* Add a subtle shadow */
+}
+
+/* Change the background and text color of the selected item when the dropdown is open */
+.bootstrap-select .dropdown-menu .dropdown-item.active {
+    background-color: #009FAA; /* Darker shade for the selected item */
+    color: #212529; /* White text for contrast */
+}
+
+/* Optional: Add a hover effect for the selected item */
+.bootstrap-select .dropdown-menu .dropdown-item.active:hover {
+    background-color: #005f66; /* Even darker shade on hover */
+    color: white; /* Keep text white */
+}
+
+/* Ensure the input group matches the width of the select dropdown */
+.input-group {
+    width: 100%; /* Set the input group to take the full width of its container */
+    max-width: 600px;
+}
+
+.input-group .form-control {
+    border-radius: 0.25rem; /* Match the border radius of the dropdown */
+    font-size: 1rem; /* Match the font size of the dropdown */
+}
+
+.input-group .form-control:focus {
+    border-color: #005f66; /* Match the focus border color of the dropdown */
+    box-shadow: 0 0 0 0.2rem rgba(0, 159, 170, 0.25); /* Add a subtle focus shadow */
+}
+
+/* Ensure the time entry container has a relative position */
+.time-entry {
+    position: relative;
+    overflow: visible; /* Ensure the button is not clipped */
+}
+
+/* Hide the delete button by default */
+.delete-entry-btn {
+    display: none;
+    position: absolute;
+    right: 10px; /* Adjust as needed */
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 9999; /* Ensure it appears above other elements */
+}
+
+/* Show the delete button on hover */
+.time-entry:hover .delete-entry-btn {
+    display: inline-block;
 }
