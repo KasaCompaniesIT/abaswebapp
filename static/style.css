@@ -569,8 +569,8 @@ header a { margin: 1rem 0.5rem; } */
 .delete-entry-btn {
     display: none;
     position: absolute;
-    right: 10px; /* Adjust as needed */
-    top: 50%;
+    right: -20px; /* Adjust as needed */
+    top: 45%;
     transform: translateY(-50%);
     z-index: 9999; /* Ensure it appears above other elements */
 }
