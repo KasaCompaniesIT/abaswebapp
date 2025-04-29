@@ -4,9 +4,24 @@
 <div class="navbar-brand navbar-text">{% block title %}Admin Zone{% endblock %}</div>
 
 {% endblock %}
+{% block subheader %}
+<nav aria-label="breadcrumb" class="breadcrumb-bg">
+    <div class="d-flex justify-content-between align-items-center">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('home') }}">Home</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Admin</li>
+        </ol>
+        {% if g.user %}
+        <span class="text-muted pr-2">{{ g.user.EmpName.title() }}</span>
+        {% endif %}
+    </div>
+</nav>
+<p></p>
+{% endblock %}
 {% block content %}
 <div class="align-items-center justify-content-center">
     <p></p>
-    <p><a href="{{ url_for('admin.importCSV') }}" class="btn btn-abas btn-block btn-max-width-400" role="button">Import CSV Data</a></p>
+    <p><a href="{{ url_for('admin.manage_employees') }}" class="btn btn-abas btn-block btn-max-width-400" role="button">Manage Employees</a></p>
+    <!-- <p><a href="{{ url_for('admin.importCSV') }}" class="btn btn-abas btn-block btn-max-width-400" role="button">Import CSV Data</a></p> -->
 </div>
 {% endblock %}

@@ -231,6 +231,54 @@ def importCSV():
 # wsdockdate = dock (due) date for this labor op
 # wsopdesc = operation description
 
+@bp.route('/admin/employees', methods=('GET', 'POST'))
+@login_required
+def manage_employees():
+    if not g.user.isAdmin:
+        return "Unauthorized access"
+
+    db = get_db()
+    dbc = db.cursor()
+
+    if request.method == 'POST':
+        # Handle form submission to update employee details
+        emp_id = request.form.get('EmpID')
+        is_admin = request.form.get('isAdmin') == 'on'  # Checkbox value
+        paychex_id = request.form.get('PayChexID')
+        salary_plus_start = request.form.get('SalaryPlusStart')
+
+        try:
+            # Update the employee record
+            dbc.execute(
+                """
+                UPDATE Employee
+                SET isAdmin = ?, PayChexID = ?, SalaryPlusStart = ?
+                WHERE EmpID = ?
+                """,
+                (is_admin, paychex_id, salary_plus_start, emp_id)
+            )
+            db.commit()
+            flash(f"Employee {emp_id} updated successfully!", "success")
+        except pyodbc.DatabaseError as err:
+            db.rollback()
+            flash(f"Error updating employee {emp_id}: {err}", "danger")
+
+    # Fetch all employees to display in the table
+    employees = dbc.execute("""
+        SELECT EmpID, Emp, EmpName, Dept, Supervisor, Wagegroup, isAdmin, PayChexID, SalaryPlusStart
+        FROM Employee
+        ORDER BY EmpName
+    """).fetchall()
+
+    # Fetch all PayChex entries for the dropdown
+    paychex_entries = dbc.execute("""
+        SELECT PayID, PayChex, PayDescription
+        FROM PayChex
+        ORDER BY PayDescription
+    """).fetchall()
+
+    return render_template('admin/employees.html', employees=employees, paychex_entries=paychex_entries)
+
 def existingProject(project):
     db = get_db()
     dbc = db.cursor()

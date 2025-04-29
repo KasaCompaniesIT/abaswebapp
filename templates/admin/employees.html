@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% block nav_admin %}active{% endblock %}
+{% block header %}
+<div class="navbar-brand navbar-text">{% block title %}Manage Employees{% endblock %}</div>
+
+{% endblock %}
+
+{% block subheader %}
+<nav aria-label="breadcrumb" class="breadcrumb-bg">
+    <div class="d-flex justify-content-between align-items-center">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('home') }}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('admin.index') }}">Admin</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Employees</li>
+        </ol>
+        {% if g.user %}
+        <span class="text-muted pr-2">{{ g.user.EmpName.title() }}</span>
+        {% endif %}
+    </div>
+</nav>
+<p></p>
+{% endblock %}
+
+{% block content %}
+<!-- Search Bar -->
+<div class="mb-3">
+    <input type="text" id="employeeSearch" class="form-control" placeholder="Search employees by name, department, or supervisor...">
+</div>
+
+<!-- Table Layout for Larger Screens -->
+<div class="d-none d-md-block">
+    <div class="table-responsive">
+        <table class="table table-striped table-bordered">
+            <thead>
+                <tr>
+                    <th>EmpID</th>
+                    <th>Emp</th>
+                    <th>Name</th>
+                    <th>Dept</th>
+                    <th>Supervisor</th>
+                    <th>Wage<br>Group</th>
+                    <th>Admin</th>
+                    <th>PayChex</th>
+                    <th>Salary Plus<br>Start</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="employeeTable">
+                {% for employee in employees %}
+                <tr>
+                    <form method="POST" action="{{ url_for('admin.manage_employees') }}">
+                        <td>{{ employee.EmpID }}</td>
+                        <td>{{ employee.Emp }}</td>
+                        <td>{{ employee.EmpName }}</td>
+                        <td>{{ employee.Dept }}</td>
+                        <td>{{ employee.Supervisor }}</td>
+                        <td>{{ employee.Wagegroup }}</td>
+                        <td>
+                            <input type="checkbox" name="isAdmin" {% if employee.isAdmin %}checked{% endif %}>
+                        </td>
+                        <td>
+                            <select name="PayChexID" class="form-control">
+                                <option value="">-- Select PayChex --</option>
+                                {% for paychex in paychex_entries %}
+                                <option value="{{ paychex.PayID }}" {% if employee.PayChexID == paychex.PayID %}selected{% endif %}>
+                                    {{ paychex.PayDescription }} ({{ paychex.PayChex }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td>
+                            <input type="number" name="SalaryPlusStart" value="{{ employee.SalaryPlusStart or '' }}" class="form-control">
+                        </td>
+                        <td>
+                            <input type="hidden" name="EmpID" value="{{ employee.EmpID }}">
+                            <button type="submit" class="btn btn-abas">
+                                Save
+                            </button>
+                        </td>
+                    </form>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Card Layout for Smaller Screens -->
+<div class="d-md-none">
+    <div id="employeeCards">
+        {% for employee in employees %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title">{{ employee.EmpName }}</h5>
+                <p class="card-text">
+                    <strong>EmpID:</strong> {{ employee.EmpID }}<br>
+                    <strong>Emp:</strong> {{ employee.Emp }}<br>
+                    <strong>Department:</strong> {{ employee.Dept }}<br>
+                    <strong>Supervisor:</strong> {{ employee.Supervisor }}<br>
+                    <strong>Wage Group:</strong> {{ employee.Wagegroup }}
+                </p>
+                <form method="POST" action="{{ url_for('admin.manage_employees') }}">
+                    <div class="form-check mb-2">
+                        <input type="checkbox" class="form-check-input" name="isAdmin" id="isAdmin{{ employee.EmpID }}" {% if employee.isAdmin %}checked{% endif %}>
+                        <label class="form-check-label" for="isAdmin{{ employee.EmpID }}">Admin</label>
+                    </div>
+                    <div class="mb-2">
+                        <label for="PayChexID{{ employee.EmpID }}">PayChex</label>
+                        <select name="PayChexID" id="PayChexID{{ employee.EmpID }}" class="form-control">
+                            <option value="">-- Select PayChex --</option>
+                            {% for paychex in paychex_entries %}
+                            <option value="{{ paychex.PayID }}" {% if employee.PayChexID == paychex.PayID %}selected{% endif %}>
+                                {{ paychex.PayDescription }} ({{ paychex.PayChex }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label for="SalaryPlusStart{{ employee.EmpID }}">Salary Plus Start</label>
+                        <input type="number" name="SalaryPlusStart" id="SalaryPlusStart{{ employee.EmpID }}" value="{{ employee.SalaryPlusStart or '' }}" class="form-control">
+                    </div>
+                    <input type="hidden" name="EmpID" value="{{ employee.EmpID }}">
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        Save
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+    document.getElementById('employeeSearch').addEventListener('input', function () {
+        const searchValue = this.value.toLowerCase();
+        const tableRows = document.querySelectorAll('#employeeTable tr');
+        const cards = document.querySelectorAll('#employeeCards .card');
+
+        // Filter table rows
+        tableRows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(searchValue) ? '' : 'none';
+        });
+
+        // Filter cards
+        cards.forEach(card => {
+            const text = card.textContent.toLowerCase();
+            card.style.display = text.includes(searchValue) ? '' : 'none';
+        });
+    });
+</script>
+{% endblock %}
