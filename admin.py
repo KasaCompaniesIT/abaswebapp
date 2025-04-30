@@ -246,16 +246,17 @@ def manage_employees():
         is_admin = request.form.get('isAdmin') == 'on'  # Checkbox value
         paychex_id = request.form.get('PayChexID')
         salary_plus_start = request.form.get('SalaryPlusStart')
+        is_hourly = request.form.get('isHourly') == 'on'  # Checkbox value
 
         try:
             # Update the employee record
             dbc.execute(
                 """
                 UPDATE Employee
-                SET isAdmin = ?, PayChexID = ?, SalaryPlusStart = ?
+                SET isAdmin = ?, PayChexID = ?, SalaryPlusStart = ?, isHourly = ?
                 WHERE EmpID = ?
                 """,
-                (is_admin, paychex_id, salary_plus_start, emp_id)
+                (is_admin, paychex_id, salary_plus_start, is_hourly, emp_id)
             )
             db.commit()
             flash(f"Employee {emp_id} updated successfully!", "success")
@@ -265,7 +266,7 @@ def manage_employees():
 
     # Fetch all employees to display in the table
     employees = dbc.execute("""
-        SELECT EmpID, Emp, EmpName, Dept, Supervisor, Wagegroup, isAdmin, PayChexID, SalaryPlusStart
+        SELECT EmpID, Emp, EmpName, Dept, Supervisor, Wagegroup, isAdmin, PayChexID, SalaryPlusStart, isHourly
         FROM Employee
         ORDER BY EmpName
     """).fetchall()
