@@ -132,9 +132,17 @@ a { color: #009FAA; }
 
 .btn-abas:disabled,
 .btn-abas.disabled {
-    background-color: #009FAA;
+    background-color: #00757e;
     border-color: #212529;
-    opacity: 0.65; /* Mimics Bootstrap’s disabled opacity */
+    opacity: 0.80; /* Mimics Bootstrap’s disabled opacity */
+}
+
+.btn-abas:disabled:hover,
+.btn-abas.disabled:hover {
+    background-color: #00757e; /* Keep the disabled background color */
+    border-color: #212529; /* Keep the disabled border color */
+    color: #212529; /* Keep the disabled text color */
+    cursor: not-allowed; /* Show a "not-allowed" cursor */
 }
 
   /* Change the default text color */
@@ -223,11 +231,13 @@ a { color: #009FAA; }
 }
 
 .badge-abas {
-    background-color: #009FAA; /* Replace with your desired color */
-    color: #343a40; /* Text color */
+    background-color: #009FAA; /* Keep the existing background color */
+    color: #343a40; /* Keep the existing text color */
     font-size: 1rem; /* Optional: Adjust font size */
     padding: 0.3em 0.5em; /* Optional: Adjust padding */
     border-radius: 0.25rem; /* Optional: Adjust border radius */
+    border: 1px solid #212529; /* Add a border similar to btn-abas */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Optional: Add a subtle shadow */
 }
 
 .badge-dark2 {
@@ -307,7 +317,7 @@ a { color: #009FAA; }
     justify-content: center;
     align-items: center;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Add a shadow */
-    border: none; /* Remove border */
+    border: 1px solid #212529; /* Add a border similar to btn-abas */
     cursor: pointer;
 }
 
@@ -317,6 +327,49 @@ a { color: #009FAA; }
 
 .btn-floating i {
     font-size: 1.5rem; /* Adjust icon size */
+}
+
+.btn-floating2 {
+    position: fixed;
+    bottom: 20px; /* Distance from the bottom of the page */
+    right: 86px; /* Distance from the right side of the page */
+    z-index: 1000; /* Ensure it stays on top of other elements */
+    background-color: #009FAA; /* Customize button color */
+    color: #212529; /* Text/icon color */
+    border-radius: 50%; /* Make it circular */
+    width: 60px; /* Button width */
+    height: 60px; /* Button height */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Add a shadow */
+    border: 1px solid #212529; /* Add a border similar to btn-abas */
+    cursor: pointer;
+}
+
+.btn-floating2:hover {
+    background-color: #007B8A; /* Darken the button on hover */
+}
+
+.btn-floating2 i {
+    font-size: 1.5rem; /* Adjust icon size */
+}
+
+.info-panel {
+    position: relative; /* Make the box a positioning context */
+}
+
+#floatingBadge {
+    position: absolute; /* Position the badge relative to the user info box */
+    bottom: -4px; /* Distance from the bottom of the box */
+    right: 4px; /* Distance from the right of the box */
+    z-index: 1050; /* Ensure it appears above other elements */
+}
+
+#floatingBadge .badge {
+    font-size: 1.2rem; /* Adjust font size if needed */
+    padding: 0.5rem 1rem; /* Adjust padding for better appearance */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); /* Add a subtle shadow */
 }
 
 .modal-header .close {
@@ -538,4 +591,39 @@ a { color: #009FAA; }
 /* Show the delete button on hover */
 .time-entry:hover .delete-entry-btn {
     display: inline-block;
+}
+
+.form-check-inline {
+    margin-right: 1rem; /* Add spacing between checkboxes */
+    margin-bottom: 1rem;;
+}
+
+.fab-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1050;
+}
+
+.fab-main {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.fab-menu {
+    display: none; /* Initially hidden */
+    flex-direction: column;
+    position: absolute;
+    bottom: 70px;
+    right: 0;
+}
+
+.fab-item {
+    margin-bottom: 10px;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
 }

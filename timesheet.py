@@ -1,3 +1,5 @@
+import csv
+import os
 import pandas as pd
 import pyodbc
 from datetime import datetime, timedelta, date
@@ -8,6 +10,8 @@ from flask import (
 from werkzeug.exceptions import abort, Unauthorized, Forbidden, NotFound
 from auth import login_required
 from db import get_db
+from config import ABAS_SERVER
+
 
 bp = Blueprint('timesheet', __name__)
 
@@ -95,6 +99,15 @@ def entry():
             startOfPrevWeek = startDate - timedelta(days=startDate.weekday())
             endOfPrevWeek = startOfPrevWeek + timedelta(days=6)
 
+            # Determine if adding/finalizing time is allowed
+            now = datetime.now()
+            is_current_week = startOfPrevWeek <= now.date() <= endOfPrevWeek
+            is_previous_week_allowed = (
+                now.weekday() == 0 and now.hour < 12 and startOfPrevWeek == (now.date() - timedelta(days=7))
+            )
+
+            can_add_or_finalize = is_current_week or is_previous_week_allowed
+
             # Generate a list of dates for the previous week
             # dateRangePrevWeek = [
             #     (startOfPrevWeek + timedelta(days=i)).strftime("%m/%d/%y")
@@ -179,6 +192,18 @@ def entry():
                 # print(f"Date: {date}, Rows: {rows}")
 
             today = datetime.now().strftime("%m/%d/%y")  # Format today's date as MM/DD/YY
+            
+            # Fetch Paychex codes
+            paychex_codes = dbc.execute(
+                "SELECT PayID, PayChex, PayDescription FROM paychex ORDER BY PayChex"
+            ).fetchall()
+
+            # Convert Paychex codes to a list of dictionaries
+            paychex_list = [
+                {"id": row.PayID, "code": row.PayChex, "description": row.PayDescription}
+                for row in paychex_codes
+            ]
+
             # Pass the data to the template
             return render_template('timesheet/entry.html',
                                     abasID=abas_ID,
@@ -187,7 +212,9 @@ def entry():
                                     endOfPrevWeek=endOfPrevWeek,
                                     dateRangePrevWeek=dateRangePrevWeek,
                                     timecard_data=timecard_data,
-                                    today=today
+                                    today=today,
+                                    can_add_or_finalize=can_add_or_finalize,
+                                    paychex_list=paychex_list
             )
 
             # return render_template('timesheet/entry.html', abasID=abas_ID, abasUser=abasUser, startOfPrevWeek=startOfPrevWeek, endOfPrevWeek=endOfPrevWeek, dateRangePrevWeek=dateRangePrevWeek)
@@ -330,6 +357,14 @@ def save_entry():
     work_slip_id = data.get('workSlipID')
     hours_worked = data.get('hoursWorked')
 
+    # Generate a unique file name using a timestamp
+    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')  # Format: YYYYMMDDHHMMSS
+    unique_file_name = f"jobtime_{abas_id}_{timestamp}.csv"
+
+    # Define the network location for the CSV file
+    #network_path = os.path.join(r"\\abas\keserp\LABOR_IMPORT\\", unique_file_name)  # Replace with your actual network path
+    network_path = os.path.join(ABAS_SERVER, unique_file_name)  # Replace with your actual network path
+
     try:
         db = get_db()
         dbc = db.cursor()
@@ -361,6 +396,14 @@ def save_entry():
         # Convert the pyodbc.Row object to a dictionary
         new_entry_dict = dict(zip([column[0] for column in dbc.description], new_entry))
 
+        # Write the new entry to the CSV file
+        with open(network_path, mode='w', newline='', encoding='utf-8') as csvfile:
+            csv_writer = csv.writer(csvfile)
+            # Write the header
+            csv_writer.writerow(['AbasID', 'Date', 'WorkSlipID', 'HoursWorked'])
+            # Write the new entry
+            csv_writer.writerow([abas_id, selected_date, work_slip_id, hours_worked])
+
         db.commit()
         return jsonify({'success': True, 'data': new_entry_dict}), 200
     except Exception as e:
@@ -375,10 +418,135 @@ def delete_time_entry(time_entry_id):
     dbc = db.cursor()
 
     try:
+        # Fetch the entry being deleted
+        entry = dbc.execute(
+            """
+            SELECT EmpID, WorkDate, WSNumber, TimeWorked
+            FROM TimeEntry
+            WHERE EntryID = ?
+            """,
+            (time_entry_id,)
+        ).fetchone()
+
+        if not entry:
+            raise ValueError("Time entry not found.")
+
+        # Extract entry details
+        abas_id = entry.EmpID
+        selected_date = entry.WorkDate
+        work_slip_id = entry.WSNumber
+        hours_worked = 0 # entry.TimeWorked
+
+        # Generate a unique file name using a timestamp
+        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')  # Format: YYYYMMDDHHMMSS
+        unique_file_name = f"jobtime_{abas_id}_{timestamp}.csv"
+
+        # Define the network location for the CSV file        
+        network_path = os.path.join(ABAS_SERVER, unique_file_name)  # Replace with your actual network path
+
+        # Write the negated entry to the CSV file
+        with open(network_path, mode='w', newline='', encoding='utf-8') as csvfile:
+            csv_writer = csv.writer(csvfile)
+            # Write the header
+            csv_writer.writerow(['AbasID', 'Date', 'WorkSlipID', 'HoursWorked'])
+            # Write the negated entry
+            csv_writer.writerow([abas_id, selected_date, work_slip_id, hours_worked])  # Negate the hours
+
+        # Delete the entry from the database
         dbc.execute("DELETE FROM TimeEntry WHERE EntryID = ?", (time_entry_id,))
         db.commit()
+
         return jsonify({'success': True}), 200
     except Exception as e:
         db.rollback()
         return jsonify({'error': str(e)}), 500
     
+@bp.route('/timesheet/finalize_time', methods=['POST'])
+@login_required
+def finalize_time():
+    data = request.form
+    db = get_db()
+    dbc = db.cursor()
+
+    try:
+        for key, value in data.items():
+            if key.startswith("paychex_code_"):
+                time_entry_id = key.split("_")[2]
+                paychex_code = value
+
+                # Update the Paychex code for the time entry
+                dbc.execute(
+                    """
+                    UPDATE TimeEntry
+                    SET PaychexCode = ?
+                    WHERE EntryID = ?
+                    """,
+                    (paychex_code, time_entry_id)
+                )
+
+        db.commit()
+        flash("Time entries finalized successfully.", "success")
+        return redirect(url_for('timesheet.entry'))
+    except Exception as e:
+        db.rollback()
+        flash(f"An error occurred while finalizing time: {str(e)}", "error")
+        return redirect(url_for('timesheet.entry'))
+    
+@bp.route('/timesheet/entry/get_time_entries', methods=['GET'])
+@login_required
+def get_time_entries():
+    try:
+        # Get the start and end dates for the current week
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+        abas_id = request.args.get('abas_id')
+
+        # # Convert the date strings to datetime objects
+        # start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+        # end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+
+        # # Convert the dates to the format required by the SQL query
+        # start_date_str = start_date.strftime('%m/%d/%y')
+        # end_date_str = end_date.strftime('%m/%d/%y')
+
+        print("abas_id: " + abas_id)
+        print("start_date: " + start_date)
+        print("end_date: " + end_date)
+
+        db = get_db()
+        dbc = db.cursor()
+
+        # Fetch time entries for the given date range
+        time_entries = dbc.execute(
+            """
+            SELECT EntryID, WorkDate, WSNumber, TimeWorked
+            FROM TimeEntry
+            WHERE EmpID = ? AND WorkDate BETWEEN ? AND ?
+            ORDER BY WorkDate
+            """,
+            (abas_id, start_date, end_date)
+        ).fetchall()
+
+        # Convert the results to a list of dictionaries
+        time_entries_list = []
+        for entry in time_entries:
+            # Strip whitespace from WorkDate and convert to a datetime object
+            # work_date = entry.WorkDate.strip() if isinstance(entry.WorkDate, str) else entry.WorkDate
+            # if isinstance(work_date, str):
+            #     try:
+            #         work_date = datetime.strptime(work_date, '%m/%d/%y')  # Handle MM/DD/YY format
+            #     except ValueError:
+            #         work_date = datetime.strptime(work_date, '%m/%d/%Y')  # Handle MM/DD/YYYY format
+
+            time_entries_list.append({
+                "EntryID": entry.EntryID,
+                "WorkDate": datetime.strptime(entry.WorkDate, '%Y-%m-%d').strftime('%m/%d/%y'),  # Format the date as MM/DD/YY,
+                "WSNumber": entry.WSNumber,
+                "tHoursWorked": entry.TimeWorked
+            })
+
+        print("Time Entries:", time_entries_list)  # Debugging: Log the data
+        return jsonify({"success": True, "time_entries": time_entries_list}), 200
+    except Exception as e:
+        print("Error fetching time entries:", str(e))  # Debugging: Log the error
+        return jsonify({"success": False, "error": str(e)}), 500    

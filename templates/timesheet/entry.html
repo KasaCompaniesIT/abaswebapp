@@ -20,6 +20,7 @@
 {% endblock %}
 {% block content %}
 
+
 <div class="container-fluid">
     <!-- User Lookup Form -->
     <form method="post" class="abasid-lookup">
@@ -54,11 +55,14 @@
         <div class="card-body compact-info-panel">
             <p><strong>Abas ID:</strong> {{ abasUser.EmpID }} | {{ abasUser.Emp }}</p>
             <p><strong>Name:</strong> {{ abasUser.EmpName }}</p>
-            <p><strong>Department:</strong> {{ abasUser.Dept }}</p>
             <p><strong>Supervisor:</strong> {{ abasUser.SupervisorName }}</p>
+            <!-- Floating Badge -->
+            <h5 id="floatingBadge">
+                <span class="badge badge-abas" id="totalHoursBadge">0</span>
+            </h5>
         </div>
     </div>
-     
+
     <!-- <form method="post"> -->
         <div class="input-group">
             <div class="input-group-prepend">
@@ -85,6 +89,7 @@
     <!-- Timecard Section -->
     <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-4 px-2" id="timecard">
         <!-- Card 1 -->
+        {% set nswk = namespace(total_hours=0) %} <!-- Create a mutable namespace object -->
         {% for day in dateRangePrevWeek %}
         <div id="card_{{ day.date.replace('/', '_') }}" class="col my-2 px-2">
             <div class="card bg-light border-dark card-shadow">
@@ -99,7 +104,7 @@
                         bg-dark2 text-light
                     {% endif %}
                 ">
-                    {{ day.date }} - {{ day.date | dateformat("%A") }}
+                    {{ day.date | dateformat("%A") }} - {{ day.date }}
                 </div>
                 <div class="card-body compact-card">
                     {% set ns = namespace(total_hours=0) %} <!-- Create a mutable namespace object -->
@@ -135,10 +140,17 @@
                 </div>
             </div>
         </div>
+        {% set nswk.total_hours = nswk.total_hours + ns.total_hours %}
         {% endfor %}
 
-        <button id="addTimeButton" class="btn btn-abas btn-floating" title="Add Time">
-            <i class="fas fa-plus"></i> <!-- Font Awesome icon -->
+        <button id="addTimeButton" class="btn btn-abas btn-floating" title="Add Time" 
+            {% if not can_add_or_finalize %} disabled {% endif %}>
+            <i class="fas fa-plus"></i>
+        </button>
+
+        <button id="finalizeTimeButton" class="btn btn-abas btn-floating2" title="Finalize Payroll Time" 
+            {% if not can_add_or_finalize %} disabled {% endif %}>
+            <i class="fas fa-check"></i>
         </button>
 
     </div>
@@ -221,12 +233,124 @@
             </div>
         </div>
     </div>
+
+    <!-- Finalize Time Modal -->
+    <div class="modal fade" id="finalizeTimeModal" data-backdrop="static" data-keyboard="false" tabindex="-1" aria-labelledby="finalizeTimeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-dark-custom">
+                    <h5 class="modal-title" id="finalizeTimeModalLabel">Finalize Payroll Time</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="finalizeTimeForm" method="post" action="{{ url_for('timesheet.finalize_time') }}">
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Paychex Code</th>
+                                        <th>Hours</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% set cumulative_hours = 0 %}
+                                    {% for day, entries in timecard_data.items() %}
+                                        {% for entry in entries %}
+                                            {% set cumulative_hours = cumulative_hours + entry.tHoursWorked %}
+                                            {% if cumulative_hours <= 40 %}
+                                                <tr>
+                                                    <td>{{ day | dateformat('%m/%d/%Y') }}</td> <!-- Add the date -->
+                                                    <td>
+                                                        <select name="paychex_code_{{ entry.TimeEntryID }}" class="form-control">
+                                                            {% for paychex in paychex_list %}
+                                                                <option value="{{ paychex.id }}" {% if cumulative_hours <= 40 and paychex.code == 'E1' %}selected{% endif %}>
+                                                                    {{ paychex.code }} - {{ paychex.description }}
+                                                                </option>
+                                                            {% endfor %}
+                                                        </select>
+                                                    </td>
+                                                    <td>{{ entry.tHoursWorked }}</td>
+                                                </tr>
+                                            {% else %}
+                                                <!-- Split the entry into two rows -->
+                                                <tr>
+                                                    <td>{{ day }}</td> <!-- Add the date -->
+                                                    <td>{{ entry.WSNumber }}</td>
+                                                    <td>
+                                                        <select name="paychex_code_{{ entry.TimeEntryID }}_1" class="form-control">
+                                                            {% for paychex in paychex_list %}
+                                                                <option value="{{ paychex.id }}" {% if paychex.code == 'E1' %}selected{% endif %}>
+                                                                    {{ paychex.code }} - {{ paychex.description }}
+                                                                </option>
+                                                            {% endfor %}
+                                                        </select>
+                                                    </td>
+                                                    <td>{{ 40 - (cumulative_hours - entry.tHoursWorked) }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>{{ day }}</td> <!-- Add the date -->
+                                                    <td>{{ entry.WSNumber }}</td>
+                                                    <td>
+                                                        <select name="paychex_code_{{ entry.TimeEntryID }}_2" class="form-control">
+                                                            {% for paychex in paychex_list %}
+                                                                <option value="{{ paychex.id }}" {% if paychex.code == 'E2' %}selected{% endif %}>
+                                                                    {{ paychex.code }} - {{ paychex.description }}
+                                                                </option>
+                                                            {% endfor %}
+                                                        </select>
+                                                    </td>
+                                                    <td>{{ cumulative_hours - 40 }}</td>
+                                                </tr>
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="text-right">
+                            <button type="submit" class="btn btn-abas">Finalize</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
     {% endif %}
 </div>
 <p></p>
 {% endblock %} <!-- end content block -->
 {% block script %}
 <script>
+
+    
+    function updateTotalHours() {
+        let totalHours = 0;
+
+        // Loop through all cards and sum up the total hours
+        document.querySelectorAll('.card-body').forEach(cardBody => {
+            cardBody.querySelectorAll('.time-entry .badge').forEach(badge => {
+                const hours = parseFloat(badge.textContent);
+                if (!isNaN(hours)) {
+                    totalHours += hours;
+                }
+            });
+        });
+
+        // Update the floating badge with the total hours
+        const totalHoursBadge = document.getElementById('totalHoursBadge');
+        if (totalHoursBadge) {
+            totalHoursBadge.textContent = totalHours.toFixed(2);
+        }
+    }
+
+    // Call the function to update the total hours on page load
+    document.addEventListener('DOMContentLoaded', function () {
+        updateTotalHours();
+    });
+
     document.getElementById('addTimeButton').addEventListener('click', function () {
         var addTimeModal = new bootstrap.Modal(document.getElementById('addTimeModal'));
         addTimeModal.show();
@@ -249,6 +373,247 @@
                 $('.selectpicker').selectpicker('refresh');
             })
             .catch(error => console.error('Error fetching projects:', error));
+    });
+
+    document.getElementById('finalizeTimeButton').addEventListener('click', function () {
+        const finalizeTimeModal = new bootstrap.Modal(document.getElementById('finalizeTimeModal'));
+        finalizeTimeModal.show();
+    
+        // Declare payrollPaychex_list inside the function
+        const payrollPaychex_list = {{ paychex_list | tojson }};
+        console.log("Paychex List:", payrollPaychex_list); // Debugging: Log the paychex_list
+    
+        // Fetch the latest time entries
+        const abasID = document.getElementById('abasIDInput').value;
+        const startDate = document.getElementById('startDateInput').value;
+        const endDate = document.getElementById('endDateInput').value;
+    
+        const isSalary = {{ g.user.isHourly | tojson }} === false; // Check if the employee is salaried
+        const salaryPlusStart = {{ g.user.SalaryPlusStart | tojson }};
+    
+        fetch(`/timesheet/entry/get_time_entries?abas_id=${abasID}&start_date=${startDate}&end_date=${endDate}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const tableBody = document.querySelector('#finalizeTimeModal tbody');
+                    tableBody.innerHTML = ''; // Clear existing rows
+    
+                    let cumulativeHours = 0;
+    
+                    // Populate the table with the latest time entries
+                    data.time_entries.forEach(entry => {
+                        console.log("Processing Entry:", entry); // Debugging: Log each entry
+                        console.log("Cumulative Hours Before:", cumulativeHours); // Debugging cumulative hours
+    
+                        let rowHTML = '';                        
+    
+                        if (isSalary) {
+                            const entryHours = parseFloat(entry.tHoursWorked);
+                            if (cumulativeHours + entryHours <= 40) {
+                                // Entire entry fits within the first 40 hours
+                                rowHTML = `
+                                    <tr>
+                                        <td>${entry.WorkDate}</td>
+                                        <td>
+                                            <select name="paychex_code_${entry.EntryID}" class="form-control">
+                                                ${payrollPaychex_list.map(paychex => `
+                                                    <option value="${paychex.id}" ${paychex.code === 'E1' ? 'selected' : ''}>
+                                                        ${paychex.code} - ${paychex.description}
+                                                    </option>
+                                                `).join('')}
+                                            </select>
+                                        </td>
+                                        <td>${entryHours.toFixed(2)}</td>
+                                    </tr>
+                                `;
+                            } else if (cumulativeHours + entryHours > 40 && cumulativeHours + entryHours <= salaryPlusStart) {
+                                // Entry crosses the 40-hour mark but is within the salary plus threshold
+                                const remainingHoursTo40 = 40 - cumulativeHours; // Hours needed to reach 40
+                                const hoursBeyond40 = entryHours - remainingHoursTo40; // Remaining hours beyond 40
+                            
+                                console.log("Remaining Hours to 40:", remainingHoursTo40); // Debugging
+                                console.log("Hours Beyond 40:", hoursBeyond40); // Debugging
+                            
+                                // First row: Hours up to 40
+                                if (remainingHoursTo40 > 0) {
+                                    rowHTML = `
+                                        <tr>
+                                            <td>${entry.WorkDate}</td>
+                                            <td>
+                                                <select name="paychex_code_${entry.EntryID}_1" class="form-control">
+                                                    ${payrollPaychex_list.map(paychex => `
+                                                        <option value="${paychex.id}" ${paychex.code === 'E1' ? 'selected' : ''}>
+                                                            ${paychex.code} - ${paychex.description}
+                                                        </option>
+                                                    `).join('')}
+                                                </select>
+                                            </td>
+                                            <td>${remainingHoursTo40.toFixed(2)}</td>
+                                        </tr>
+                                    `;
+                                }
+                            
+                                // Second row: Hours beyond 40 with S40 code
+                                if (hoursBeyond40 > 0) {
+                                    console.log("Creating S40 row for hours:", hoursBeyond40); // Debugging
+                                    rowHTML += `
+                                        <tr>
+                                            <td>${entry.WorkDate}</td>
+                                            <td>
+                                                <select name="paychex_code_${entry.EntryID}_2" class="form-control">
+                                                    ${payrollPaychex_list.map(paychex => `
+                                                        <option value="${paychex.id}" ${paychex.code === 'S40' ? 'selected' : ''}>
+                                                            ${paychex.code} - ${paychex.description}
+                                                        </option>
+                                                    `).join('')}
+                                                </select>
+                                            </td>
+                                            <td>${hoursBeyond40.toFixed(2)}</td>
+                                        </tr>
+                                    `;
+                                }
+                            } else if (cumulativeHours + entryHours > salaryPlusStart) {
+                                // Entry exceeds the salary plus threshold
+                                const remainingHoursToSalaryPlus = salaryPlusStart - cumulativeHours; // Hours to reach salary plus
+                                const overtimeHours = Math.max(0, entryHours - remainingHoursToSalaryPlus); // Remaining hours beyond salary plus
+                                console.log("Salary Plus Start:", salaryPlusStart); // Debugging
+                                console.log("Remaining Hours to Salary Plus:", remainingHoursToSalaryPlus); // Debugging
+                                console.log("Overtime Hours:", overtimeHours); // Debugging
+                            
+                                // First row: Hours up to salary plus with S40 code
+                                if (remainingHoursToSalaryPlus > 0) {
+                                    rowHTML = `
+                                        <tr>
+                                            <td>${entry.WorkDate}</td>
+                                            <td>
+                                                <select name="paychex_code_${entry.EntryID}_1" class="form-control">
+                                                    ${payrollPaychex_list.map(paychex => `
+                                                        <option value="${paychex.id}" ${paychex.code === 'S40' ? 'selected' : ''}>
+                                                            ${paychex.code} - ${paychex.description}
+                                                        </option>
+                                                    `).join('')}
+                                                </select>
+                                            </td>
+                                            <td>${remainingHoursToSalaryPlus.toFixed(2)}</td>
+                                        </tr>
+                                    `;
+                                }
+                            
+                                // Second row: Overtime hours beyond salary plus with E50 code
+                                if (overtimeHours > 0) {
+                                    rowHTML += `
+                                        <tr>
+                                            <td>${entry.WorkDate}</td>
+                                            <td>
+                                                <select name="paychex_code_${entry.EntryID}_2" class="form-control">
+                                                    ${payrollPaychex_list.map(paychex => `
+                                                        <option value="${paychex.id}" ${paychex.code === 'E50' ? 'selected' : ''}>
+                                                            ${paychex.code} - ${paychex.description}
+                                                        </option>
+                                                    `).join('')}
+                                                </select>
+                                            </td>
+                                            <td>${overtimeHours.toFixed(2)}</td>
+                                        </tr>
+                                    `;
+                                }
+                            }
+                        }
+    
+                        // For hourly employees
+                        if (!isSalary) {
+                            const entryHours = parseFloat(entry.tHoursWorked);
+
+                            if (cumulativeHours + entryHours <= 40) {
+                                // Entire entry fits within the first 40 hours
+                                rowHTML = `
+                                    <tr>
+                                        <td>${entry.WorkDate}</td>
+                                        <td>
+                                            <select name="paychex_code_${entry.EntryID}" class="form-control">
+                                                ${payrollPaychex_list.map(paychex => `
+                                                    <option value="${paychex.id}" ${paychex.code === 'E1' ? 'selected' : ''}>
+                                                        ${paychex.code} - ${paychex.description}
+                                                    </option>
+                                                `).join('')}
+                                            </select>
+                                        </td>
+                                        <td>${entryHours.toFixed(2)}</td>
+                                    </tr>
+                                `;
+                            } else if (cumulativeHours < 40 && cumulativeHours + entryHours > 40) {
+                                // Entry crosses the 40-hour mark
+                                const remainingHoursTo40 = 40 - cumulativeHours; // Hours needed to reach 40
+                                const overtimeHours = entryHours - remainingHoursTo40; // Remaining hours beyond 40
+
+                                // First row: Hours up to 40
+                                if (remainingHoursTo40 > 0) {
+                                    rowHTML = `
+                                        <tr>
+                                            <td>${entry.WorkDate}</td>
+                                            <td>
+                                                <select name="paychex_code_${entry.EntryID}_1" class="form-control">
+                                                    ${payrollPaychex_list.map(paychex => `
+                                                        <option value="${paychex.id}" ${paychex.code === 'E1' ? 'selected' : ''}>
+                                                            ${paychex.code} - ${paychex.description}
+                                                        </option>
+                                                    `).join('')}
+                                                </select>
+                                            </td>
+                                            <td>${remainingHoursTo40.toFixed(2)}</td>
+                                        </tr>
+                                    `;
+                                }
+
+                                // Second row: Overtime hours beyond 40 with E2 code
+                                if (overtimeHours > 0) {
+                                    rowHTML += `
+                                        <tr>
+                                            <td>${entry.WorkDate}</td>
+                                            <td>
+                                                <select name="paychex_code_${entry.EntryID}_2" class="form-control">
+                                                    ${payrollPaychex_list.map(paychex => `
+                                                        <option value="${paychex.id}" ${paychex.code === 'E2' ? 'selected' : ''}>
+                                                            ${paychex.code} - ${paychex.description}
+                                                        </option>
+                                                    `).join('')}
+                                                </select>
+                                            </td>
+                                            <td>${overtimeHours.toFixed(2)}</td>
+                                        </tr>
+                                    `;
+                                }
+                            } else {
+                                // Entire entry is overtime
+                                rowHTML = `
+                                    <tr>
+                                        <td>${entry.WorkDate}</td>
+                                        <td>
+                                            <select name="paychex_code_${entry.EntryID}" class="form-control">
+                                                ${payrollPaychex_list.map(paychex => `
+                                                    <option value="${paychex.id}" ${paychex.code === 'E2' ? 'selected' : ''}>
+                                                        ${paychex.code} - ${paychex.description}
+                                                    </option>
+                                                `).join('')}
+                                            </select>
+                                        </td>
+                                        <td>${entryHours.toFixed(2)}</td>
+                                    </tr>
+                                `;
+                            }
+                        }
+
+                        cumulativeHours += parseFloat(entry.tHoursWorked);
+
+                        // Append the row to the table body
+                        tableBody.insertAdjacentHTML('beforeend', rowHTML);
+                        console.log("Cumulative Hours After:", cumulativeHours); // Debugging cumulative hours
+                    });
+                } else {
+                    console.error('Error fetching time entries:', data.error);
+                }
+            })
+            .catch(error => console.error('Error fetching time entries:', error));
     });
 
     // Event listener for project selection
@@ -391,19 +756,24 @@
                             // Remove the time entry from the UI
                             const timeEntryElement = this.closest('.time-entry');
                             const cardBody = timeEntryElement.closest('.card-body');
-                            timeEntryElement.remove();
-
-                            // Recalculate the total hours
-                            let totalHours = 0;
-                            cardBody.querySelectorAll('.time-entry').forEach(entry => {
-                                const hours = parseFloat(entry.querySelector('.badge').textContent);
-                                totalHours += hours;
-                            });
-
-                            // Update the total hours in the card footer
                             const cardFooter = cardBody.nextElementSibling; // Assuming footer is the next sibling
                             const totalHoursElement = cardFooter.querySelector('.font-weight-bold');
-                            totalHoursElement.textContent = totalHours.toFixed(2);
+
+                            // Get the hours of the deleted entry
+                            const deletedHours = parseFloat(
+                                timeEntryElement.querySelector('.badge').textContent
+                            );
+
+                            // Remove the time entry from the UI
+                            timeEntryElement.remove();
+
+                            // Update the total hours in the card footer
+                            const currentTotal = parseFloat(totalHoursElement.textContent) || 0;
+                            const newTotal = currentTotal - deletedHours;
+                            totalHoursElement.textContent = newTotal.toFixed(2);
+
+                            // Recalculate the total hours for the floating badge
+                            updateTotalHours();
 
                             // Check if the card is now empty
                             if (cardBody.querySelectorAll('.time-entry').length === 0) {
@@ -412,8 +782,6 @@
                                 noDataMessage.textContent = 'No data available for this date.';
                                 cardBody.appendChild(noDataMessage);
                             }
-
-                            // alert('Time entry deleted successfully.');
                         } else {
                             alert('Failed to delete time entry.');
                         }
@@ -441,15 +809,32 @@
                         if (response.ok) {
                             const timeEntryElement = this.closest('.time-entry');
                             const cardBody = timeEntryElement.closest('.card-body');
+                            const cardFooter = cardBody.nextElementSibling; // Assuming footer is the next sibling
+                            const totalHoursElement = cardFooter.querySelector('.font-weight-bold');
+
+                            // Get the hours of the deleted entry
+                            const deletedHours = parseFloat(
+                                timeEntryElement.querySelector('.badge').textContent
+                            );
+
+                            // Remove the time entry from the UI
                             timeEntryElement.remove();
 
+                            // Update the total hours in the card footer
+                            const currentTotal = parseFloat(totalHoursElement.textContent) || 0;
+                            const newTotal = currentTotal - deletedHours;
+                            totalHoursElement.textContent = newTotal.toFixed(2);
+
+                            // Recalculate the total hours for the floating badge
+                            updateTotalHours();
+
+                            // Check if the card is now empty
                             if (cardBody.querySelectorAll('.time-entry').length === 0) {
+                                // Add a "No data available" message
                                 const noDataMessage = document.createElement('p');
                                 noDataMessage.textContent = 'No data available for this date.';
                                 cardBody.appendChild(noDataMessage);
                             }
-
-                            // alert('Time entry deleted successfully.');
                         } else {
                             alert('Failed to delete time entry.');
                         }
@@ -499,17 +884,15 @@
                     `;
                     cardBody.appendChild(timeEntryDiv);
 
-                    // Recalculate the total hours
-                    let totalHours = 0;
-                    cardBody.querySelectorAll('.time-entry').forEach(entry => {
-                        const hours = parseFloat(entry.querySelector('.badge').textContent);
-                        totalHours += hours;
-                    });
-
                     // Update the total hours in the card footer
                     const cardFooter = cardBody.nextElementSibling; // Assuming footer is the next sibling
                     const totalHoursElement = cardFooter.querySelector('.font-weight-bold');
-                    totalHoursElement.textContent = totalHours.toFixed(2);
+                    const currentTotal = parseFloat(totalHoursElement.textContent) || 0;
+                    const newTotal = currentTotal + parseFloat(result.data.tHoursWorked);
+                    totalHoursElement.textContent = newTotal.toFixed(2);
+
+                    // Recalculate the total hours for the floating badge
+                    updateTotalHours();
 
                     // Reattach the delete button event listener
                     attachDeleteEvent(timeEntryDiv.querySelector('.delete-entry-btn'));
