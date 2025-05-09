@@ -103,7 +103,7 @@ def load_logged_in_user():
     else:
         g.user = user_id
         g.user = get_db().cursor().execute(
-            'SELECT EmpID, Emp, EmpName, Dept, Supervisor, isAdmin FROM employee WHERE empid = ?', (user_id,)
+            'SELECT EmpID, Emp, EmpName, Dept, Supervisor, isAdmin, isSuperAdmin, isHourly, PayChexID, SalaryPlusStart  FROM employee WHERE empid = ?', (user_id,)
         ).fetchone()
 
 

@@ -43,6 +43,7 @@
                     <th>PayChex</th>
                     <th>Salary Plus<br>Start</th>
                     <th>Admin</th>
+                    <th>Super<br>Admin</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -76,10 +77,15 @@
                             <input type="checkbox" name="isAdmin" {% if employee.isAdmin %}checked{% endif %}>
                         </td>
                         <td>
+                            <input type="checkbox" name="isSuperAdmin" {% if employee.isSuperAdmin %}checked{% endif %}>
+                        </td>
+                        <td>
                             <input type="hidden" name="EmpID" value="{{ employee.EmpID }}">
-                            <button type="submit" class="btn btn-abas">
-                                Save
-                            </button>
+                            <div class="d-flex justify-content-end">
+                                <button type="submit" class="btn btn-abas">
+                                    Save
+                                </button>
+                            </div>
                         </td>
                     </form>
                 </tr>
@@ -104,9 +110,17 @@
                     <strong>Wage Group:</strong> {{ employee.Wagegroup }}
                 </p>
                 <form method="POST" action="{{ url_for('admin.manage_employees') }}">
-                    <div class="form-check mb-2">
+                    <div class="form-check form-check-inline">
+                        <input type="checkbox" class="form-check-input" name="isHourly" id="isHourly{{ employee.EmpID }}" {% if employee.isHourly %}checked{% endif %}>
+                        <label class="form-check-label" for="isHourly{{ employee.EmpID }}">Hourly Pay</label>
+                    </div>
+                    <div class="form-check form-check-inline">
                         <input type="checkbox" class="form-check-input" name="isAdmin" id="isAdmin{{ employee.EmpID }}" {% if employee.isAdmin %}checked{% endif %}>
                         <label class="form-check-label" for="isAdmin{{ employee.EmpID }}">Admin</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input type="checkbox" class="form-check-input" name="isSuperAdmin" id="isSuperAdmin{{ employee.EmpID }}" {% if employee.isSuperAdmin %}checked{% endif %}>
+                        <label class="form-check-label" for="isSuperAdmin{{ employee.EmpID }}">Super Admin</label>
                     </div>
                     <div class="mb-2">
                         <label for="PayChexID{{ employee.EmpID }}">PayChex</label>
@@ -124,9 +138,11 @@
                         <input type="number" name="SalaryPlusStart" id="SalaryPlusStart{{ employee.EmpID }}" value="{{ employee.SalaryPlusStart or '' }}" class="form-control">
                     </div>
                     <input type="hidden" name="EmpID" value="{{ employee.EmpID }}">
-                    <button type="submit" class="btn btn-primary btn-sm">
-                        Save
-                    </button>
+                    <div class="d-flex justify-content-end">
+                        <button type="submit" class="btn btn-abas">
+                            Save
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>

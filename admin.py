@@ -244,20 +244,40 @@ def manage_employees():
         # Handle form submission to update employee details
         emp_id = request.form.get('EmpID')
         is_admin = request.form.get('isAdmin') == 'on'  # Checkbox value
+        is_hourly = request.form.get('isHourly') == 'on'  # Checkbox value
         paychex_id = request.form.get('PayChexID')
         salary_plus_start = request.form.get('SalaryPlusStart')
-        is_hourly = request.form.get('isHourly') == 'on'  # Checkbox value
+
+        # Only allow super admins to set the isSuperAdmin field
+        if g.user.isSuperAdmin:
+            is_superadmin = request.form.get('isSuperAdmin') == 'on'  # Checkbox value
+        else:
+            # Prevent non-super admins from modifying this field
+            is_superadmin = None
 
         try:
             # Update the employee record
-            dbc.execute(
-                """
-                UPDATE Employee
-                SET isAdmin = ?, PayChexID = ?, SalaryPlusStart = ?, isHourly = ?
-                WHERE EmpID = ?
-                """,
-                (is_admin, paychex_id, salary_plus_start, is_hourly, emp_id)
-            )
+            if is_superadmin is not None:
+                # Include isSuperAdmin in the update if the user is a super admin
+                dbc.execute(
+                    """
+                    UPDATE Employee
+                    SET isAdmin = ?, PayChexID = ?, SalaryPlusStart = ?, isHourly = ?, isSuperAdmin = ?
+                    WHERE EmpID = ?
+                    """,
+                    (is_admin, paychex_id, salary_plus_start, is_hourly, is_superadmin, emp_id)
+                )
+            else:
+                # Exclude isSuperAdmin from the update if the user is not a super admin
+                dbc.execute(
+                    """
+                    UPDATE Employee
+                    SET isAdmin = ?, PayChexID = ?, SalaryPlusStart = ?, isHourly = ?
+                    WHERE EmpID = ?
+                    """,
+                    (is_admin, paychex_id, salary_plus_start, is_hourly, emp_id)
+                )
+
             db.commit()
             flash(f"Employee {emp_id} updated successfully!", "success")
         except pyodbc.DatabaseError as err:
@@ -266,7 +286,7 @@ def manage_employees():
 
     # Fetch all employees to display in the table
     employees = dbc.execute("""
-        SELECT EmpID, Emp, EmpName, Dept, Supervisor, Wagegroup, isAdmin, PayChexID, SalaryPlusStart, isHourly
+        SELECT EmpID, Emp, EmpName, Dept, Supervisor, Wagegroup, isAdmin, PayChexID, SalaryPlusStart, isHourly, isSuperAdmin
         FROM Employee
         ORDER BY EmpName
     """).fetchall()

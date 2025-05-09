@@ -22,6 +22,8 @@
 <div class="align-items-center justify-content-center">
     <p></p>
     <p><a href="{{ url_for('admin.manage_employees') }}" class="btn btn-abas btn-block btn-max-width-400" role="button">Manage Employees</a></p>
-    <!-- <p><a href="{{ url_for('admin.importCSV') }}" class="btn btn-abas btn-block btn-max-width-400" role="button">Import CSV Data</a></p> -->
+    {% if g.user.isSuperAdmin %}
+    <p><a href="{{ url_for('admin.importCSV') }}" class="btn btn-abas btn-block btn-max-width-400" role="button">Import CSV Data</a></p>
+    {% endif %}
 </div>
 {% endblock %}
