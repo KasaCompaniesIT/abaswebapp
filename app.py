@@ -21,15 +21,15 @@ def home():
 def manifest():
     return app.send_from_directory('static', 'manifest.json')
 
-# from . import db
+import db
 
-from . import auth
+import auth
 app.register_blueprint(auth.bp)
 
-from . import admin
+import admin
 app.register_blueprint(admin.bp)
 
-from . import timesheet
+import timesheet
 app.register_blueprint(timesheet.bp)
 # app.add_url_rule('/timesheet', endpoint='index')
 
