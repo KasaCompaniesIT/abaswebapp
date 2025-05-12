@@ -1,0 +1,36 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        GIT_REPO: https://github.com/KasaCompaniesIT/abaswebapp.git
+    container_name: flask_app
+    restart: unless-stopped
+    environment:
+      - FLASK_ENV=production
+      - ODBCINI=/etc/odbc.ini
+    volumes:
+      - ./odbc/odbc.ini:/etc/odbc.ini:ro
+      - ./app:/app  # Mount local source code
+    networks:
+      - app-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./certs:/etc/nginx/certs
+    depends_on:
+      - app
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
