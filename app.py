@@ -21,7 +21,7 @@ def home():
 def manifest():
     return app.send_from_directory('static', 'manifest.json')
 
-from . import db
+# from . import db
 
 from . import auth
 app.register_blueprint(auth.bp)
