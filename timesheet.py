@@ -2,6 +2,8 @@ import csv
 import os
 import pandas as pd
 import pyodbc
+import requests
+
 from datetime import datetime, timedelta, date
 
 from flask import (
@@ -357,13 +359,13 @@ def save_entry():
     work_slip_id = data.get('workSlipID')
     hours_worked = data.get('hoursWorked')
 
-    # Generate a unique file name using a timestamp
-    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')  # Format: YYYYMMDDHHMMSS
-    unique_file_name = f"jobtime_{abas_id}_{timestamp}.csv"
+    # # Generate a unique file name using a timestamp
+    # timestamp = datetime.now().strftime('%Y%m%d%H%M%S')  # Format: YYYYMMDDHHMMSS
+    # unique_file_name = f"jobtime_{abas_id}_{timestamp}.csv"
 
-    # Define the network location for the CSV file
-    #network_path = os.path.join(r"\\abas\keserp\LABOR_IMPORT\\", unique_file_name)  # Replace with your actual network path
-    network_path = os.path.join(ABAS_SERVER, unique_file_name)  # Replace with your actual network path
+    # # Define the network location for the CSV file
+    # #network_path = os.path.join(r"\\abas\keserp\LABOR_IMPORT\\", unique_file_name)  # Replace with your actual network path
+    # network_path = os.path.join(ABAS_SERVER, unique_file_name)  # Replace with your actual network path
 
     try:
         db = get_db()
@@ -396,16 +398,42 @@ def save_entry():
         # Convert the pyodbc.Row object to a dictionary
         new_entry_dict = dict(zip([column[0] for column in dbc.description], new_entry))
 
-        # Write the new entry to the CSV file
-        with open(network_path, mode='w', newline='', encoding='utf-8') as csvfile:
-            csv_writer = csv.writer(csvfile)
-            # Write the header
-            csv_writer.writerow(['AbasID', 'Date', 'WorkSlipID', 'HoursWorked'])
-            # Write the new entry
-            csv_writer.writerow([abas_id, selected_date, work_slip_id, hours_worked])
+        # Define the API endpoint
+        url = "http://abas.kasa.kasacontrols.com:8000/jobtime_entry"
 
-        db.commit()
-        return jsonify({'success': True, 'data': new_entry_dict}), 200
+        workdate = datetime.strptime(selected_date, '%m/%d/%y').date()
+
+        # Define the payload
+        payload = {
+            "EmpID": abas_id,
+            "WorkDate": workdate.strftime('%m/%d/%y'),  # Format the date as MM/DD/YY
+            "WSNumber": work_slip_id,
+            "HoursWorked": hours_worked
+        }
+
+        # Send the POST request
+        response = requests.post(url, json=payload)
+
+        # Check the response
+        if response.status_code == 200:
+            # Delete the entry from the database
+            print("CSV file sent successfully!")
+            db.commit()
+            return jsonify({'success': True, 'data': new_entry_dict}), 200            
+        else:            
+            print(f"Failed to create CSV. Status code: {response.status_code}, Response: {response.text}")
+            db.rollback()
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+        # # Write the new entry to the CSV file
+        # with open(network_path, mode='w', newline='', encoding='utf-8') as csvfile:
+        #     csv_writer = csv.writer(csvfile)
+        #     # Write the header
+        #     csv_writer.writerow(['AbasID', 'Date', 'WorkSlipID', 'HoursWorked'])
+        #     # Write the new entry
+        #     csv_writer.writerow([abas_id, selected_date, work_slip_id, hours_worked])
+
+
     except Exception as e:
         db.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -437,24 +465,45 @@ def delete_time_entry(time_entry_id):
         work_slip_id = entry.WSNumber
         hours_worked = 0 # entry.TimeWorked
 
-        # Generate a unique file name using a timestamp
-        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')  # Format: YYYYMMDDHHMMSS
-        unique_file_name = f"jobtime_{abas_id}_{timestamp}.csv"
+        # Define the API endpoint
+        url = "http://abas.kasa.kasacontrols.com:8000/jobtime_entry"
 
-        # Define the network location for the CSV file        
-        network_path = os.path.join(ABAS_SERVER, unique_file_name)  # Replace with your actual network path
+        # Define the payload
+        payload = {
+            "EmpID": abas_id,
+            "WorkDate": selected_date.strftime('%m/%d/%y'),  # Format the date as MM/DD/YY
+            "WSNumber": work_slip_id,
+            "HoursWorked": hours_worked
+        }
 
-        # Write the negated entry to the CSV file
-        with open(network_path, mode='w', newline='', encoding='utf-8') as csvfile:
-            csv_writer = csv.writer(csvfile)
-            # Write the header
-            csv_writer.writerow(['AbasID', 'Date', 'WorkSlipID', 'HoursWorked'])
-            # Write the negated entry
-            csv_writer.writerow([abas_id, selected_date, work_slip_id, hours_worked])  # Negate the hours
+        # Send the POST request
+        response = requests.post(url, json=payload)
 
-        # Delete the entry from the database
-        dbc.execute("DELETE FROM TimeEntry WHERE EntryID = ?", (time_entry_id,))
-        db.commit()
+        # Check the response
+        if response.status_code == 200:
+            # Delete the entry from the database
+            dbc.execute("DELETE FROM TimeEntry WHERE EntryID = ?", (time_entry_id,))
+            db.commit()
+            print("CSV file sent successfully!")
+        else:
+            print(f"Failed to create CSV. Status code: {response.status_code}, Response: {response.text}")
+
+        # # Generate a unique file name using a timestamp
+        # timestamp = datetime.now().strftime('%Y%m%d%H%M%S')  # Format: YYYYMMDDHHMMSS
+        # unique_file_name = f"jobtime_{abas_id}_{timestamp}.csv"
+
+        # # Define the network location for the CSV file        
+        # network_path = os.path.join(ABAS_SERVER, unique_file_name)  # Replace with your actual network path
+
+        # # Write the negated entry to the CSV file
+        # with open(network_path, mode='w', newline='', encoding='utf-8') as csvfile:
+        #     csv_writer = csv.writer(csvfile)
+        #     # Write the header
+        #     csv_writer.writerow(['AbasID', 'Date', 'WorkSlipID', 'HoursWorked'])
+        #     # Write the negated entry
+        #     csv_writer.writerow([abas_id, selected_date, work_slip_id, hours_worked])  # Negate the hours
+
+
 
         return jsonify({'success': True}), 200
     except Exception as e:
