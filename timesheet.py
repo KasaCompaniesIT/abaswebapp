@@ -12,7 +12,7 @@ from flask import (
 from werkzeug.exceptions import abort, Unauthorized, Forbidden, NotFound
 from auth import login_required
 from db import get_db
-from config import ABAS_SERVER
+#from config import ABAS_SERVER
 
 
 bp = Blueprint('timesheet', __name__)
