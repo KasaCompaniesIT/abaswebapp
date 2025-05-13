@@ -1,0 +1,2 @@
+# Use Microsoft ODBC Driver for SQL Server in all environments
+DB_URL = 'DRIVER={DB Driver Name};SERVER=fqdn.server.name;DATABASE=dbname;UID=username;PWD=password;Encrypt=no;'
