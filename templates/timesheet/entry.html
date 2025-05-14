@@ -360,7 +360,11 @@
             .then(response => response.json())
             .then(data => {
                 const projectDropdown = document.getElementById('projectDropdown');
+                const workOrderDropdown = document.getElementById('workOrderDropdown');
+                const workSlipDropdown = document.getElementById('workSlipDropdown');
                 projectDropdown.innerHTML = ''; // Clear existing options
+                workOrderDropdown.innerHTML = ''; // Clear existing options
+                workSlipDropdown.innerHTML = ''; // Clear existing options
 
                 data.projects.forEach(project => {
                     const option = document.createElement('option');
@@ -632,7 +636,9 @@
                 .then(response => response.json())
                 .then(data => {
                     const workOrderDropdown = document.getElementById('workOrderDropdown');
+                    const workSlipDropdown = document.getElementById('workSlipDropdown');
                     workOrderDropdown.innerHTML = ''; // Clear existing options
+                    workSlipDropdown.innerHTML = ''; // Clear existing options
 
                     if (data.workOrders && data.workOrders.length > 0) {
                         // Populate the dropdown with work orders
@@ -782,6 +788,7 @@
                                 noDataMessage.textContent = 'No data available for this date.';
                                 cardBody.appendChild(noDataMessage);
                             }
+                            showSnackbar('Time entry deleted successfully!');
                         } else {
                             alert('Failed to delete time entry.');
                         }
@@ -835,6 +842,7 @@
                                 noDataMessage.textContent = 'No data available for this date.';
                                 cardBody.appendChild(noDataMessage);
                             }
+                            showSnackbar('Time entry deleted successfully!');
                         } else {
                             alert('Failed to delete time entry.');
                         }
@@ -902,6 +910,7 @@
                     // addTimeModal.hide();
 
                     // alert('Time entry added successfully.');
+                    showSnackbar('Time entry added successfully!');
                 } else {
                     alert('Failed to add time entry: ' + result.error);
                 }

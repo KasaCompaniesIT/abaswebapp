@@ -627,3 +627,38 @@ a { color: #009FAA; }
     border-radius: 50%;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
 }
+
+
+
+#snackbar {
+    visibility: hidden;
+    min-width: 250px;
+    margin-left: -125px;
+    /* background-color: #333; */
+    /* color: #fff; */
+    background-color: #009FAA; /* Match the primary color */
+    color: #212529; /* White text on hover */
+    text-align: center;
+    border-radius: 2px;
+    padding: 16px;
+    position: fixed;
+    z-index: 1100; /* Higher than Bootstrap modal (1050) */
+    left: 50%;
+    top: 16px; /* Position it above the modal */
+    font-size: 18px;
+}
+
+#snackbar.show {
+    visibility: visible;
+    animation: fadein 0.5s, fadeout 0.5s 2.5s;
+}
+
+@keyframes fadein {
+    from {top: 0; opacity: 0;}
+    to {top: 16px; opacity: 1;}
+}
+
+@keyframes fadeout {
+    from {top: 16px; opacity: 1;}
+    to {top: 0; opacity: 0;}
+}

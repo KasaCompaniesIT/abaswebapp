@@ -67,7 +67,7 @@
         {% block content %}{% endblock %}
     </section>
   </div>   
-  
+  <div id="snackbar"></div>
   
   {% block footer %}
   <footer class="bg-dark text-muted text-center py-3 mt-4 border-top">
@@ -85,6 +85,17 @@
   <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/ajax-bootstrap-select/1.4.5/js/ajax-bootstrap-select.min.js" integrity="sha512-HExUHcDgB9r00YwaaDe5z9lTFmTChuW9lDkPEnz+6/I26/mGtwg58OHI324cfqcnejphCl48MHR3SFQzIGXmOA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script> -->
   <script src="https://cdn.jsdelivr.net/npm/use-bootstrap-select@2.2.1/dist/use-bootstrap-select.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script>
+    function showSnackbar(message) {
+      const snackbar = document.getElementById('snackbar');
+      snackbar.textContent = message;
+      snackbar.className = 'show';
+      setTimeout(() => {
+            snackbar.className = snackbar.className.replace('show', '');
+        }, 3000);
+    }
+  </script>
+
   {% block script %} {% endblock %}
 </body>
 
