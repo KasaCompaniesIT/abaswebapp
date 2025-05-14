@@ -1,0 +1,14 @@
+Time Entry WebApp Todo:
+
+x*Add time to current week only
+x*Export time to xls and copy to abas server
+
+x*Highlight current day
+x*Highlight holidays
+x*Add today button
+x*Add login for users
+x*fix error when going back to a date with not time
+
+*Finalize Payroll Time screen
+*Export Payroll time to abas api server
+*Update api server to handle payroll data
