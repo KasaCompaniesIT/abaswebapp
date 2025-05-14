@@ -4,7 +4,7 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Publish to webserver",
+            "label": "OLD - Publish to webserver",
             "type": "shell",
             "command": "robocopy ./ //abas-webapp/abaswebapp$/ *.* /E /R:0 /XD '.venv' '.vscode' '.git'",
             "problemMatcher": []
