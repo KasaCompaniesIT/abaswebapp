@@ -10,5 +10,6 @@ x*Add login for users
 x*fix error when going back to a date with not time
 
 *Finalize Payroll Time screen
+x*If E1 salary, only show up to 40 hours
 *Export Payroll time to abas api server
 *Update api server to handle payroll data

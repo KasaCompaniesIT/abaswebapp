@@ -433,6 +433,34 @@
                                         <td>${entryHours.toFixed(2)}</td>
                                     </tr>
                                 `;
+                            } else if (cumulativeHours + entryHours > 40 && salaryPlusStart == 0) {
+                                // Entry crosses the 40-hour mark but is within the salary plus threshold
+                                const remainingHoursTo40 = Math.max(0, 40 - cumulativeHours); // Hours needed to reach 40
+                                const hoursBeyond40 = entryHours - remainingHoursTo40; // Remaining hours beyond 40
+                            
+                                console.log("Remaining Hours to 40:", remainingHoursTo40); // Debugging
+                                console.log("Hours Beyond 40:", hoursBeyond40); // Debugging
+                            
+                                // First row: Hours up to 40
+                                if (remainingHoursTo40 > 0) {
+                                    rowHTML = `
+                                        <tr>
+                                            <td>${entry.WorkDate}</td>
+                                            <td>${entry.WSNumber} - ${entry.OpName}</td>
+                                            <td>
+                                                <select name="paychex_code_${entry.EntryID}_1" class="form-control">
+                                                    ${payrollPaychex_list.map(paychex => `
+                                                        <option value="${paychex.id}" ${paychex.code === 'E1' ? 'selected' : ''}>
+                                                            ${paychex.code} - ${paychex.description}
+                                                        </option>
+                                                    `).join('')}
+                                                </select>
+                                            </td>
+                                            <td>${remainingHoursTo40.toFixed(2)}</td>
+                                        </tr>
+                                    `;
+                                }
+                            
                             } else if (cumulativeHours + entryHours > 40 && cumulativeHours + entryHours <= salaryPlusStart) {
                                 // Entry crosses the 40-hour mark but is within the salary plus threshold
                                 const remainingHoursTo40 = Math.max(0, 40 - cumulativeHours); // Hours needed to reach 40
@@ -587,7 +615,7 @@
                                             <td>
                                                 <select name="paychex_code_${entry.EntryID}_2" class="form-control">
                                                     ${payrollPaychex_list.map(paychex => `
-                                                        <option value="${paychex.id}" ${paychex.code === 'E2' ? 'selected' : ''}>
+                                                        <option value="${paychex.id}" ${paychex.code === 'E51' ? 'selected' : ''}>
                                                             ${paychex.code} - ${paychex.description}
                                                         </option>
                                                     `).join('')}
@@ -606,7 +634,7 @@
                                         <td>
                                             <select name="paychex_code_${entry.EntryID}" class="form-control">
                                                 ${payrollPaychex_list.map(paychex => `
-                                                    <option value="${paychex.id}" ${paychex.code === 'E2' ? 'selected' : ''}>
+                                                    <option value="${paychex.id}" ${paychex.code === 'E51' ? 'selected' : ''}>
                                                         ${paychex.code} - ${paychex.description}
                                                     </option>
                                                 `).join('')}
