@@ -86,14 +86,23 @@
   <script src="https://cdn.jsdelivr.net/npm/use-bootstrap-select@2.2.1/dist/use-bootstrap-select.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script>
-    function showSnackbar(message) {
+    function showSnackbar(message, type = 'success') {
       const snackbar = document.getElementById('snackbar');
+  
+      // Set the message
       snackbar.textContent = message;
-      snackbar.className = 'show';
+  
+      // Remove any existing type classes
+      snackbar.className = '';
+  
+      // Add the base class and the type-specific class
+      snackbar.classList.add('show', type);
+  
+      // Automatically hide the snackbar after 3 seconds
       setTimeout(() => {
-            snackbar.className = snackbar.className.replace('show', '');
-        }, 3000);
-    }
+          snackbar.className = snackbar.className.replace('show', '').trim();
+      }, 3000);
+  }
   </script>
 
   {% block script %} {% endblock %}

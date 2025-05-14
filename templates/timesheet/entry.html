@@ -788,9 +788,9 @@
                                 noDataMessage.textContent = 'No data available for this date.';
                                 cardBody.appendChild(noDataMessage);
                             }
-                            showSnackbar('Time entry deleted successfully!');
+                            showSnackbar('Time entry deleted successfully!', 'success');
                         } else {
-                            alert('Failed to delete time entry.');
+                            showSnackbar('Failed to delete time entry.', 'error');
                         }
                     })
                     .catch(error => console.error('Error deleting time entry:', error));
@@ -844,7 +844,7 @@
                             }
                             showSnackbar('Time entry deleted successfully!');
                         } else {
-                            alert('Failed to delete time entry.');
+                            showSnackbar('Failed to delete time entry.', 'error');
                         }
                     })
                     .catch(error => console.error('Error deleting time entry:', error));
@@ -910,9 +910,10 @@
                     // addTimeModal.hide();
 
                     // alert('Time entry added successfully.');
-                    showSnackbar('Time entry added successfully!');
+                    showSnackbar('Time entry added successfully!', 'success');
                 } else {
-                    alert('Failed to add time entry: ' + result.error);
+                    //alert('Failed to add time entry: ' + result.error);
+                    showSnackbar(result.error, 'error');
                 }
             })
             .catch(error => console.error('Error adding time entry:', error));

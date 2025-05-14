@@ -374,7 +374,7 @@ def save_entry():
         ).fetchone()
 
         if existing_entry:
-            return jsonify({'success': False, 'error': 'An entry for this day and work slip already exists.'}), 400
+            return jsonify({'success': False, 'error': 'An entry for this day and operation already exists.'}), 400
 
         # Insert the new time entry and fetch the inserted ID
         new_entry_id = dbc.execute(
@@ -428,7 +428,7 @@ def save_entry():
         else:
             print(f"Failed to create CSV. Status code: {response.status_code}, Response: {response.text}")
             db.rollback()
-            return jsonify({'success': False, 'error': 'Failed to send data to the external API.'}), 500
+            return jsonify({'success': False, 'error': 'Failed to send data to the Abas server.'}), 500
 
     except Exception as e:
         db.rollback()
