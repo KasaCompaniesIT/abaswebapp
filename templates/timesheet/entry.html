@@ -140,7 +140,7 @@
                 </div>
             </div>
         </div>
-        {% set nswk.total_hours = nswk.total_hours + ns.total_hours %}
+        {% set nswk.total_hours = nswk.total_hours|float + ns.total_hours|float %}
         {% endfor %}
 
         <button id="addTimeButton" class="btn btn-abas btn-floating" title="Add Time" 
