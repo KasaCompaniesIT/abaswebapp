@@ -564,8 +564,10 @@ def get_time_entries():
         # Fetch time entries for the given date range
         time_entries = dbc.execute(
             """
-            SELECT EntryID, WorkDate, WSNumber, TimeWorked
-            FROM TimeEntry
+            SELECT EntryID, WorkDate, t.WSNumber, TimeWorked, OpName, OpNameExtended
+            FROM TimeEntry t 
+            INNER JOIN WorkSlips w ON t.WSNumber = w.WSNumber 
+            INNER JOIN Operations o ON w.OpID = o.OpID
             WHERE EmpID = ? AND WorkDate BETWEEN ? AND ?
             ORDER BY WorkDate
             """,
@@ -585,8 +587,10 @@ def get_time_entries():
 
             time_entries_list.append({
                 "EntryID": entry.EntryID,
-                "WorkDate": datetime.strptime(entry.WorkDate, '%Y-%m-%d').strftime('%m/%d/%y'),  # Format the date as MM/DD/YY,
+                "WorkDate": entry.WorkDate.strftime('%m/%d/%y'),  # Format the date as MM/DD/YY,
                 "WSNumber": entry.WSNumber,
+                "OpName": entry.OpName,
+                "OpNameExtended": entry.OpNameExtended,
                 "tHoursWorked": entry.TimeWorked
             })
 

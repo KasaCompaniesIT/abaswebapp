@@ -251,6 +251,7 @@
                                 <thead>
                                     <tr>
                                         <th>Date</th>
+                                        <th>Operation</th>
                                         <th>Paychex Code</th>
                                         <th>Hours</th>
                                     </tr>
@@ -263,6 +264,7 @@
                                             {% if cumulative_hours <= 40 %}
                                                 <tr>
                                                     <td>{{ day | dateformat('%m/%d/%Y') }}</td> <!-- Add the date -->
+                                                    <td>{{ entry.WSNumber }} - {{ entry.OpName }}</td>
                                                     <td>
                                                         <select name="paychex_code_{{ entry.TimeEntryID }}" class="form-control">
                                                             {% for paychex in paychex_list %}
@@ -418,6 +420,7 @@
                                 rowHTML = `
                                     <tr>
                                         <td>${entry.WorkDate}</td>
+                                        <td>${entry.WSNumber} - ${entry.OpName}</td>
                                         <td>
                                             <select name="paychex_code_${entry.EntryID}" class="form-control">
                                                 ${payrollPaychex_list.map(paychex => `
@@ -432,7 +435,7 @@
                                 `;
                             } else if (cumulativeHours + entryHours > 40 && cumulativeHours + entryHours <= salaryPlusStart) {
                                 // Entry crosses the 40-hour mark but is within the salary plus threshold
-                                const remainingHoursTo40 = 40 - cumulativeHours; // Hours needed to reach 40
+                                const remainingHoursTo40 = Math.max(0, 40 - cumulativeHours); // Hours needed to reach 40
                                 const hoursBeyond40 = entryHours - remainingHoursTo40; // Remaining hours beyond 40
                             
                                 console.log("Remaining Hours to 40:", remainingHoursTo40); // Debugging
@@ -443,6 +446,7 @@
                                     rowHTML = `
                                         <tr>
                                             <td>${entry.WorkDate}</td>
+                                            <td>${entry.WSNumber} - ${entry.OpName}</td>
                                             <td>
                                                 <select name="paychex_code_${entry.EntryID}_1" class="form-control">
                                                     ${payrollPaychex_list.map(paychex => `
@@ -463,6 +467,7 @@
                                     rowHTML += `
                                         <tr>
                                             <td>${entry.WorkDate}</td>
+                                            <td>${entry.WSNumber} - ${entry.OpName}</td>
                                             <td>
                                                 <select name="paychex_code_${entry.EntryID}_2" class="form-control">
                                                     ${payrollPaychex_list.map(paychex => `
@@ -478,7 +483,7 @@
                                 }
                             } else if (cumulativeHours + entryHours > salaryPlusStart) {
                                 // Entry exceeds the salary plus threshold
-                                const remainingHoursToSalaryPlus = salaryPlusStart - cumulativeHours; // Hours to reach salary plus
+                                const remainingHoursToSalaryPlus = Math.max(0, salaryPlusStart - cumulativeHours); // Hours to reach salary plus
                                 const overtimeHours = Math.max(0, entryHours - remainingHoursToSalaryPlus); // Remaining hours beyond salary plus
                                 console.log("Salary Plus Start:", salaryPlusStart); // Debugging
                                 console.log("Remaining Hours to Salary Plus:", remainingHoursToSalaryPlus); // Debugging
@@ -489,6 +494,7 @@
                                     rowHTML = `
                                         <tr>
                                             <td>${entry.WorkDate}</td>
+                                            <td>${entry.WSNumber} - ${entry.OpName}</td>
                                             <td>
                                                 <select name="paychex_code_${entry.EntryID}_1" class="form-control">
                                                     ${payrollPaychex_list.map(paychex => `
@@ -508,6 +514,7 @@
                                     rowHTML += `
                                         <tr>
                                             <td>${entry.WorkDate}</td>
+                                            <td>${entry.WSNumber} - ${entry.OpName}</td>
                                             <td>
                                                 <select name="paychex_code_${entry.EntryID}_2" class="form-control">
                                                     ${payrollPaychex_list.map(paychex => `
@@ -533,6 +540,7 @@
                                 rowHTML = `
                                     <tr>
                                         <td>${entry.WorkDate}</td>
+                                        <td>${entry.WSNumber} - ${entry.OpName}</td>
                                         <td>
                                             <select name="paychex_code_${entry.EntryID}" class="form-control">
                                                 ${payrollPaychex_list.map(paychex => `
@@ -555,6 +563,7 @@
                                     rowHTML = `
                                         <tr>
                                             <td>${entry.WorkDate}</td>
+                                            <td>${entry.WSNumber} - ${entry.OpName}</td>
                                             <td>
                                                 <select name="paychex_code_${entry.EntryID}_1" class="form-control">
                                                     ${payrollPaychex_list.map(paychex => `
@@ -574,6 +583,7 @@
                                     rowHTML += `
                                         <tr>
                                             <td>${entry.WorkDate}</td>
+                                            <td>${entry.WSNumber} - ${entry.OpName}</td>
                                             <td>
                                                 <select name="paychex_code_${entry.EntryID}_2" class="form-control">
                                                     ${payrollPaychex_list.map(paychex => `
@@ -592,6 +602,7 @@
                                 rowHTML = `
                                     <tr>
                                         <td>${entry.WorkDate}</td>
+                                        <td>${entry.WSNumber} - ${entry.OpName}</td>
                                         <td>
                                             <select name="paychex_code_${entry.EntryID}" class="form-control">
                                                 ${payrollPaychex_list.map(paychex => `
