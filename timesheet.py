@@ -359,17 +359,23 @@ def save_entry():
     work_slip_id = data.get('workSlipID')
     hours_worked = data.get('hoursWorked')
 
-    # # Generate a unique file name using a timestamp
-    # timestamp = datetime.now().strftime('%Y%m%d%H%M%S')  # Format: YYYYMMDDHHMMSS
-    # unique_file_name = f"jobtime_{abas_id}_{timestamp}.csv"
-
-    # # Define the network location for the CSV file
-    # #network_path = os.path.join(r"\\abas\keserp\LABOR_IMPORT\\", unique_file_name)  # Replace with your actual network path
-    # network_path = os.path.join(ABAS_SERVER, unique_file_name)  # Replace with your actual network path
-
     try:
         db = get_db()
         dbc = db.cursor()
+
+        # Check if an entry for the same day and work slip already exists
+        existing_entry = dbc.execute(
+            """
+            SELECT EntryID
+            FROM TimeEntry
+            WHERE EmpID = ? AND WorkDate = ? AND WSNumber = ?
+            """,
+            (abas_id, selected_date, work_slip_id)
+        ).fetchone()
+
+        if existing_entry:
+            return jsonify({'success': False, 'error': 'An entry for this day and work slip already exists.'}), 400
+
         # Insert the new time entry and fetch the inserted ID
         new_entry_id = dbc.execute(
             """
@@ -416,23 +422,13 @@ def save_entry():
 
         # Check the response
         if response.status_code == 200:
-            # Delete the entry from the database
             print("CSV file sent successfully!")
             db.commit()
-            return jsonify({'success': True, 'data': new_entry_dict}), 200            
-        else:            
+            return jsonify({'success': True, 'data': new_entry_dict}), 200
+        else:
             print(f"Failed to create CSV. Status code: {response.status_code}, Response: {response.text}")
             db.rollback()
-            return jsonify({'success': False, 'error': str(e)}), 500
-
-        # # Write the new entry to the CSV file
-        # with open(network_path, mode='w', newline='', encoding='utf-8') as csvfile:
-        #     csv_writer = csv.writer(csvfile)
-        #     # Write the header
-        #     csv_writer.writerow(['AbasID', 'Date', 'WorkSlipID', 'HoursWorked'])
-        #     # Write the new entry
-        #     csv_writer.writerow([abas_id, selected_date, work_slip_id, hours_worked])
-
+            return jsonify({'success': False, 'error': 'Failed to send data to the external API.'}), 500
 
     except Exception as e:
         db.rollback()
