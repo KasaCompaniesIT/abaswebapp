@@ -712,6 +712,7 @@ a { color: #009FAA; }
 /* Add space between the table and the finalize button */
 #finalizeTimeModal .modal-body .text-right {
     margin-top: .5rem; /* Adjust the value as needed */
+<<<<<<< HEAD
 }
 
 .text-abas {
@@ -720,4 +721,6 @@ a { color: #009FAA; }
 
 .text-dark {
     color: #343a40; /* Darker color for contrast */
+=======
+>>>>>>> 7aef9648097588e1f365523effa3f14655a40b35
 }
