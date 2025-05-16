@@ -206,6 +206,16 @@ def entry():
                 for row in paychex_codes
             ]
 
+            # Check if the week has been finalized
+            week_finalized = dbc.execute(
+                """
+                SELECT 1
+                FROM ExportStatus
+                WHERE exportEmpID = ? AND exportWorkWeek = ?
+                """,
+                (abasUser.EmpID, startOfPrevWeek)
+            ).fetchone() is not None
+
             # Pass the data to the template
             return render_template('timesheet/entry.html',
                                     abasID=abas_ID,
@@ -216,7 +226,8 @@ def entry():
                                     timecard_data=timecard_data,
                                     today=today,
                                     can_add_or_finalize=can_add_or_finalize,
-                                    paychex_list=paychex_list
+                                    paychex_list=paychex_list,
+                                    week_finalized=week_finalized
             )
 
             # return render_template('timesheet/entry.html', abasID=abas_ID, abasUser=abasUser, startOfPrevWeek=startOfPrevWeek, endOfPrevWeek=endOfPrevWeek, dateRangePrevWeek=dateRangePrevWeek)
@@ -609,10 +620,12 @@ def payroll_export():
 
         # Get the JSON payload from the client
         data = request.get_json()
-
+        print("Received JSON data:", data)  # Debugging: Log the received data
+        
         # Define a mapping of Paychex codes to their values
         paychex_code_mapping = get_paychex_codes()
-
+        print("Paychex Code Mapping:", paychex_code_mapping)  # Debugging: Log the mapping
+        
         # Create a new copy of the JSON data with converted Paychex codes
         converted_data = {
             "abas_id": data.get("abas_id"),
@@ -620,20 +633,43 @@ def payroll_export():
             "time_entries": [
                 {
                     "date": entry["date"],
-                    "operation": entry["operation"],
-                    "paychexCode": paychex_code_mapping.get(entry["paychexCode"], entry["paychexCode"]),
+                    "paychexCode": paychex_code_mapping.get(int(entry["paychexCode"]), entry["paychexCode"]),  # Map PayID to PayChex code
                     "hours": entry["hours"]
                 }
                 for entry in data.get("time_entries", [])
             ]
         }
 
+        print("Converted JSON data:", converted_data)  # Debugging: Log the converted data
+
         # Forward the converted JSON data to the external API
         response = requests.post(external_api_url, json=converted_data)
+        print("Response from external API:", response.status_code, response.text)  # Debugging: Log the response
+
+        if response.status_code == 200:
+            # If the API call is successful, write an entry to the ExportStatus table
+            db = get_db()
+            dbc = db.cursor()
+
+            # Insert a new record into the ExportStatus table
+            export_date = datetime.now()  # Current date and time
+            export_work_week = datetime.strptime(data.get("start_date"), "%Y-%m-%d").date()  # Assuming start_date is passed in the payload
+
+            dbc.execute(
+                """
+                INSERT INTO ExportStatus (exportEmpID, exportDate, exportWorkWeek)
+                VALUES (?, ?, ?)
+                """,
+                (data.get("abas_id"), export_date, export_work_week)
+            )
+
+            db.commit()
+            print("ExportStatus entry added successfully.")
 
         # Return the response from the external API to the client
         return jsonify(response.json()), response.status_code
     except Exception as e:
+        print("Error during payroll export:", str(e))  # Debugging: Log the error
         return jsonify({'success': False, 'error': str(e)}), 500
 
 def get_paychex_codes():
@@ -641,16 +677,14 @@ def get_paychex_codes():
     dbc = db.cursor()
 
     paychex_codes = dbc.execute(
-        "SELECT PayID, PayChex, PayDescription FROM paychex ORDER BY PayChex"
+        "SELECT PayID, PayChex FROM paychex ORDER BY PayChex"
     ).fetchall()
 
-    # Convert Paychex codes to a list of dictionaries
-    paychex_list = [
-        {"id": row.PayID, "code": row.PayChex, "description": row.PayDescription}
-        for row in paychex_codes
-    ]
+    # Convert PayID to PayChex code mapping
+    paychex_mapping = {row.PayID: row.PayChex for row in paychex_codes}
 
-    return paychex_list
+    return paychex_mapping
+
 
 def lookup_paychex_id(paychex_id):
     db = get_db()

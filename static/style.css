@@ -679,3 +679,45 @@ a { color: #009FAA; }
     from {top: 16px; opacity: 1;}
     to {top: 0; opacity: 0;}
 }
+
+/* Remove block display from tbody */
+.modal-body .table-responsive tbody {
+    max-height: none; /* Remove height restriction from tbody */
+    overflow-y: visible; /* Allow natural table layout */
+}
+
+/* Make the entire table scrollable */
+.modal-body .table-responsive {
+    max-height: 600px; /* Restrict the height of the table container */
+    overflow-y: auto; /* Enable vertical scrolling */
+}
+
+/* Ensure the table columns auto-adjust their width */
+#finalizeTimeModal .table {
+    font-size: 0.85rem; /* Adjust font size */
+    table-layout: auto; /* Allow columns to adjust width based on content */
+    width: 100%; /* Ensure the table spans the full width */
+}
+
+#finalizeTimeModal .table td,
+#finalizeTimeModal .table th {
+    padding: 0.2rem; /* Adjust padding for better spacing */
+    vertical-align: middle; /* Align content vertically */
+}
+
+#finalizeTimeModal .table thead th {
+    font-weight: bold; /* Keep header bold for readability */
+}
+
+/* Add space between the table and the finalize button */
+#finalizeTimeModal .modal-body .text-right {
+    margin-top: .5rem; /* Adjust the value as needed */
+}
+
+.text-abas {
+    color: #009FAA; /* Your primary color */
+}
+
+.text-dark {
+    color: #343a40; /* Darker color for contrast */
+}
