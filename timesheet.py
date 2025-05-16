@@ -599,3 +599,67 @@ def get_time_entries():
     except Exception as e:
         print("Error fetching time entries:", str(e))  # Debugging: Log the error
         return jsonify({"success": False, "error": str(e)}), 500    
+
+
+@bp.route('/timesheet/payroll_export', methods=['POST'])
+def payroll_export():
+    try:
+        # Define the external API URL
+        external_api_url = "http://abas.kasa.kasacontrols.com:8000/payroll_import"
+
+        # Get the JSON payload from the client
+        data = request.get_json()
+
+        # Define a mapping of Paychex codes to their values
+        paychex_code_mapping = get_paychex_codes()
+
+        # Create a new copy of the JSON data with converted Paychex codes
+        converted_data = {
+            "abas_id": data.get("abas_id"),
+            "total_hours": data.get("total_hours"),
+            "time_entries": [
+                {
+                    "date": entry["date"],
+                    "operation": entry["operation"],
+                    "paychexCode": paychex_code_mapping.get(entry["paychexCode"], entry["paychexCode"]),
+                    "hours": entry["hours"]
+                }
+                for entry in data.get("time_entries", [])
+            ]
+        }
+
+        # Forward the converted JSON data to the external API
+        response = requests.post(external_api_url, json=converted_data)
+
+        # Return the response from the external API to the client
+        return jsonify(response.json()), response.status_code
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+def get_paychex_codes():
+    db = get_db()
+    dbc = db.cursor()
+
+    paychex_codes = dbc.execute(
+        "SELECT PayID, PayChex, PayDescription FROM paychex ORDER BY PayChex"
+    ).fetchall()
+
+    # Convert Paychex codes to a list of dictionaries
+    paychex_list = [
+        {"id": row.PayID, "code": row.PayChex, "description": row.PayDescription}
+        for row in paychex_codes
+    ]
+
+    return paychex_list
+
+def lookup_paychex_id(paychex_id):
+    db = get_db()
+    dbc = db.cursor()
+
+    paychex_code = dbc.execute(
+        "SELECT PayID, PayChex, PayDescription FROM paychex WHERE PayID = ? ORDER BY PayChex", paychex_id
+    ).fetchone()
+
+    paycode = paychex_code.PayChex if paychex_code else None
+
+    return paycode
