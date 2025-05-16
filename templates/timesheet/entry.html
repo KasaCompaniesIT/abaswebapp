@@ -142,18 +142,19 @@
         </div>
         {% set nswk.total_hours = nswk.total_hours|float + ns.total_hours|float %}
         {% endfor %}
-
-        <button id="addTimeButton" class="btn btn-abas btn-floating" title="Add Time" 
-            {% if not can_add_or_finalize %} disabled {% endif %}>
-            <i class="fas fa-plus"></i>
-        </button>
-
-        <button id="finalizeTimeButton" class="btn btn-abas btn-floating2" title="Finalize Payroll Time" 
-            {% if not can_add_or_finalize %} disabled {% endif %}>
-            <i class="fas fa-check"></i>
-        </button>
-
     </div>
+
+    <button id="addTimeButton" class="btn btn-abas btn-floating" title="Add Time" 
+        {% if not can_add_or_finalize %} disabled {% endif %}
+        {% if week_finalized %} disabled {% endif %}>
+        <i class="fas fa-plus"></i>
+    </button>
+
+    <button id="finalizeTimeButton" class="btn btn-abas btn-floating2" title="Finalize Payroll Time" 
+        {% if not can_add_or_finalize %} disabled {% endif %}
+        {% if week_finalized %} disabled {% endif %}>
+        <i class="fas fa-check"></i>
+    </button>
 
     <!-- Add Time Modal -->
     <div class="modal fade" id="addTimeModal" data-backdrop="static" data-keyboard="false" tabindex="-1" aria-labelledby="addTimeModalLabel" aria-hidden="true">
@@ -247,8 +248,8 @@
                 <div class="modal-body">
                     <form id="finalizeTimeForm" method="post" action="{{ url_for('timesheet.finalize_time') }}">
                         <div class="table-responsive">
-                            <table class="table table-bordered">
-                                <thead>
+                            <table class="table table-bordered" id="finalizeTimeTable">
+                                <thead class="thead-dark">
                                     <tr>
                                         <th>Date</th>
                                         <th>Operation</th>
@@ -257,7 +258,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    
+                                    <!-- Table rows will be dynamically populated here -->
                                 </tbody>
                                 <tfoot>
                                     <tr>
@@ -270,7 +271,7 @@
                             </table>
                         </div>
                         <div class="text-right">
-                            <button type="submit" class="btn btn-abas">Finalize</button>
+                            <button id="finalizeTimeModalButton" type="submit" class="btn btn-abas">Finalize</button>
                         </div>
                     </form>
                 </div>
@@ -707,10 +708,12 @@
     
         // Get the abas_id from the hidden input field
         const abasID = document.getElementById('abasIDInput').value;
-    
+        const startDate = document.getElementById('startDateInput').value;
+
         // Create the JSON payload
         const jsonData = JSON.stringify({
             abas_id: abasID,
+            start_date: startDate,
             total_hours: totalHours.toFixed(2), // Include total hours
             time_entries: finalizeData
         });
@@ -727,6 +730,26 @@
             .then(result => {
                 if (result.success) {
                     showSnackbar('Time data finalized successfully!', 'success');
+                    // Disable the finalize button and Add Time button
+                    document.getElementById('finalizeTimeModalButton').disabled = true;
+                    document.getElementById('finalizeTimeButton').disabled = true;
+                    document.getElementById('addTimeButton').disabled = true;
+
+
+                    console.log('Closing modal...');
+                    // Close the Finalize Time Modal
+                    $('#finalizeTimeModal').modal('hide');
+
+                    // Fallback: Force hide the modal if it doesn't close
+                    const modalElement = document.getElementById('finalizeTimeModal');
+                    if ($(modalElement).is(':visible')) {
+                        console.log('Forcing modal to hide...');
+                        modalElement.classList.remove('show');
+                        modalElement.style.display = 'none';
+                        document.body.classList.remove('modal-open');
+                        document.querySelector('.modal-backdrop').remove();
+                    }
+                                                          
                 } else {
                     showSnackbar('Failed to finalize time data: ' + result.error, 'error');
                 }
@@ -860,61 +883,61 @@
 
     // Event listener for time entry deletion
     document.addEventListener('DOMContentLoaded', function () {
-    // Add event listener to all delete buttons
-    document.querySelectorAll('.delete-entry-btn').forEach(button => {
-        button.addEventListener('click', function () {
-            const timeEntryID = this.getAttribute('data-timeentryid');
+        // Add event listener to all delete buttons
+        document.querySelectorAll('.delete-entry-btn').forEach(button => {
+            button.addEventListener('click', function () {
+                const timeEntryID = this.getAttribute('data-timeentryid');
 
-            if (confirm('Are you sure you want to delete this time entry?')) {
-                // Send a request to delete the time entry
-                fetch(`/timesheet/entry/delete/${timeEntryID}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ id: timeEntryID }),
-                })
-                    .then(response => {
-                        if (response.ok) {
-                            // Remove the time entry from the UI
-                            const timeEntryElement = this.closest('.time-entry');
-                            const cardBody = timeEntryElement.closest('.card-body');
-                            const cardFooter = cardBody.nextElementSibling; // Assuming footer is the next sibling
-                            const totalHoursElement = cardFooter.querySelector('.font-weight-bold');
-
-                            // Get the hours of the deleted entry
-                            const deletedHours = parseFloat(
-                                timeEntryElement.querySelector('.badge').textContent
-                            );
-
-                            // Remove the time entry from the UI
-                            timeEntryElement.remove();
-
-                            // Update the total hours in the card footer
-                            const currentTotal = parseFloat(totalHoursElement.textContent) || 0;
-                            const newTotal = currentTotal - deletedHours;
-                            totalHoursElement.textContent = newTotal.toFixed(2);
-
-                            // Recalculate the total hours for the floating badge
-                            updateTotalHours();
-
-                            // Check if the card is now empty
-                            if (cardBody.querySelectorAll('.time-entry').length === 0) {
-                                // Add a "No data available" message
-                                const noDataMessage = document.createElement('p');
-                                noDataMessage.textContent = 'No data available for this date.';
-                                cardBody.appendChild(noDataMessage);
-                            }
-                            showSnackbar('Time entry deleted successfully!', 'success');
-                        } else {
-                            showSnackbar('Failed to delete time entry.', 'error');
-                        }
+                if (confirm('Are you sure you want to delete this time entry?')) {
+                    // Send a request to delete the time entry
+                    fetch(`/timesheet/entry/delete/${timeEntryID}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ id: timeEntryID }),
                     })
-                    .catch(error => console.error('Error deleting time entry:', error));
-            }
+                        .then(response => {
+                            if (response.ok) {
+                                // Remove the time entry from the UI
+                                const timeEntryElement = this.closest('.time-entry');
+                                const cardBody = timeEntryElement.closest('.card-body');
+                                const cardFooter = cardBody.nextElementSibling; // Assuming footer is the next sibling
+                                const totalHoursElement = cardFooter.querySelector('.font-weight-bold');
+
+                                // Get the hours of the deleted entry
+                                const deletedHours = parseFloat(
+                                    timeEntryElement.querySelector('.badge').textContent
+                                );
+
+                                // Remove the time entry from the UI
+                                timeEntryElement.remove();
+
+                                // Update the total hours in the card footer
+                                const currentTotal = parseFloat(totalHoursElement.textContent) || 0;
+                                const newTotal = currentTotal - deletedHours;
+                                totalHoursElement.textContent = newTotal.toFixed(2);
+
+                                // Recalculate the total hours for the floating badge
+                                updateTotalHours();
+
+                                // Check if the card is now empty
+                                if (cardBody.querySelectorAll('.time-entry').length === 0) {
+                                    // Add a "No data available" message
+                                    const noDataMessage = document.createElement('p');
+                                    noDataMessage.textContent = 'No data available for this date.';
+                                    cardBody.appendChild(noDataMessage);
+                                }
+                                showSnackbar('Time entry deleted successfully!', 'success');
+                            } else {
+                                showSnackbar('Failed to delete time entry.', 'error');
+                            }
+                        })
+                        .catch(error => console.error('Error deleting time entry:', error));
+                }
+            });
         });
     });
-});
 
     // Function to attach delete event to dynamically created buttons
     function attachDeleteEvent(button) {
