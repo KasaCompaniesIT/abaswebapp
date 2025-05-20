@@ -1,4 +1,6 @@
+from collections import defaultdict
 import csv
+import decimal
 import os
 import pandas as pd
 import pyodbc
@@ -375,67 +377,22 @@ def save_entry():
         dbc = db.cursor()
 
         # Check if an entry for the same day and work slip already exists
-        existing_entry = dbc.execute(
-            """
-            SELECT EntryID
-            FROM TimeEntry
-            WHERE EmpID = ? AND WorkDate = ? AND WSNumber = ?
-            """,
-            (abas_id, selected_date, work_slip_id)
-        ).fetchone()
+        existing_entry = get_time_entry(abas_id, selected_date, work_slip_id)
 
         if existing_entry:
             return jsonify({'success': False, 'error': 'An entry for this day and operation already exists.'}), 400
 
-        # Insert the new time entry and fetch the inserted ID
-        new_entry_id = dbc.execute(
-            """
-            INSERT INTO TimeEntry (EmpID, WorkDate, WSNumber, TimeWorked)
-            OUTPUT INSERTED.EntryID
-            VALUES (?, ?, ?, ?)
-            """,
-            (abas_id, selected_date, work_slip_id, hours_worked)
-        ).fetchone()[0]
-
-        # Fetch the newly added entry for the response
-        new_entry = dbc.execute(
-            """
-            SELECT t.EntryID AS TimeEntryID, t.WSNumber, ws.WSDescription, o.OpName, o.OpNameExtended, t.TimeWorked AS tHoursWorked
-            FROM TimeEntry t
-            INNER JOIN WorkSlips ws ON t.WSNumber = ws.WSNumber
-            INNER JOIN Operations o ON ws.OpID = o.OpID
-            WHERE t.EntryID = ?
-            """,
-            (new_entry_id,)
-        ).fetchone()
+        new_entry = create_time_entry(abas_id, selected_date, work_slip_id, hours_worked)
 
         if not new_entry:
             raise ValueError("Failed to fetch the newly added time entry.")
 
-        # Convert the pyodbc.Row object to a dictionary
-        new_entry_dict = dict(zip([column[0] for column in dbc.description], new_entry))
+        # new_entry is already a dict!
+        response = send_timeentry_csv_to_abas(abas_id, selected_date, work_slip_id, hours_worked)
 
-        # Define the API endpoint
-        url = "http://abas.kasa.kasacontrols.com:8000/jobtime_entry"
-
-        workdate = datetime.strptime(selected_date, '%m/%d/%y').date()
-
-        # Define the payload
-        payload = {
-            "EmpID": abas_id,
-            "WorkDate": workdate.strftime('%m/%d/%y'),  # Format the date as MM/DD/YY
-            "WSNumber": work_slip_id,
-            "HoursWorked": hours_worked
-        }
-
-        # Send the POST request
-        response = requests.post(url, json=payload)
-
-        # Check the response
         if response.status_code == 200:
             print("CSV file sent successfully!")
-            db.commit()
-            return jsonify({'success': True, 'data': new_entry_dict}), 200
+            return jsonify({'success': True, 'data': new_entry}), 200
         else:
             print(f"Failed to create CSV. Status code: {response.status_code}, Response: {response.text}")
             db.rollback()
@@ -443,6 +400,7 @@ def save_entry():
 
     except Exception as e:
         db.rollback()
+        print("Error:", str(e))  # Debugging: Log the error
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
@@ -547,7 +505,8 @@ def finalize_time():
         db.rollback()
         flash(f"An error occurred while finalizing time: {str(e)}", "error")
         return redirect(url_for('timesheet.entry'))
-    
+
+# get existing time entries for selected user and return to ajax query for finalize time modal   
 @bp.route('/timesheet/entry/get_time_entries', methods=['GET'])
 @login_required
 def get_time_entries():
@@ -627,17 +586,36 @@ def payroll_export():
         print("Paychex Code Mapping:", paychex_code_mapping)  # Debugging: Log the mapping
         
         # Create a new copy of the JSON data with converted Paychex codes
+        # converted_data = {
+        #     "abas_id": data.get("abas_id"),
+        #     "total_hours": data.get("total_hours"),
+        #     "time_entries": [
+        #         {
+        #             "date": entry["date"],
+        #             "paychexCode": paychex_code_mapping.get(int(entry["paychexCode"]), entry["paychexCode"]),  # Map PayID to PayChex code
+        #             "hours": entry["hours"]
+        #         }
+        #         for entry in data.get("time_entries", [])
+        #     ]
+        # }
+
+        grouped = defaultdict(float)
+        for entry in data.get("time_entries", []):
+            date = entry["date"]
+            paychex_code = paychex_code_mapping.get(int(entry["paychexCode"]), entry["paychexCode"])
+            hours = float(entry["hours"])
+            grouped[(date, paychex_code)] += hours
+
+        # 2. Build the combined time_entries list
+        combined_time_entries = [
+            {"date": date, "paychexCode": paychex_code, "hours": hours}
+            for (date, paychex_code), hours in grouped.items()
+        ]
+
         converted_data = {
             "abas_id": data.get("abas_id"),
             "total_hours": data.get("total_hours"),
-            "time_entries": [
-                {
-                    "date": entry["date"],
-                    "paychexCode": paychex_code_mapping.get(int(entry["paychexCode"]), entry["paychexCode"]),  # Map PayID to PayChex code
-                    "hours": entry["hours"]
-                }
-                for entry in data.get("time_entries", [])
-            ]
+            "time_entries": combined_time_entries
         }
 
         print("Converted JSON data:", converted_data)  # Debugging: Log the converted data
@@ -672,6 +650,102 @@ def payroll_export():
         print("Error during payroll export:", str(e))  # Debugging: Log the error
         return jsonify({'success': False, 'error': str(e)}), 500
 
+
+@bp.route('/timesheet/entry/copy_prev_week', methods=['POST'])
+@login_required
+def copy_prev_week():
+    try:
+        data = request.get_json()
+        abas_id = data.get('abas_id')
+        curr_start = data.get('curr_start')
+        
+        curr_start = datetime.strptime(curr_start, "%Y-%m-%d").date()
+        
+        # Calculate the start and end of the week
+        prev_start = curr_start - timedelta(days=7)
+        print("prev_start: ", prev_start)
+        prev_end = prev_start + timedelta(days=6)
+        print("prev_end: ", prev_end)
+
+        # 1. Fetch previous week's entries
+        print("get_time_entries_for_week")
+        prev_entries = get_time_entries_for_week(abas_id, prev_start, prev_end)  # Implement this helper
+        print("prev_entries: ", prev_entries)
+        
+        if prev_entries:
+            # 2. Copy entries to current week (adjust dates)
+            for entry in prev_entries:
+                # Calculate new date for current week
+                prev_date = entry.WorkDate
+                days_offset = (prev_date - prev_start).days
+                new_date = curr_start + timedelta(days=days_offset)
+                print("new_date: ", new_date)
+                # Create new entry (implement create_time_entry as needed)
+                new_entry = create_time_entry(abas_id, new_date, entry.WSNumber, entry.TimeWorked)
+                print("new_entry: ", new_entry)
+                
+                if new_entry:
+                    # After creating new_entry or when building any JSON response:
+                    time_worked = float(entry.TimeWorked) if isinstance(entry.TimeWorked, decimal.Decimal) else entry.TimeWorked
+                    response = send_timeentry_csv_to_abas(abas_id, new_date, entry.WSNumber, time_worked)
+                    if response.status_code != 200:
+                        raise ValueError(f"Failed to send data for {new_date}.")
+
+            flash("Previous week's entries copied successfully.", "success")
+            return jsonify({'success': True})
+        else:
+            return jsonify({'success': False, 'error': 'No entries found for the previous week.'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+
+@bp.route('/timesheet/entry/update_hours/<int:entry_id>', methods=['POST'])
+@login_required
+def update_hours(entry_id):
+    data = request.get_json()
+    hours_worked = data.get('hoursWorked')
+    db = get_db()
+    dbc = db.cursor()
+    try:
+        dbc.execute(
+            "UPDATE TimeEntry SET TimeWorked = ? WHERE EntryID = ?",
+            (hours_worked, entry_id)
+        )
+        db.commit()
+        
+        time_entry = get_time_entry(entry_id=entry_id)
+        print("time_entry: ", time_entry)
+        abas_id = time_entry[1]
+        entry_date = time_entry[2]
+        work_slip_id = time_entry[3]
+        time_worked = float(time_entry[4])
+        response = send_timeentry_csv_to_abas(abas_id, entry_date, work_slip_id, time_worked)
+        if response.status_code != 200:
+            raise ValueError(f"Failed to send data for {time_entry.WorkDate}.")
+                
+        return jsonify({'success': True, 'hoursWorked': f"{float(hours_worked):.2f}"})
+    except Exception as e:
+        db.rollback()
+        print("Error updating hours:", str(e))  # Debugging: Log the error
+        return jsonify({'success': False, 'error': str(e)})
+
+def get_time_entries_for_week(abas_id, start_date, end_date):
+    db = get_db()
+    dbc = db.cursor()
+
+    # Fetch time entries for the given date range
+    time_entries = dbc.execute(
+        """
+        SELECT EntryID, WorkDate, WSNumber, TimeWorked
+        FROM TimeEntry 
+        WHERE EmpID = ? AND WorkDate BETWEEN ? AND ?
+        ORDER BY WorkDate
+        """,
+        (abas_id, start_date, end_date)
+    ).fetchall()
+
+    return time_entries
+
 def get_paychex_codes():
     db = get_db()
     dbc = db.cursor()
@@ -685,7 +759,6 @@ def get_paychex_codes():
 
     return paychex_mapping
 
-
 def lookup_paychex_id(paychex_id):
     db = get_db()
     dbc = db.cursor()
@@ -697,3 +770,99 @@ def lookup_paychex_id(paychex_id):
     paycode = paychex_code.PayChex if paychex_code else None
 
     return paycode
+
+def create_time_entry(abas_id, work_date, ws_number, time_worked=None):
+    try:
+        db = get_db()
+        dbc = db.cursor()
+
+        # Insert the new time entry and fetch the inserted ID
+        new_entry_id = dbc.execute(
+            """
+            INSERT INTO TimeEntry (EmpID, WorkDate, WSNumber, TimeWorked)
+            OUTPUT INSERTED.EntryID
+            VALUES (?, ?, ?, ?)
+            """,
+            (abas_id, work_date, ws_number, time_worked)
+        ).fetchone()[0]
+
+        db.commit()
+
+        # Fetch the newly added entry for the response
+        new_entry = dbc.execute(
+            """
+            SELECT t.EntryID AS TimeEntryID, t.WSNumber, ws.WSDescription, o.OpName, o.OpNameExtended, t.TimeWorked AS tHoursWorked
+            FROM TimeEntry t
+            INNER JOIN WorkSlips ws ON t.WSNumber = ws.WSNumber
+            INNER JOIN Operations o ON ws.OpID = o.OpID
+            WHERE t.EntryID = ?
+            """,
+            (new_entry_id,)
+        ).fetchone()
+        
+        if not new_entry:
+            raise ValueError("Failed to fetch the newly added time entry.")
+
+        # Build a dictionary directly using column names
+        columns = [column[0] for column in dbc.description]
+        entry_dict = dict(zip(columns, new_entry))
+        # Convert Decimal to float if needed
+        for k, v in entry_dict.items():
+            if isinstance(v, decimal.Decimal):
+                entry_dict[k] = f"{float(v):.2f}"
+        return entry_dict
+
+    except Exception as e:
+        db.rollback()
+        print("Error creating time entry:", str(e))
+        return None
+
+def get_time_entry(abas_id=None, work_date=None, ws_number=None, entry_id=None):
+    db = get_db()
+    dbc = db.cursor()
+
+    if entry_id:
+        # If entry_id is provided, fetch the specific entry
+        time_entry = dbc.execute(
+            """
+            SELECT EntryID, EmpID, WorkDate, WSNumber, TimeWorked
+            FROM TimeEntry
+            WHERE EntryID = ?
+            """, 
+            (entry_id)
+        ).fetchone()
+    else: 
+        # Fetch the time entry for the given parameters
+        time_entry = dbc.execute(
+            """
+            SELECT EntryID, EmpID, WorkDate, WSNumber, TimeWorked
+            FROM TimeEntry
+            WHERE EmpID = ? AND WorkDate = ? AND WSNumber = ?
+            """,
+            (abas_id, work_date, ws_number)
+        ).fetchone()
+
+    return time_entry
+
+def send_timeentry_csv_to_abas(abas_id, work_date, work_slip_id, hours_worked):
+    # Define the API endpoint
+    url = "http://abas.kasa.kasacontrols.com:8000/jobtime_entry"
+
+    # Convert work_date to string if it's a date object
+    if isinstance(work_date, (datetime, date)):
+        work_date_str = work_date.strftime('%m/%d/%y')
+    else:
+        work_date_str = str(work_date)
+
+    # Define the payload
+    payload = {
+        "EmpID": abas_id,
+        "WorkDate": work_date_str,  # Format the date as MM/DD/YY
+        "WSNumber": work_slip_id,
+        "HoursWorked": hours_worked
+    }
+
+    # Send the POST request
+    response = requests.post(url, json=payload)
+
+    return response

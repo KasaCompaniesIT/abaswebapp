@@ -124,7 +124,12 @@
                         <div class="d-flex justify-content-between align-items-center time-entry">
                             <p>{{ t.WSNumber }} {{ t.OpNameExtended }}</p>
                             <h5>
-                                <span class="badge badge-secondary">{{ t.tHoursWorked }}</span>
+                                <span class="badge badge-secondary editable-hours {% if week_finalized %}disabled-badge{% endif %}"
+                                    data-timeentryid="{{ t.TimeEntryID }}"
+                                    style="cursor:pointer;"
+                                    {% if week_finalized %} aria-disabled="true" tabindex="-1" {% endif %}>
+                                    {{ t.tHoursWorked }}
+                                </span>
                             </h5>
                             {% if t.TimeEntryID %}
                             <button class="btn btn-danger btn-sm delete-entry-btn" data-timeentryid="{{ t.TimeEntryID }}" title="Delete Entry">
@@ -233,13 +238,12 @@
                                 </div>
                             </div>
 
-                            <p></p>
-                            <div class="row text-right mt-2">
-                                <div class="col col-button">
-                                    <button type="submit" class="btn btn-abas" id="btnAddTime">Add to Timesheet</button>
-                                </div>
-                            </div>
+                            <p></p>                            
                         </div>
+                        <div class="d-flex justify-content-between">
+                                <button type="submit" class="btn btn-abas" id="btnCopyPrev">Copy Previous Week</button>
+                                <button type="submit" class="btn btn-abas" id="btnAddTime">Add to Timesheet</button>
+                            </div>
                     </form> 
                 </div>                           
             </div>
@@ -289,6 +293,27 @@
             </div>
         </div>
     </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteConfirmModal" tabindex="-1" role="dialog" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-dark-custom">
+                    <h5 class="modal-title" id="deleteConfirmModalLabel">Confirm Delete</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to delete this time entry?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
     {% endif %}
 </div>
 <p></p>
@@ -320,6 +345,96 @@
     // Call the function to update the total hours on page load
     document.addEventListener('DOMContentLoaded', function () {
         updateTotalHours();
+    });
+
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('editable-hours')) {
+            // Prevent editing if badge is disabled
+            if (e.target.classList.contains('disabled-badge') || e.target.getAttribute('aria-disabled') === 'true') {
+                return;
+            }
+            const badge = e.target;
+            const currentValue = badge.textContent.trim();
+            const entryId = badge.getAttribute('data-timeentryid');
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.min = '0';
+            input.step = '0.01';
+            input.value = currentValue;
+            input.className = 'form-control form-control-sm d-inline-block';
+            input.style.width = '70px';
+
+            badge.replaceWith(input);
+            input.focus();
+            input.select();
+
+            input.addEventListener('blur', saveEdit);
+            input.addEventListener('keydown', function(ev) {
+                if (ev.key === 'Enter') {
+                    saveEdit.call(input);
+                }
+                if (ev.key === 'Escape') {
+                    input.replaceWith(badge);
+                }
+            });
+
+            function saveEdit() {
+                const newValue = input.value;
+                // Optionally: validate newValue here
+                fetch(`/timesheet/entry/update_hours/${entryId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ hoursWorked: newValue })
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        badge.textContent = result.hoursWorked; // Use the formatted value from backend
+                        input.replaceWith(badge);
+                        updateTotalHours();
+                        showSnackbar('Hours updated!', 'success');
+                    } else {
+                        showSnackbar('Failed to update hours.', 'error');
+                        input.replaceWith(badge);
+                    }
+                })
+                .catch(() => {
+                    showSnackbar('Error updating hours.', 'error');
+                    input.replaceWith(badge);
+                });
+            }
+        }
+    });
+
+    document.getElementById('btnCopyPrev').addEventListener('click', function (event) {
+        event.preventDefault();
+
+        const abasID = document.getElementById('abasIDInput').value;
+        const currStart = document.getElementById('startDateInput').value;;
+
+        fetch('/timesheet/entry/copy_prev_week', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                abas_id: abasID,
+                curr_start: currStart,
+            })
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                showSnackbar('Previous week copied and exported successfully!', 'success');
+                // Optionally refresh the UI here                
+                location.reload();
+
+            } else {
+                showSnackbar('Failed to copy previous week: ' + result.error, 'error');
+            }
+        })
+        .catch(error => {
+            showSnackbar('An unexpected error occurred.', 'error');
+            console.error(error);
+        });
     });
 
     document.getElementById('addTimeButton').addEventListener('click', function () {
@@ -891,115 +1006,73 @@
     if (preselectedCard) {
         document.getElementById('selectedDateInput').value = preselectedCard.getAttribute('data-date');
     }
+    
+    let deleteEntryID = null;
+    let deleteButton = null;
 
     // Event listener for time entry deletion
     document.addEventListener('DOMContentLoaded', function () {
-        // Add event listener to all delete buttons
+        // Add event listener to all delete buttons        
         document.querySelectorAll('.delete-entry-btn').forEach(button => {
             button.addEventListener('click', function () {
-                const timeEntryID = this.getAttribute('data-timeentryid');
-
-                if (confirm('Are you sure you want to delete this time entry?')) {
-                    // Send a request to delete the time entry
-                    fetch(`/timesheet/entry/delete/${timeEntryID}`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ id: timeEntryID }),
-                    })
-                        .then(response => {
-                            if (response.ok) {
-                                // Remove the time entry from the UI
-                                const timeEntryElement = this.closest('.time-entry');
-                                const cardBody = timeEntryElement.closest('.card-body');
-                                const cardFooter = cardBody.nextElementSibling; // Assuming footer is the next sibling
-                                const totalHoursElement = cardFooter.querySelector('.font-weight-bold');
-
-                                // Get the hours of the deleted entry
-                                const deletedHours = parseFloat(
-                                    timeEntryElement.querySelector('.badge').textContent
-                                );
-
-                                // Remove the time entry from the UI
-                                timeEntryElement.remove();
-
-                                // Update the total hours in the card footer
-                                const currentTotal = parseFloat(totalHoursElement.textContent) || 0;
-                                const newTotal = currentTotal - deletedHours;
-                                totalHoursElement.textContent = newTotal.toFixed(2);
-
-                                // Recalculate the total hours for the floating badge
-                                updateTotalHours();
-
-                                // Check if the card is now empty
-                                if (cardBody.querySelectorAll('.time-entry').length === 0) {
-                                    // Add a "No data available" message
-                                    const noDataMessage = document.createElement('p');
-                                    noDataMessage.textContent = 'No data available for this date.';
-                                    cardBody.appendChild(noDataMessage);
-                                }
-                                showSnackbar('Time entry deleted successfully!', 'success');
-                            } else {
-                                showSnackbar('Failed to delete time entry.', 'error');
-                            }
-                        })
-                        .catch(error => console.error('Error deleting time entry:', error));
-                }
+                deleteEntryID = this.getAttribute('data-timeentryid');
+                deleteButton = this;
+                $('#deleteConfirmModal').modal('show');
             });
+        });
+    });
+
+    
+    document.getElementById('confirmDeleteBtn').addEventListener('click', function () {
+        if (!deleteEntryID) return;
+        fetch(`/timesheet/entry/delete/${deleteEntryID}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ id: deleteEntryID }),
+        })
+        .then(response => {
+            if (response.ok) {
+                // Remove the time entry from the UI (same as before)
+                const timeEntryElement = deleteButton.closest('.time-entry');
+                const cardBody = timeEntryElement.closest('.card-body');
+                const cardFooter = cardBody.nextElementSibling;
+                const totalHoursElement = cardFooter.querySelector('.font-weight-bold');
+                const deletedHours = parseFloat(timeEntryElement.querySelector('.badge').textContent);
+                timeEntryElement.remove();
+                const currentTotal = parseFloat(totalHoursElement.textContent) || 0;
+                const newTotal = currentTotal - deletedHours;
+                totalHoursElement.textContent = newTotal.toFixed(2);
+                updateTotalHours();
+                if (cardBody.querySelectorAll('.time-entry').length === 0) {
+                    const noDataMessage = document.createElement('p');
+                    noDataMessage.textContent = 'No data available for this date.';
+                    cardBody.appendChild(noDataMessage);
+                }
+                showSnackbar('Time entry deleted successfully!', 'success');
+            } else {
+                showSnackbar('Failed to delete time entry.', 'error');
+            }
+            $('#deleteConfirmModal').modal('hide');
+            deleteEntryID = null;
+            deleteButton = null;
+        })
+        .catch(error => {
+            showSnackbar('Error deleting time entry.', 'error');
+            $('#deleteConfirmModal').modal('hide');
+            deleteEntryID = null;
+            deleteButton = null;
         });
     });
 
     // Function to attach delete event to dynamically created buttons
     function attachDeleteEvent(button) {
         button.addEventListener('click', function () {
-            const timeEntryID = this.getAttribute('data-timeentryid');
-
-            if (confirm('Are you sure you want to delete this time entry?')) {
-                fetch(`/timesheet/entry/delete/${timeEntryID}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ id: timeEntryID }),
-                })
-                    .then(response => {
-                        if (response.ok) {
-                            const timeEntryElement = this.closest('.time-entry');
-                            const cardBody = timeEntryElement.closest('.card-body');
-                            const cardFooter = cardBody.nextElementSibling; // Assuming footer is the next sibling
-                            const totalHoursElement = cardFooter.querySelector('.font-weight-bold');
-
-                            // Get the hours of the deleted entry
-                            const deletedHours = parseFloat(
-                                timeEntryElement.querySelector('.badge').textContent
-                            );
-
-                            // Remove the time entry from the UI
-                            timeEntryElement.remove();
-
-                            // Update the total hours in the card footer
-                            const currentTotal = parseFloat(totalHoursElement.textContent) || 0;
-                            const newTotal = currentTotal - deletedHours;
-                            totalHoursElement.textContent = newTotal.toFixed(2);
-
-                            // Recalculate the total hours for the floating badge
-                            updateTotalHours();
-
-                            // Check if the card is now empty
-                            if (cardBody.querySelectorAll('.time-entry').length === 0) {
-                                // Add a "No data available" message
-                                const noDataMessage = document.createElement('p');
-                                noDataMessage.textContent = 'No data available for this date.';
-                                cardBody.appendChild(noDataMessage);
-                            }
-                            showSnackbar('Time entry deleted successfully!');
-                        } else {
-                            showSnackbar('Failed to delete time entry.', 'error');
-                        }
-                    })
-                    .catch(error => console.error('Error deleting time entry:', error));
-            }
+            deleteEntryID = this.getAttribute('data-timeentryid');
+            deleteButton = this;
+            $('#deleteConfirmModal').modal('show');
+            
         });
     }
 
