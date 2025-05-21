@@ -40,7 +40,8 @@ RUN apk add --no-cache \
 WORKDIR /app
 
 # Clone the public GitHub repository
-RUN git clone https://github.com/KasaCompaniesIT/abaswebapp.git .
+ARG GIT_REPO=https://github.com/KasaCompaniesIT/abaswebapp.git 
+RUN git clone ${GIT_REPO} . || (echo "Failed to clone repository" && exit 1)
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
