@@ -507,9 +507,9 @@ def finalize_time():
         return redirect(url_for('timesheet.entry'))
 
 # get existing time entries for selected user and return to ajax query for finalize time modal   
-@bp.route('/timesheet/entry/get_time_entries', methods=['GET'])
+@bp.route('/timesheet/entry/get_final_time_entries', methods=['GET'])
 @login_required
-def get_time_entries():
+def get_final_time_entries():
     try:
         # Get the start and end dates for the current week
         start_date = request.args.get('start_date')
@@ -545,27 +545,31 @@ def get_time_entries():
         ).fetchall()
 
         # Convert the results to a list of dictionaries
-        time_entries_list = []
-        for entry in time_entries:
-            # Strip whitespace from WorkDate and convert to a datetime object
-            # work_date = entry.WorkDate.strip() if isinstance(entry.WorkDate, str) else entry.WorkDate
-            # if isinstance(work_date, str):
-            #     try:
-            #         work_date = datetime.strptime(work_date, '%m/%d/%y')  # Handle MM/DD/YY format
-            #     except ValueError:
-            #         work_date = datetime.strptime(work_date, '%m/%d/%Y')  # Handle MM/DD/YYYY format
+        if time_entries:
+            time_entries_list = []
+            for entry in time_entries:
+                # Strip whitespace from WorkDate and convert to a datetime object
+                # work_date = entry.WorkDate.strip() if isinstance(entry.WorkDate, str) else entry.WorkDate
+                # if isinstance(work_date, str):
+                #     try:
+                #         work_date = datetime.strptime(work_date, '%m/%d/%y')  # Handle MM/DD/YY format
+                #     except ValueError:
+                #         work_date = datetime.strptime(work_date, '%m/%d/%Y')  # Handle MM/DD/YYYY format
 
-            time_entries_list.append({
-                "EntryID": entry.EntryID,
-                "WorkDate": entry.WorkDate.strftime('%m/%d/%y'),  # Format the date as MM/DD/YY,
-                "WSNumber": entry.WSNumber,
-                "OpName": entry.OpName,
-                "OpNameExtended": entry.OpNameExtended,
-                "tHoursWorked": entry.TimeWorked
-            })
+                time_entries_list.append({
+                    "EntryID": entry.EntryID,
+                    "WorkDate": entry.WorkDate.strftime('%m/%d/%y'),  # Format the date as MM/DD/YY,
+                    "WSNumber": entry.WSNumber,
+                    "OpName": entry.OpName,
+                    "OpNameExtended": entry.OpNameExtended,
+                    "tHoursWorked": entry.TimeWorked
+                })
 
-        print("Time Entries:", time_entries_list)  # Debugging: Log the data
-        return jsonify({"success": True, "time_entries": time_entries_list}), 200
+            print("Time Entries:", time_entries_list)  # Debugging: Log the data
+            return jsonify({"success": True, "time_entries": time_entries_list}), 200
+        else:
+            print("No time entries found for the given date range.")
+            return jsonify({"success": True, "time_entries": None}), 200
     except Exception as e:
         print("Error fetching time entries:", str(e))  # Debugging: Log the error
         return jsonify({"success": False, "error": str(e)}), 500    
@@ -743,7 +747,20 @@ def get_time_entries_for_week(abas_id, start_date, end_date):
         """,
         (abas_id, start_date, end_date)
     ).fetchall()
-
+    
+    # get time entries from TimeEntryAbas if no entries found in TimeEntry
+    # This is a fallback to ensure we get some data
+    if not time_entries:
+        time_entries = dbc.execute(
+            """
+            SELECT AbasEntryID as EntryID, WorkDate, WSNumber, TimeWorked
+            FROM TimeEntryAbas 
+            WHERE EmpID = ? AND WorkDate BETWEEN ? AND ?
+            ORDER BY WorkDate
+            """,
+            (abas_id, start_date, end_date)
+        ).fetchall()       
+        
     return time_entries
 
 def get_paychex_codes():
