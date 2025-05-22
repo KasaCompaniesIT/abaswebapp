@@ -122,7 +122,10 @@
                     {% if timecard_data[day.date] %}
                         {% for t in timecard_data[day.date] %}
                         <div class="d-flex justify-content-between align-items-center time-entry">
-                            <p>{{ t.WSNumber }} {{ t.OpNameExtended }}</p>
+                            <p>
+                                {{ t.WSNumber }} - {{ t.OpNameExtended }}
+                                <small class="card-desc">({{ t.WODescription }})</small>
+                            </p>
                             <h5>
                                 <span class="badge badge-secondary editable-hours {% if week_finalized or not can_add_or_finalize %}disabled-badge{% endif %}"
                                     data-timeentryid="{{ t.TimeEntryID }}"
@@ -914,7 +917,7 @@
                             });
 
                             // Add the finalized checkmark to each card header if not already present
-                            document.querySelectorAll('.card-header').forEach(header => {
+                            document.querySelectorAll('#timecard .card-header').forEach(header => {
                             if (!header.querySelector('.fas.fa-check')) {
                                 // Check for today or holiday by class
                                 let checkClass = 'text-abas';
@@ -1176,7 +1179,10 @@
                     const timeEntryDiv = document.createElement('div');
                     timeEntryDiv.classList.add('d-flex', 'justify-content-between', 'align-items-center', 'time-entry');
                     timeEntryDiv.innerHTML = `
-                        <p>${result.data.WSNumber} ${result.data.OpNameExtended}</p>
+                        <p>
+                        ${result.data.WSNumber} ${result.data.OpNameExtended}
+                        <small class="card-desc">(${result.data.WODescription})</small>
+                        </p>
                         <h5><span class="badge badge-secondary">${result.data.tHoursWorked}</span></h5>
                         <button class="btn btn-danger btn-sm delete-entry-btn" data-timeentryid="${result.data.TimeEntryID}" title="Delete Entry">
                             <i class="fas fa-times"></i>

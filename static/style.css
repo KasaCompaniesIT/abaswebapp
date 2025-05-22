@@ -727,3 +727,15 @@ a { color: #009FAA; }
     pointer-events: none;
     cursor: not-allowed !important;
 }
+
+.card-desc {
+    margin-top: 0;
+    padding-top: 0;
+    display: block;
+    line-height: 1;
+    font-size: 0.8rem;
+    color: #474c52; /* Muted grey for the description */
+}
+.time-entry p {
+    margin-bottom: 0.5rem;
+}

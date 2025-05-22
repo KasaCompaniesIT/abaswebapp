@@ -134,21 +134,23 @@ def entry():
                 print(day["date"])
                 # Fetch timecard data for the specific date
                 timeEntryAbas = dbc.execute("""
-                            select EmpID, WorkDate, TimeEntryAbas.WSNumber, WSDescription, OpName, OpNameExtended, sum(TimeWorked) as tHoursWorked 
-                            from TimeEntryAbas 
-                            inner join WorkSlips on TimeEntryAbas.WSNumber = WorkSlips.WSNumber 
-                            inner join Operations on WorkSlips.OpID = Operations.OpID
+                            select EmpID, WorkDate, t.WSNumber, WSDescription, OpName, OpNameExtended, sum(TimeWorked) as tHoursWorked, WODescription
+                            from TimeEntryAbas t
+                            inner join WorkSlips ws on t.WSNumber = ws.WSNumber 
+                            inner join Operations o on ws.OpID = o.OpID
+                            inner join WorkOrders wo on ws.WONumber = wo.WONumber
                             where EmpID = ? and WorkDate = ? 
-                            group by EmpID, TimeEntryAbas.WSNumber, WSDescription, OpName, OpNameExtended, WorkDate 
+                            group by EmpID, t.WSNumber, WSDescription, OpName, OpNameExtended, WorkDate, WODescription
                             order by EmpID, WorkDate
                             """
                             , abasUser.EmpID, day["date"]).fetchall()
                 
                 timeEntry = dbc.execute("""
-                            select EntryID, EmpID, WorkDate, TimeEntry.WSNumber, WSDescription, OpName, OpNameExtended, TimeWorked as tHoursWorked 
-                            from TimeEntry 
-                            inner join WorkSlips on TimeEntry.WSNumber = WorkSlips.WSNumber 
-                            inner join Operations on WorkSlips.OpID = Operations.OpID
+                            select EntryID, EmpID, WorkDate, t.WSNumber, WSDescription, OpName, OpNameExtended, TimeWorked as tHoursWorked, WODescription 
+                            from TimeEntry t
+                            inner join WorkSlips ws on t.WSNumber = ws.WSNumber 
+                            inner join Operations o on ws.OpID = o.OpID
+                            inner join workorders wo on ws.WONumber = wo.WONumber
                             where EmpID = ? and WorkDate = ? 
                             order by EmpID, WorkDate
                             """
@@ -167,6 +169,7 @@ def entry():
                         "WorkDate": entry.WorkDate,
                         "WSNumber": entry.WSNumber,
                         "WSDescription": entry.WSDescription,
+                        "WODescription": entry.WODescription,
                         "OpName": entry.OpName,
                         "OpNameExtended": entry.OpNameExtended,
                         "tHoursWorked": entry.tHoursWorked,
@@ -182,6 +185,7 @@ def entry():
                             "WorkDate": entry.WorkDate,
                             "WSNumber": entry.WSNumber,
                             "WSDescription": entry.WSDescription,
+                            "WODescription": entry.WODescription,
                             "OpName": entry.OpName,
                             "OpNameExtended": entry.OpNameExtended,
                             "tHoursWorked": entry.tHoursWorked,
@@ -808,10 +812,11 @@ def create_time_entry(abas_id, work_date, ws_number, time_worked=None):
         # Fetch the newly added entry for the response
         new_entry = dbc.execute(
             """
-            SELECT t.EntryID AS TimeEntryID, t.WSNumber, ws.WSDescription, o.OpName, o.OpNameExtended, t.TimeWorked AS tHoursWorked
+            SELECT t.EntryID AS TimeEntryID, t.WSNumber, ws.WSDescription, o.OpName, o.OpNameExtended, t.TimeWorked AS tHoursWorked, WODescription
             FROM TimeEntry t
             INNER JOIN WorkSlips ws ON t.WSNumber = ws.WSNumber
             INNER JOIN Operations o ON ws.OpID = o.OpID
+            INNER JOIN WorkOrders wo ON ws.WONumber = wo.WONumber
             WHERE t.EntryID = ?
             """,
             (new_entry_id,)
