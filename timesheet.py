@@ -538,10 +538,11 @@ def get_final_time_entries():
         # Fetch time entries for the given date range
         time_entries = dbc.execute(
             """
-            SELECT EntryID, WorkDate, t.WSNumber, TimeWorked, OpName, OpNameExtended
+            SELECT EntryID, WorkDate, t.WSNumber, TimeWorked, OpName, OpNameExtended, WODescription
             FROM TimeEntry t 
-            INNER JOIN WorkSlips w ON t.WSNumber = w.WSNumber 
-            INNER JOIN Operations o ON w.OpID = o.OpID
+            INNER JOIN WorkSlips ws ON t.WSNumber = ws.WSNumber 
+            INNER JOIN Operations o ON ws.OpID = o.OpID
+            INNER JOIN WorkOrders wo ON ws.WONumber = wo.WONumber
             WHERE EmpID = ? AND WorkDate BETWEEN ? AND ?
             ORDER BY WorkDate
             """,
@@ -566,7 +567,8 @@ def get_final_time_entries():
                     "WSNumber": entry.WSNumber,
                     "OpName": entry.OpName,
                     "OpNameExtended": entry.OpNameExtended,
-                    "tHoursWorked": entry.TimeWorked
+                    "tHoursWorked": entry.TimeWorked,
+                    "WODescription": entry.WODescription
                 })
 
             print("Time Entries:", time_entries_list)  # Debugging: Log the data

@@ -538,7 +538,7 @@
                                     rowHTML = `
                                         <tr>
                                             <td>${entry.WorkDate}</td>
-                                            <td>${entry.WSNumber} - ${entry.OpName}</td>
+                                            <td>${entry.WSNumber} - ${entry.OpName}<br><small class="card-desc">(${entry.WODescription})</small></td>
                                             <td>
                                                 <select name="paychex_code_${entry.EntryID}" class="form-control">
                                                     ${payrollPaychex_list.map(paychex => `
