@@ -79,13 +79,34 @@ a { color: #009FAA; }
     /* --bs-breadcrumb-margin-bottom: 0.5rem;  */
     padding-left: 1rem;
     padding-top: 0.9rem;
+    padding-right: 0.5rem;
     padding-bottom: 0;
-    line-height: 0.6;
+    line-height: 0.5;
     background-color: #e6e6e6;
 }
 
 .breadcrumb a {
     text-decoration: none;
+}
+
+@media (max-width: 576px) {
+    .breadcrumb {
+        padding-left: 0.5rem;
+    }
+    .breadcrumb-item {
+        padding: 0; /* Reduce left/right padding for tighter spacing */
+    }
+
+    .breadcrumb-item + .breadcrumb-item {
+        padding-left: 0.2rem; /* Adjust spacing between items */
+    }
+
+    .breadcrumb-item + .breadcrumb-item::before {
+        margin-right: 0;
+        margin-left: 0;
+        padding-right: 0.2rem;
+        padding-left: 0;
+    }
 }
 
 .bg-abas {
