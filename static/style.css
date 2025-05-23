@@ -593,6 +593,16 @@ a { color: #009FAA; }
     box-shadow: 0 0 0 0.2rem rgba(0, 159, 170, 0.25); /* Add a subtle focus shadow */
 }
 
+@media (max-width: 576px) {  
+  #startDate, #endDate {
+    min-width: 0;
+    font-size: 0.95em;
+    padding-left: 0.2em;
+    padding-right: 0.2em;
+  }
+  
+}
+
 /* Ensure the time entry container has a relative position */
 .time-entry {
     position: relative;
@@ -843,5 +853,4 @@ a { color: #009FAA; }
     font-weight: bold;
   }
 }
-
 
