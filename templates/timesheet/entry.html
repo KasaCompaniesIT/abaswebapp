@@ -281,9 +281,7 @@
                                 <tfoot>
                                     <tr>
                                         <td colspan="3" class="text-right font-weight-bold">Total Hours:</td>
-                                        <td class="font-weight-bold">
-                                            <span id="finalizeTotalHoursBadge">00</span>
-                                        </td>
+                                        <td class="font-weight-bold text-right" id="finalizeTotalHoursCell">00</td>
                                     </tr>
                                 </tfoot>
                             </table>
@@ -518,7 +516,7 @@
                     const finalizeTimeButton = document.getElementById('finalizeTimeModalButton');
                     const tableBody = document.querySelector('#finalizeTimeModal tbody');
                     tableBody.innerHTML = ''; // Clear existing rows
-                    const totalHoursBadge = document.getElementById('finalizeTotalHoursBadge');
+                    const totalHoursBadge = document.getElementById('finalizeTotalHoursCell');
                     totalHoursBadge.textContent = '0'; // Reset the total hours badge
                     let cumulativeHours = 0;
                     let totalHours = 0; // Initialize total hours variable
@@ -536,21 +534,21 @@
                                 if (cumulativeHours + entryHours <= 40) {
                                     // Entire entry fits within the first 40 hours
                                     rowHTML = `
-                                        <tr>
-                                            <td>${entry.WorkDate}</td>
-                                            <td>${entry.WSNumber} - ${entry.OpName}<br><small class="card-desc">(${entry.WODescription})</small></td>
-                                            <td>
-                                                <select name="paychex_code_${entry.EntryID}" class="form-control">
-                                                    ${payrollPaychex_list.map(paychex => `
-                                                        <option value="${paychex.id}" ${paychex.code === 'E1' ? 'selected' : ''}>
-                                                            ${paychex.code} - ${paychex.description}
-                                                        </option>
-                                                    `).join('')}
-                                                </select>
-                                            </td>
-                                            <td>${entryHours.toFixed(2)}</td>
-                                        </tr>
-                                    `;
+                                    <tr>
+                                        <td data-label="Date">${entry.WorkDate}</td>
+                                        <td data-label="Operation">${entry.WSNumber} - ${entry.OpName}<br><small class="card-desc">(${entry.WODescription})</small></td>
+                                        <td data-label="Paychex Code">
+                                            <select name="paychex_code_${entry.EntryID}" class="form-control">
+                                                ${payrollPaychex_list.map(paychex => `
+                                                    <option value="${paychex.id}" ${paychex.code === 'E1' ? 'selected' : ''}>
+                                                        ${paychex.code} - ${paychex.description}
+                                                    </option>
+                                                `).join('')}
+                                            </select>
+                                        </td>
+                                        <td data-label="Hours">${entryHours.toFixed(2)}</td>
+                                    </tr>
+`;
                                     totalHours += entryHours; // Add to total hours
                                 } else if (cumulativeHours + entryHours > 40 && salaryPlusStart == 0) {
                                     // Entry crosses the 40-hour mark but is within the salary plus threshold
@@ -564,10 +562,10 @@
                                     if (remainingHoursTo40 > 0) {
                                         rowHTML = `
                                             <tr>
-                                                <td>${entry.WorkDate}</td>
-                                                <td>${entry.WSNumber} - ${entry.OpName}</td>
-                                                <td>
-                                                    <select name="paychex_code_${entry.EntryID}_1" class="form-control">
+                                                <td data-label="Date">${entry.WorkDate}</td>
+                                                <td data-label="Operation">${entry.WSNumber} - ${entry.OpName}<br><small class="card-desc">(${entry.WODescription})</small></td>
+                                                <td data-label="Paychex Code">
+                                                    <select name="paychex_code_${entry.EntryID}" class="form-control">
                                                         ${payrollPaychex_list.map(paychex => `
                                                             <option value="${paychex.id}" ${paychex.code === 'E1' ? 'selected' : ''}>
                                                                 ${paychex.code} - ${paychex.description}
@@ -575,7 +573,7 @@
                                                         `).join('')}
                                                     </select>
                                                 </td>
-                                                <td>${remainingHoursTo40.toFixed(2)}</td>
+                                                <td data-label="Hours">${remainingHoursTo40.toFixed(2)}</td>
                                             </tr>
                                         `;
                                     }
@@ -592,10 +590,10 @@
                                     if (remainingHoursTo40 > 0) {
                                         rowHTML = `
                                             <tr>
-                                                <td>${entry.WorkDate}</td>
-                                                <td>${entry.WSNumber} - ${entry.OpName}</td>
-                                                <td>
-                                                    <select name="paychex_code_${entry.EntryID}_1" class="form-control">
+                                                <td data-label="Date">${entry.WorkDate}</td>
+                                                <td data-label="Operation">${entry.WSNumber} - ${entry.OpName}<br><small class="card-desc">(${entry.WODescription})</small></td>
+                                                <td data-label="Paychex Code">
+                                                    <select name="paychex_code_${entry.EntryID}" class="form-control">
                                                         ${payrollPaychex_list.map(paychex => `
                                                             <option value="${paychex.id}" ${paychex.code === 'E1' ? 'selected' : ''}>
                                                                 ${paychex.code} - ${paychex.description}
@@ -603,7 +601,7 @@
                                                         `).join('')}
                                                     </select>
                                                 </td>
-                                                <td>${remainingHoursTo40.toFixed(2)}</td>
+                                                <td data-label="Hours">${remainingHoursTo40.toFixed(2)}</td>
                                             </tr>
                                         `;
                                     }
@@ -613,18 +611,18 @@
                                         console.log("Creating E50 row for hours:", hoursBeyond40); // Debugging
                                         rowHTML += `
                                             <tr>
-                                                <td>${entry.WorkDate}</td>
-                                                <td>${entry.WSNumber} - ${entry.OpName}</td>
-                                                <td>
-                                                    <select name="paychex_code_${entry.EntryID}_2" class="form-control">
-                                                        ${payrollPaychex_list.map(paychex => `
-                                                            <option value="${paychex.id}" ${paychex.code === 'E50' ? 'selected' : ''}>
-                                                                ${paychex.code} - ${paychex.description}
-                                                            </option>
-                                                        `).join('')}
-                                                    </select>
-                                                </td>
-                                                <td>${hoursBeyond40.toFixed(2)}</td>
+                                                <td data-label="Date">${entry.WorkDate}</td>
+                                        <td data-label="Operation">${entry.WSNumber} - ${entry.OpName}<br><small class="card-desc">(${entry.WODescription})</small></td>
+                                        <td data-label="Paychex Code">
+                                            <select name="paychex_code_${entry.EntryID}" class="form-control">
+                                                ${payrollPaychex_list.map(paychex => `
+                                                    <option value="${paychex.id}" ${paychex.code === 'E1' ? 'selected' : ''}>
+                                                        ${paychex.code} - ${paychex.description}
+                                                    </option>
+                                                `).join('')}
+                                            </select>
+                                        </td>
+                                        <td data-label="Hours">${hoursBeyond40.toFixed(2)}</td>
                                             </tr>
                                         `;
                                     }
@@ -738,9 +736,9 @@
                                     // Entire entry fits within the first 40 hours
                                     rowHTML = `
                                         <tr>
-                                            <td>${entry.WorkDate}</td>
-                                            <td>${entry.WSNumber} - ${entry.OpName}</td>
-                                            <td>
+                                            <td data-label="Date">${entry.WorkDate}</td>
+                                            <td data-label="Operation">${entry.WSNumber} - ${entry.OpName}<br><small class="card-desc">(${entry.WODescription})</small></td>
+                                            <td data-label="Paychex Code">
                                                 <select name="paychex_code_${entry.EntryID}" class="form-control">
                                                     ${payrollPaychex_list.map(paychex => `
                                                         <option value="${paychex.id}" ${paychex.code === 'E1' ? 'selected' : ''}>
@@ -749,7 +747,7 @@
                                                     `).join('')}
                                                 </select>
                                             </td>
-                                            <td>${entryHours.toFixed(2)}</td>
+                                            <td data-label="Hours">${entryHours.toFixed(2)}</td>
                                         </tr>
                                     `;
                                     totalHours += entryHours; // Add to total hours
@@ -762,10 +760,10 @@
                                     if (remainingHoursTo40 > 0) {
                                         rowHTML = `
                                             <tr>
-                                                <td>${entry.WorkDate}</td>
-                                                <td>${entry.WSNumber} - ${entry.OpName}</td>
-                                                <td>
-                                                    <select name="paychex_code_${entry.EntryID}_1" class="form-control">
+                                                <td data-label="Date">${entry.WorkDate}</td>
+                                                <td data-label="Operation">${entry.WSNumber} - ${entry.OpName}<br><small class="card-desc">(${entry.WODescription})</small></td>
+                                                <td data-label="Paychex Code">
+                                                    <select name="paychex_code_${entry.EntryID}" class="form-control">
                                                         ${payrollPaychex_list.map(paychex => `
                                                             <option value="${paychex.id}" ${paychex.code === 'E1' ? 'selected' : ''}>
                                                                 ${paychex.code} - ${paychex.description}
@@ -773,7 +771,7 @@
                                                         `).join('')}
                                                     </select>
                                                 </td>
-                                                <td>${remainingHoursTo40.toFixed(2)}</td>
+                                                <td data-label="Hours">${remainingHoursTo40.toFixed(2)}</td>
                                             </tr>
                                         `;
                                     }
@@ -782,18 +780,18 @@
                                     if (hoursBeyond40 > 0) {
                                         rowHTML += `
                                             <tr>
-                                                <td>${entry.WorkDate}</td>
-                                                <td>${entry.WSNumber} - ${entry.OpName}</td>
-                                                <td>
-                                                    <select name="paychex_code_${entry.EntryID}_2" class="form-control">
+                                                <td data-label="Date">${entry.WorkDate}</td>
+                                                <td data-label="Operation">${entry.WSNumber} - ${entry.OpName}<br><small class="card-desc">(${entry.WODescription})</small></td>
+                                                <td data-label="Paychex Code">
+                                                    <select name="paychex_code_${entry.EntryID}" class="form-control">
                                                         ${payrollPaychex_list.map(paychex => `
-                                                            <option value="${paychex.id}" ${paychex.code === 'E51' ? 'selected' : ''}>
+                                                            <option value="${paychex.id}" ${paychex.code === 'E1' ? 'selected' : ''}>
                                                                 ${paychex.code} - ${paychex.description}
                                                             </option>
                                                         `).join('')}
                                                     </select>
                                                 </td>
-                                                <td>${hoursBeyond40.toFixed(2)}</td>
+                                                <td data-label="Hours">${hoursBeyond40.toFixed(2)}</td>
                                             </tr>
                                         `;
                                     }

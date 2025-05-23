@@ -739,3 +739,88 @@ a { color: #009FAA; }
 .time-entry p {
     margin-bottom: 0.5rem;
 }
+
+/* Stacked table rows for finalize time modal on mobile */
+@media (max-width: 576px) {
+  #finalizeTimeModal #finalizeTimeTable,
+  #finalizeTimeModal #finalizeTimeTable thead,
+  #finalizeTimeModal #finalizeTimeTable tbody,
+  #finalizeTimeModal #finalizeTimeTable tr,
+  #finalizeTimeModal #finalizeTimeTable th,
+  #finalizeTimeModal #finalizeTimeTable td {
+    display: block !important;
+    width: 100% !important;
+    box-sizing: border-box;
+  }
+  #finalizeTimeModal #finalizeTimeTable thead {
+    display: none !important;
+  }
+  #finalizeTimeModal #finalizeTimeTable tr {
+    margin-bottom: .5rem;
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    background: #fff;
+    padding: 0.5rem 0;
+  }
+  #finalizeTimeModal #finalizeTimeTable td {
+    position: relative;
+    padding-left: 34%;
+    min-height: 2.2em;
+    border: none;
+    border-bottom: 1px solid #eee;
+    box-sizing: border-box;
+    word-break: break-word;
+    vertical-align: top;
+    font-size: 1em;
+  }
+  #finalizeTimeModal #finalizeTimeTable td:last-child {
+    border-bottom: none;
+  }
+  #finalizeTimeModal #finalizeTimeTable td:before {
+    position: absolute;
+    left: 0.75rem;
+    top: 0.5rem;
+    width: 28%;
+    min-width: 60px;
+    max-width: 95%;
+    white-space: normal;
+    font-weight: bold;
+    color: #666;
+    content: attr(data-label);
+    box-sizing: border-box;
+    pointer-events: none;
+    line-height: 1.2;
+    overflow-wrap: break-word;
+  }
+  #finalizeTimeModal #finalizeTimeTable tfoot tr,
+  #finalizeTimeModal #finalizeTimeTable tfoot td {
+    display: table-cell !important;
+    width: auto !important;
+    text-align: right !important;
+    white-space: nowrap;
+    vertical-align: middle;
+    background: #f8f9fa;
+    font-size: 1.1em;
+    position: static !important;
+    padding-left: 0 !important;
+  }
+  #finalizeTimeModal #finalizeTimeTable tfoot td:before {
+    display: none !important;
+    content: none !important;
+  }
+  /* Make the label cell expand, value cell shrink */
+  #finalizeTimeModal #finalizeTimeTable tfoot td[colspan] {
+    width: 99%;
+    text-align: right;
+  }
+  #finalizeTimeModal #finalizeTimeTable tfoot td:last-child {
+    width: 1%;
+    white-space: nowrap;
+    text-align: right;
+    padding-right: 1rem;
+    font-weight: bold;
+  }
+}
+
+
