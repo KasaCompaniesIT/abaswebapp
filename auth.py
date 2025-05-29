@@ -74,20 +74,23 @@ def login():
             ).fetchone()
        
         # print(user)
-        if user.Password is None:
-            error = 'Abas ID is not registered. Click register to create a password.'
-        else:            
-            if user is None or not check_password_hash(user.Password, password):
-                error = 'Invalid username or password.'
-            else:
-                session.clear()
-                session['user_id'] = user.EmpID
-                next_page = request.form.get('next')  # Get the 'next' parameter from the form
-                print(f"Next page: {next_page}")
-                if not next_page or not is_safe_url(next_page):
-                    next_page = url_for('home')  # Default to the home page
-                return redirect(next_page)
-
+        if user:
+            if user.Password is None:
+                error = 'Your Abas ID is not registered. Click register to create a password.'
+            else:            
+                if not check_password_hash(user.Password, password):
+                    error = 'You entered an invalid password.'
+                else:
+                    session.clear()
+                    session['user_id'] = user.EmpID
+                    next_page = request.form.get('next')  # Get the 'next' parameter from the form
+                    print(f"Next page: {next_page}")
+                    if not next_page or not is_safe_url(next_page):
+                        next_page = url_for('home')  # Default to the home page
+                    return redirect(next_page)
+        else:
+            error = 'You entered an invalid Abas ID/Username.'
+            
         flash(error)
 
     next_page = request.args.get('next', '')
