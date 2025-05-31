@@ -519,7 +519,11 @@ def get_final_time_entries():
         start_date = request.args.get('start_date')
         end_date = request.args.get('end_date')
         abas_id = request.args.get('abas_id')
-
+        view_mode = request.args.get('view_mode', 'summary')
+        print("view_mode: " + view_mode)
+        
+        totalHoursWorked = 0.0
+        
         # # Convert the date strings to datetime objects
         # start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
         # end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
@@ -535,47 +539,85 @@ def get_final_time_entries():
         db = get_db()
         dbc = db.cursor()
 
-        # Fetch time entries for the given date range
-        time_entries = dbc.execute(
-            """
-            SELECT EntryID, WorkDate, t.WSNumber, TimeWorked, OpName, OpNameExtended, WODescription
-            FROM TimeEntry t 
-            INNER JOIN WorkSlips ws ON t.WSNumber = ws.WSNumber 
-            INNER JOIN Operations o ON ws.OpID = o.OpID
-            INNER JOIN WorkOrders wo ON ws.WONumber = wo.WONumber
-            WHERE EmpID = ? AND WorkDate BETWEEN ? AND ?
-            ORDER BY WorkDate
-            """,
-            (abas_id, start_date, end_date)
-        ).fetchall()
+        if view_mode == 'detailed':
+            # Fetch time entries for the given date range of an hourly employee or detailed view for salaried employee
+            time_entries = dbc.execute(
+                """
+                SELECT EntryID, WorkDate, t.WSNumber, TimeWorked, OpName, OpNameExtended, WODescription
+                FROM TimeEntry t 
+                INNER JOIN WorkSlips ws ON t.WSNumber = ws.WSNumber 
+                INNER JOIN Operations o ON ws.OpID = o.OpID
+                INNER JOIN WorkOrders wo ON ws.WONumber = wo.WONumber
+                WHERE EmpID = ? AND WorkDate BETWEEN ? AND ?
+                ORDER BY WorkDate
+                """,
+                (abas_id, start_date, end_date)
+            ).fetchall()
 
-        # Convert the results to a list of dictionaries
-        if time_entries:
-            time_entries_list = []
-            for entry in time_entries:
-                # Strip whitespace from WorkDate and convert to a datetime object
-                # work_date = entry.WorkDate.strip() if isinstance(entry.WorkDate, str) else entry.WorkDate
-                # if isinstance(work_date, str):
-                #     try:
-                #         work_date = datetime.strptime(work_date, '%m/%d/%y')  # Handle MM/DD/YY format
-                #     except ValueError:
-                #         work_date = datetime.strptime(work_date, '%m/%d/%Y')  # Handle MM/DD/YYYY format
+            # Convert the results to a list of dictionaries
+            if time_entries:
+                time_entries_list = []
+                for entry in time_entries:
+                    # Strip whitespace from WorkDate and convert to a datetime object
+                    # work_date = entry.WorkDate.strip() if isinstance(entry.WorkDate, str) else entry.WorkDate
+                    # if isinstance(work_date, str):
+                    #     try:
+                    #         work_date = datetime.strptime(work_date, '%m/%d/%y')  # Handle MM/DD/YY format
+                    #     except ValueError:
+                    #         work_date = datetime.strptime(work_date, '%m/%d/%Y')  # Handle MM/DD/YYYY format
 
-                time_entries_list.append({
-                    "EntryID": entry.EntryID,
-                    "WorkDate": entry.WorkDate.strftime('%m/%d/%y'),  # Format the date as MM/DD/YY,
-                    "WSNumber": entry.WSNumber,
-                    "OpName": entry.OpName,
-                    "OpNameExtended": entry.OpNameExtended,
-                    "tHoursWorked": entry.TimeWorked,
-                    "WODescription": entry.WODescription
-                })
-
-            print("Time Entries:", time_entries_list)  # Debugging: Log the data
-            return jsonify({"success": True, "time_entries": time_entries_list}), 200
+                    time_entries_list.append({
+                        "EntryID": entry.EntryID,
+                        "WorkDate": entry.WorkDate.strftime('%m/%d/%y'),  # Format the date as MM/DD/YY,
+                        "WSNumber": entry.WSNumber,
+                        "OpName": entry.OpName,
+                        "OpNameExtended": entry.OpNameExtended,
+                        "tHoursWorked": entry.TimeWorked,
+                        "WODescription": entry.WODescription
+                    })
+                    totalHoursWorked += float(entry.TimeWorked) if isinstance(entry.TimeWorked, decimal.Decimal) else entry.TimeWorked
+                    
+                print("Time Entries:", time_entries_list)  # Debugging: Log the data
+                return jsonify({"success": True, "time_entries": time_entries_list}), 200
+            else:
+                print("No time entries found for the given date range.")
+                return jsonify({"success": True, "time_entries": None}), 200
         else:
-            print("No time entries found for the given date range.")
-            return jsonify({"success": True, "time_entries": None}), 200
+            # Fetch time entries for the given date range of a salaried employee
+            time_entries = dbc.execute(
+                """
+                SELECT WorkDate, sum(TimeWorked) as sTimeWorked
+                FROM TimeEntry 
+                WHERE EmpID = ? AND WorkDate BETWEEN ? AND ?
+                GROUP BY WorkDate
+                ORDER BY WorkDate
+                """,
+                (abas_id, start_date, end_date)
+            ).fetchall()
+
+            # Convert the results to a list of dictionaries
+            if time_entries:
+                time_entries_list = []
+                for entry in time_entries:
+                    # Strip whitespace from WorkDate and convert to a datetime object
+                    # work_date = entry.WorkDate.strip() if isinstance(entry.WorkDate, str) else entry.WorkDate
+                    # if isinstance(work_date, str):
+                    #     try:
+                    #         work_date = datetime.strptime(work_date, '%m/%d/%y')  # Handle MM/DD/YY format
+                    #     except ValueError:
+                    #         work_date = datetime.strptime(work_date, '%m/%d/%Y')  # Handle MM/DD/YYYY format
+
+                    time_entries_list.append({
+                        "WorkDate": entry.WorkDate.strftime('%m/%d/%y'),  # Format the date as MM/DD/YY,                    
+                        "tHoursWorked": entry.sTimeWorked
+                    })
+                    totalHoursWorked += float(entry.sTimeWorked) if isinstance(entry.sTimeWorked, decimal.Decimal) else entry.sTimeWorked
+                    
+                print("Time Entries:", time_entries_list)  # Debugging: Log the data
+                return jsonify({"success": True, "time_entries": time_entries_list, "totalHoursWorked": totalHoursWorked}), 200
+            else:
+                print("No time entries found for the given date range.")
+                return jsonify({"success": True, "time_entries": None, "totalHoursWorked": 0}), 200
     except Exception as e:
         print("Error fetching time entries:", str(e))  # Debugging: Log the error
         return jsonify({"success": False, "error": str(e)}), 500    

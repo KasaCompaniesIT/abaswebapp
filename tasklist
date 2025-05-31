@@ -1,18 +1,17 @@
 Time Entry WebApp Todo:
 
-x*Add time to current week only
-x*Export time to xls and copy to abas server
-x*Highlight current day
-x*Highlight holidays
-x*Add today button
-x*Add login for users
-x*fix error when going back to a date with not time
-x*Finalize Payroll Time screen
-x*If E1 salary, only show up to 40 hours
-x*Export Payroll time to abas api server
-x*Update api server to handle payroll data
-x*Copy previous weeks time to current week
-
+DONE: Add time to current week only
+DONE: Export time to xls and copy to abas server
+DONE: Highlight current day
+DONE: Highlight holidays
+DONE: Add today button
+DONE: Add login for users
+DONE: fix error when going back to a date with not time
+DONE: Finalize Payroll Time screen
+DONE: If E1 salary, only show up to 40 hours
+DONE: Export Payroll time to abas api server
+DONE: Update api server to handle payroll data
+DONE: Copy previous weeks time to current week
 DONE: dont allow delete after current week is finalized
 DONE: add finalize day 0 hour check
 DONE: add finalize warning
@@ -20,3 +19,8 @@ DONE: copy previous week from abas data if time entry data doesn't exist
 DONE: don't allow time edit from previous week. Same timeframe as finalizing previous week.
 TODO: set PTO to correct code on finalize screen
 TODO: tie indirect codes to paychex codes if they exist.  PTO / Sick / Etc.
+TODO: Add Comments section to finalize screen or timecard screen
+TODO: Split finalize screen for Hourly and Salary
+TODO: Holiday exception when user works on a holiday.  hours worked over salary plus threshold go to E50
+TODO: Editing hours does not update total hours for the day
+TODO: Add switch for summary / detailed view on finalize for salaried
