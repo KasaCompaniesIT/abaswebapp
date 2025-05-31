@@ -24,3 +24,5 @@ TODO: Split finalize screen for Hourly and Salary
 TODO: Holiday exception when user works on a holiday.  hours worked over salary plus threshold go to E50
 TODO: Editing hours does not update total hours for the day
 TODO: Add switch for summary / detailed view on finalize for salaried
+
+TODO: See if Dan can email out a copy of the timesheet after import of attendence data.
