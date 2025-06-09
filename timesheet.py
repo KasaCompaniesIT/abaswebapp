@@ -543,7 +543,7 @@ def get_final_time_entries():
             # Fetch time entries for the given date range of an hourly employee or detailed view for salaried employee
             time_entries = dbc.execute(
                 """
-                SELECT EntryID, WorkDate, t.WSNumber, TimeWorked, OpName, OpNameExtended, WODescription
+                SELECT EntryID, WorkDate, t.WSNumber, TimeWorked, OpName, OpNameExtended, OpCode, WODescription
                 FROM TimeEntry t 
                 INNER JOIN WorkSlips ws ON t.WSNumber = ws.WSNumber 
                 INNER JOIN Operations o ON ws.OpID = o.OpID
@@ -572,6 +572,7 @@ def get_final_time_entries():
                         "WSNumber": entry.WSNumber,
                         "OpName": entry.OpName,
                         "OpNameExtended": entry.OpNameExtended,
+                        "OpCode": entry.OpCode,
                         "tHoursWorked": entry.TimeWorked,
                         "WODescription": entry.WODescription
                     })
@@ -723,6 +724,18 @@ def copy_prev_week():
         print("get_time_entries_for_week")
         prev_entries = get_time_entries_for_week(abas_id, prev_start, prev_end)  # Implement this helper
         print("prev_entries: ", prev_entries)
+        
+        if not prev_entries:
+            # Calculate the start and end of the week for 2 weeks ago
+            prev_start = curr_start - timedelta(days=14)
+            print("prev_start: ", prev_start)
+            prev_end = prev_start + timedelta(days=6)
+            print("prev_end: ", prev_end)
+
+            # 1. Fetch previous week's entries
+            print("get_time_entries_for_week")
+            prev_entries = get_time_entries_for_week(abas_id, prev_start, prev_end)  # Implement this helper
+            print("prev_entries: ", prev_entries)
         
         if prev_entries:
             # 2. Copy entries to current week (adjust dates)
