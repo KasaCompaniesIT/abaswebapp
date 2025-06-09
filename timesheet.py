@@ -134,19 +134,19 @@ def entry():
                 print(day["date"])
                 # Fetch timecard data for the specific date
                 timeEntryAbas = dbc.execute("""
-                            select EmpID, WorkDate, t.WSNumber, WSDescription, OpName, OpNameExtended, sum(TimeWorked) as tHoursWorked, WODescription
+                            select EmpID, WorkDate, t.WSNumber, WSDescription, OpName, OpNameExtended, sum(TimeWorked) as tHoursWorked, WODescription, OpCode
                             from TimeEntryAbas t
                             inner join WorkSlips ws on t.WSNumber = ws.WSNumber 
                             inner join Operations o on ws.OpID = o.OpID
                             inner join WorkOrders wo on ws.WONumber = wo.WONumber
                             where EmpID = ? and WorkDate = ? 
-                            group by EmpID, t.WSNumber, WSDescription, OpName, OpNameExtended, WorkDate, WODescription
+                            group by EmpID, t.WSNumber, WSDescription, OpName, OpNameExtended, WorkDate, WODescription, OpCode
                             order by EmpID, WorkDate
                             """
                             , abasUser.EmpID, day["date"]).fetchall()
                 
                 timeEntry = dbc.execute("""
-                            select EntryID, EmpID, WorkDate, t.WSNumber, WSDescription, OpName, OpNameExtended, TimeWorked as tHoursWorked, WODescription 
+                            select EntryID, EmpID, WorkDate, t.WSNumber, WSDescription, OpName, OpNameExtended, TimeWorked as tHoursWorked, WODescription, OpCode 
                             from TimeEntry t
                             inner join WorkSlips ws on t.WSNumber = ws.WSNumber 
                             inner join Operations o on ws.OpID = o.OpID
@@ -172,6 +172,7 @@ def entry():
                         "WODescription": entry.WODescription,
                         "OpName": entry.OpName,
                         "OpNameExtended": entry.OpNameExtended,
+                        "OpCode": entry.OpCode,
                         "tHoursWorked": entry.tHoursWorked,
                         "TimeEntryID": None  # No TimeEntryID for TimeEntryAbas
                     })
@@ -187,6 +188,7 @@ def entry():
                             "WSDescription": entry.WSDescription,
                             "WODescription": entry.WODescription,
                             "OpName": entry.OpName,
+                            "OpCode": entry.OpCode,
                             "OpNameExtended": entry.OpNameExtended,
                             "tHoursWorked": entry.tHoursWorked,
                             "TimeEntryID": entry.EntryID  # Include TimeEntryID for deletion
@@ -198,6 +200,18 @@ def entry():
                 timecard_data[day["date"]] = combined_entries
 
                 # print(f"Date: {date}, Rows: {rows}")
+
+            # Check if any time entry has an OpCode specified
+            has_opcode = False
+            for entries in timecard_data.values():
+                for entry in entries:
+                    if entry.get("OpCode"):
+                        has_opcode = True
+                        break
+                if has_opcode:
+                    break
+
+            can_use_summary_view = not has_opcode
 
             today = datetime.now().strftime("%m/%d/%y")  # Format today's date as MM/DD/YY
             
@@ -233,7 +247,8 @@ def entry():
                                     today=today,
                                     can_add_or_finalize=can_add_or_finalize,
                                     paychex_list=paychex_list,
-                                    week_finalized=week_finalized
+                                    week_finalized=week_finalized,
+                                    can_use_summary_view=can_use_summary_view
             )
 
             # return render_template('timesheet/entry.html', abasID=abas_ID, abasUser=abasUser, startOfPrevWeek=startOfPrevWeek, endOfPrevWeek=endOfPrevWeek, dateRangePrevWeek=dateRangePrevWeek)
@@ -945,3 +960,30 @@ def send_timeentry_csv_to_abas(abas_id, work_date, work_slip_id, hours_worked):
     response = requests.post(url, json=payload)
 
     return response
+
+@bp.route('/timesheet/entry/get_summary_flag')
+@login_required
+def get_summary_flag():
+    abas_id = request.args.get('abas_id')
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    
+    db = get_db()
+    dbc = db.cursor()
+    
+    # Fetch timecard data for each date      
+    timeEntry = dbc.execute("""
+                select OpCode 
+                from TimeEntry t
+                inner join WorkSlips ws on t.WSNumber = ws.WSNumber 
+                inner join Operations o on ws.OpID = o.OpID
+                where EmpID = ? and WorkDate BETWEEN ? and ? and OpCode != ''
+                """
+                , abas_id, start_date, end_date).fetchall()
+        
+    
+    has_opcode = False
+    if timeEntry:
+        has_opcode = True
+
+    return jsonify({'can_use_summary_view': not has_opcode})

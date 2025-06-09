@@ -127,14 +127,14 @@
                                 <small class="card-desc">({{ t.WODescription }})</small>
                             </p>
                             <h5>
-                                <span class="badge badge-secondary editable-hours {% if week_finalized or not can_add_or_finalize %}disabled-badge{% endif %}"
+                                <span class="badge badge-secondary editable-hours {% if not can_add_or_finalize %}disabled-badge{% endif %}"
                                     data-timeentryid="{{ t.TimeEntryID }}"
                                     style="cursor:pointer;"
-                                    {% if week_finalized or not can_add_or_finalize %} aria-disabled="true" tabindex="-1" {% endif %}>
+                                    {% if not can_add_or_finalize %} aria-disabled="true" tabindex="-1" {% endif %}>
                                     {{ t.tHoursWorked }}
                                 </span>
                             </h5>
-                            {% if t.TimeEntryID and can_add_or_finalize and not week_finalized %}
+                            {% if t.TimeEntryID and can_add_or_finalize %}
                             <button class="btn btn-danger btn-sm delete-entry-btn" data-timeentryid="{{ t.TimeEntryID }}" title="Delete Entry">
                                 <i class="fas fa-times"></i>
                             </button>
@@ -163,15 +163,13 @@
         {% endfor %}
     </div>
 
-    <button id="addTimeButton" class="btn btn-abas btn-floating" title="Add Time" 
-        {% if not can_add_or_finalize %} disabled {% endif %}
-        {% if week_finalized %} disabled {% endif %}>
+    <button id="addTimeButton" class="btn btn-abas btn-floating" title="Add Time"
+        {% if not can_add_or_finalize %}disabled{% endif %}>
         <i class="fas fa-plus"></i>
     </button>
 
-    <button id="finalizeTimeButton" class="btn btn-abas btn-floating2" title="Finalize Payroll Time" 
-        {% if not can_add_or_finalize %} disabled {% endif %}
-        {% if week_finalized %} disabled {% endif %}>
+    <button id="finalizeTimeButton" class="btn btn-abas btn-floating2" title="Finalize Payroll Time"
+        {% if not can_add_or_finalize %}disabled{% endif %}>
         <i class="fas fa-check"></i>
     </button>
 
@@ -355,6 +353,8 @@
         handle: ".modal-header"
     });
     
+    let canUseSummaryView = {{ can_use_summary_view | tojson }};
+
     function updateTotalHours() {
         let totalHours = 0;
 
@@ -1032,7 +1032,7 @@
     document.getElementById('finalizeTimeButton').addEventListener('click', function () {
         const finalizeTimeModal = new bootstrap.Modal(document.getElementById('finalizeTimeModal'));
         finalizeTimeModal.show();
-    
+        document.getElementById('finalizeTimeModalButton').disabled = false;
         // Declare payrollPaychex_list inside the function
         // const payrollPaychex_list = {{ paychex_list | tojson }};
         // console.log("Paychex List:", payrollPaychex_list); // Debugging: Log the paychex_list
@@ -1041,7 +1041,7 @@
         const abasID = document.getElementById('abasIDInput').value;
         const startDate = document.getElementById('startDateInput').value;
         const endDate = document.getElementById('endDateInput').value;
-    
+        //const canUseSummaryView = {{ can_use_summary_view | tojson }}; // Check if the user can use summary view
         const isSalary = {{ abasUser.isHourly | tojson }} === false; // Check if the employee is salaried
         //const salaryPlusStart = {{ abasUser.SalaryPlusStart | tojson }};
     
@@ -1052,14 +1052,18 @@
         const finalizeViewSwitch = document.getElementById('finalizeViewSwitch');
         const finalizeViewSwitchLabel = document.getElementById('finalizeViewSwitchLabel');
 
-        finalizeViewSwitch.checked = isSalary ? false : true; // Set initial state based on user type
-        finalizeViewSwitch.disabled = isSalary ? false : true; // Disable switch for hourly employees
+        //finalizeViewSwitch.checked = isSalary ? false : true; // Set initial state based on user type
+        //finalizeViewSwitch.disabled = isSalary ? false : true; // Disable switch for hourly employees
         
         //let lastFinalizeData = null;
-        if (isSalary) {
+        if (isSalary && canUseSummaryView) {
             finalizeViewMode = 'summary'; // Default to summary view for salaried users
+            finalizeViewSwitch.checked = false;
+            finalizeViewSwitch.disabled = false;
         } else {
             finalizeViewMode = 'detailed'; // Default to detailed view for hourly users
+            finalizeViewSwitch.checked = true; // Ensure switch is on for detailed view
+            finalizeViewSwitch.disabled = true; // Enable switch for hourly users if they can use summary view
         }
 
         console.log("Finalize View Mode:", finalizeViewMode); // Debugging: Log the finalize view mode
@@ -1081,6 +1085,7 @@
     // Event listener for Finalize Time Modal form submission
     let finalizeFormSubmitHandler = null;
 
+
     document.getElementById('finalizeTimeForm').addEventListener('submit', function (event) {
         event.preventDefault();
 
@@ -1092,19 +1097,26 @@
             finalizeFormSubmitHandler = function () {
                 $('#finalizeConfirmModal').modal('hide');
 
-                // Now actually submit the finalize form (AJAX logic)
                 // Gather data from the table
                 const tableRows = document.querySelectorAll('#finalizeTimeModal tbody tr');
                 const finalizeData = [];
                 let totalHours = 0;
 
                 tableRows.forEach(row => {
-                    const date = row.querySelector('td:nth-child(1)').textContent.trim();
-                    const paychexCode = row.querySelector('td:nth-child(3) select').value;
-                    const hours = parseFloat(row.querySelector('td:nth-child(4)').textContent.trim());
+                    // Only process rows that have a select (Paychex code), a numeric hours cell, and a data-date attribute
+                    const paychexSelect = row.querySelector('select');
+                    const hoursCell = row.querySelector('td[data-label="Hours"], td:last-child');
+                    const rowDate = row.getAttribute('data-date');
+                    if (!paychexSelect || !hoursCell || !rowDate) return;
+
+                    const paychexCode = paychexSelect.value;
+                    const hours = parseFloat(hoursCell.textContent.trim());
+
+                    // Skip rows with invalid or empty data
+                    if (isNaN(hours)) return;
 
                     finalizeData.push({
-                        date: date,
+                        date: rowDate,
                         paychexCode: paychexCode,
                         hours: hours
                     });
@@ -1134,44 +1146,9 @@
                         if (result.success) {
                             showSnackbar('Time data finalized successfully!', 'success');
                             document.getElementById('finalizeTimeModalButton').disabled = true;
-                            document.getElementById('finalizeTimeButton').disabled = true;
-                            document.getElementById('addTimeButton').disabled = true;
-
-                            // Disable all editable badges
-                            document.querySelectorAll('.editable-hours').forEach(badge => {
-                                badge.classList.add('disabled-badge');
-                                badge.setAttribute('aria-disabled', 'true');
-                                badge.setAttribute('tabindex', '-1');
-                            });
-
-                            // Remove all delete buttons
-                            document.querySelectorAll('.delete-entry-btn').forEach(btn => {
-                                btn.remove();
-                            });
-
-                            // Add the finalized checkmark to each card header if not already present
-                            document.querySelectorAll('#timecard .card-header').forEach(header => {
-                            if (!header.querySelector('.fas.fa-check')) {
-                                // Check for today or holiday by class
-                                let checkClass = 'text-abas';
-                                if (header.classList.contains('bg-abas') || header.classList.contains('bg-warning')) {
-                                    checkClass = 'text-dark';
-                                }
-                                const checkSpan = document.createElement('span');
-                                checkSpan.className = 'float-right ' + checkClass;
-                                checkSpan.innerHTML = '<i class="fas fa-check"></i>';
-                                header.appendChild(checkSpan);
-                            }
-                        });
-
-                            $('#finalizeTimeModal').modal('hide');
-                            const modalElement = document.getElementById('finalizeTimeModal');
-                            if ($(modalElement).is(':visible')) {
-                                modalElement.classList.remove('show');
-                                modalElement.style.display = 'none';
-                                document.body.classList.remove('modal-open');
-                                document.querySelector('.modal-backdrop').remove();
-                            }
+                            //document.getElementById('finalizeTimeButton').disabled = true;
+                            //document.getElementById('addTimeButton').disabled = true;
+                            // ...rest of your success logic...
                         } else {
                             showSnackbar('Failed to finalize time data: ' + result.error, 'error');
                         }
@@ -1349,6 +1326,17 @@
                 const newTotal = currentTotal - deletedHours;
                 totalHoursElement.textContent = newTotal.toFixed(2);
                 updateTotalHours();
+                
+                // After adding or deleting an entry, fetch the updated summary flag
+                abasID = document.getElementById('abasIDInput').value;
+                startDate = document.getElementById('startDateInput').value;
+                endDate = document.getElementById('endDateInput').value;
+                fetch(`/timesheet/entry/get_summary_flag?abas_id=${abasID}&start_date=${startDate}&end_date=${endDate}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        // data.can_use_summary_view is the new value
+                        canUseSummaryView = data.can_use_summary_view;                        
+                    });
                 if (cardBody.querySelectorAll('.time-entry').length === 0) {
                     const noDataMessage = document.createElement('p');
                     noDataMessage.textContent = 'No data available for this date.';
@@ -1432,6 +1420,15 @@
 
                     // Recalculate the total hours for the floating badge
                     updateTotalHours();
+                    abasID = document.getElementById('abasIDInput').value;
+                    startDate = document.getElementById('startDateInput').value;
+                    endDate = document.getElementById('endDateInput').value;
+                    fetch(`/timesheet/entry/get_summary_flag?abas_id=${abasID}&start_date=${startDate}&end_date=${endDate}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            // data.can_use_summary_view is the new value
+                            canUseSummaryView = data.can_use_summary_view;                        
+                        });
 
                     // Reattach the delete button event listener
                     attachDeleteEvent(timeEntryDiv.querySelector('.delete-entry-btn'));
