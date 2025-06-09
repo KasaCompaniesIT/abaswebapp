@@ -796,7 +796,7 @@ a { color: #009FAA; }
   }
   #finalizeTimeModal #finalizeTimeTable td {
     position: relative;
-    padding-left: 34%;
+    padding-left: 24%;
     min-height: 2.2em;
     border: none;
     border-bottom: 1px solid #eee;
@@ -812,8 +812,8 @@ a { color: #009FAA; }
     position: absolute;
     left: 0.75rem;
     top: 0.5rem;
-    width: 28%;
-    min-width: 60px;
+    width: 20%;
+    min-width: 40px;
     max-width: 95%;
     white-space: normal;
     font-weight: bold;

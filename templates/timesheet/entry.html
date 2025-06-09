@@ -275,7 +275,7 @@
                                     <tr>
                                         <th>Date</th>
                                         <th id="operationHeader" style="display: none;">Operation</th>
-                                        <th>Paychex Code</th>
+                                        <th>Pay Code</th>
                                         <th>Hours</th>
                                     </tr>
                                 </thead>
@@ -346,7 +346,14 @@
 {% endblock %} <!-- end content block -->
 {% block script %}
 <script>
+    // Make the modal draggable by its header
+    $('#addTimeModal').draggable({
+        handle: ".modal-header"
+    });
 
+    $('#finalizeTimeModal').draggable({
+        handle: ".modal-header"
+    });
     
     function updateTotalHours() {
         let totalHours = 0;
@@ -614,7 +621,7 @@
                     rowHTML += `
                         <tr>
                             <td data-label="Date">${day}</td>
-                            <td data-label="Paychex Code">
+                            <td data-label="Pay Code">
                                 <select name="paychex_code_${day}" class="form-control">
                                     ${payrollPaychex_list.map(paychex => `
                                         <option value="${paychex.id}" ${paychex.code === 'E1' ? 'selected' : ''}>
@@ -633,7 +640,7 @@
                     rowHTML += `
                         <tr>
                             <td data-label="Date">Salary Plus</td>
-                            <td data-label="Paychex Code">
+                            <td data-label="Pay Code">
                                 <select name="paychex_code_salaryplus" class="form-control">
                                     ${payrollPaychex_list.map(paychex => `
                                         <option value="${paychex.id}" ${paychex.code === 'E50' ? 'selected' : ''}>
@@ -657,27 +664,49 @@
                 let rowHTML = '';
                 let totalHours = 0;
                 let cumulativeHours = 0;
-                let lastWorkDate = null;
-                let dayTotal = 0;
                 let lastDay = null;
-                
-                data.time_entries.forEach(entry => {
+                let dayTotal = 0;
+                let isFirstRowOfDay = true;
+
+                data.time_entries.forEach((entry, idx) => {
                     const entryHours = parseFloat(entry.tHoursWorked);
                     const workDate = entry.WorkDate;
-                    // Use just the date part for grouping (if your WorkDate includes time)
+                    const dateObj = new Date(workDate);
+                    // Get day of week name (e.g., "Monday")
+                    const weekdayName = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
                     const dayStr = workDate;
-                    
-                    lastWorkDate = entry.WorkDate; // Update lastWorkDate
+
+                    // If this is a new day and not the first entry, add a total row for the previous day
+                    if (lastDay && lastDay !== dayStr) {
+                        // Get the weekday name for the last day
+                        const lastDateObj = new Date(lastDay);
+                        const lastWeekdayName = lastDateObj.toLocaleDateString('en-US', { weekday: 'long' });
+
+                        rowHTML += `
+                            <tr class="table-secondary" data-date="${lastDay}">
+                                <td colspan="3" class="text-right font-italic">Total for ${lastWeekdayName} - ${lastDay}:</td>
+                                <td class="font-weight-bold text-right">${dayTotal.toFixed(2)}</td>
+                            </tr>
+                        `;
+                        dayTotal = 0;
+                        isFirstRowOfDay = true;
+                    }
+
+                    // --- Your existing logic for salary caps and salary plus ---
                     if (cumulativeHours + entryHours <= 40) {
                         // Entire entry fits within the first 40 hours
-                        rowHTML = `
-                            <tr>
-                                <td data-label="Date">${entry.WorkDate}</td>
+                        rowHTML += `
+                            <tr data-date="${workDate}">
+                                <td data-label="Date">${isFirstRowOfDay ? weekdayName : ''}</td>
                                 <td data-label="Operation">${entry.WSNumber} - ${entry.OpName}<br><small class="card-desc">(${entry.WODescription})</small></td>
-                                <td data-label="Paychex Code">
+                                <td data-label="Pay Code">
                                     <select name="paychex_code_${entry.WorkDate}" class="form-control">
                                         ${payrollPaychex_list.map(paychex => `
-                                            <option value="${paychex.id}" ${paychex.code === 'E1' ? 'selected' : ''}>
+                                            <option value="${paychex.id}" ${
+                                                entry.OpCode
+                                                    ? (paychex.code === entry.OpCode ? 'selected' : '')
+                                                    : (paychex.code === 'E1' ? 'selected' : '')
+                                            }>
                                                 ${paychex.code} - ${paychex.description}
                                             </option>
                                         `).join('')}
@@ -686,70 +715,47 @@
                                 <td data-label="Hours" class="text-right">${entryHours.toFixed(2)}</td>
                             </tr>
                         `;
-                        totalHours += entryHours; // Add to total hours
-                    } else if (cumulativeHours + entryHours > 40 && salaryPlusStart == 0) {
-                        // Entry crosses the 40-hour mark but is within the salary plus threshold
-                        const remainingHoursTo40 = Math.max(0, 40 - cumulativeHours); // Hours needed to reach 40
-                        const hoursBeyond40 = entryHours - remainingHoursTo40; // Remaining hours beyond 40
-                    
-                        console.log("Remaining Hours to 40:", remainingHoursTo40); // Debugging
-                        console.log("Hours Beyond 40:", hoursBeyond40); // Debugging
-                    
+                        totalHours += entryHours;
+                        dayTotal += entryHours;
+                    } else if (cumulativeHours + entryHours > 40 && cumulativeHours + entryHours <= salaryPlusStart) {
+                    //else if (cumulativeHours < 40) {
+                        // Entry crosses the 40-hour mark
+                        const remainingHoursTo40 = Math.max(0, 40 - cumulativeHours);
+                        const hoursBeyond40 = entryHours - remainingHoursTo40;
+
                         // First row: Hours up to 40
                         if (remainingHoursTo40 > 0) {
-                            rowHTML = `
-                                <tr>
-                                    <td data-label="Date">${entry.WorkDate}</td>
-                                    <td data-label="Operation">${entry.WSNumber} - ${entry.OpName}<br><small class="card-desc">(${entry.WODescription})</small></td>
-                                    <td data-label="Paychex Code">
-                                        <select name="paychex_code_${entry.WorkDate}" class="form-control">
-                                            ${payrollPaychex_list.map(paychex => `
-                                                <option value="${paychex.id}" ${paychex.code === 'E1' ? 'selected' : ''}>
-                                                    ${paychex.code} - ${paychex.description}
-                                                </option>
-                                            `).join('')}
-                                        </select>
-                                    </td>
-                                    <td data-label="Hours" class="text-right">${remainingHoursTo40.toFixed(2)}</td>
-                                </tr>
-                            `;
-                        }
-                        totalHours += remainingHoursTo40; // Add to total hours
-                    } else if (cumulativeHours + entryHours > 40 && salaryPlusStart > 0) {
-                        // Entry crosses the 40-hour mark but is within the salary plus threshold
-                        const remainingHoursTo40 = Math.max(0, 40 - cumulativeHours); // Hours needed to reach 40
-                        const hoursBeyond40 = entryHours - remainingHoursTo40; // Remaining hours beyond 40
-                    
-                        console.log("Remaining Hours to 40:", remainingHoursTo40); // Debugging
-                        console.log("Hours Beyond 40:", hoursBeyond40); // Debugging
-                    
-                        // First row: Hours up to 40
-                        if (remainingHoursTo40 > 0) {
-                            rowHTML = `
-                                <tr>
-                                    <td data-label="Date">${entry.WorkDate}</td>
-                                    <td data-label="Operation">${entry.WSNumber} - ${entry.OpName}<br><small class="card-desc">(${entry.WODescription})</small></td>
-                                    <td data-label="Paychex Code">
-                                        <select name="paychex_code_${entry.WorkDate}" class="form-control">
-                                            ${payrollPaychex_list.map(paychex => `
-                                                <option value="${paychex.id}" ${paychex.code === 'E1' ? 'selected' : ''}>
-                                                    ${paychex.code} - ${paychex.description}
-                                                </option>
-                                            `).join('')}
-                                        </select>
-                                    </td>
-                                    <td data-label="Hours" class="text-right">${remainingHoursTo40.toFixed(2)}</td>
-                                </tr>
-                            `;
-                        }
-                    
-                        // Second row: Hours beyond 40 and greater then salaryplus start with E50 code
-                        if (hoursBeyond40 > 0 && cumulativeHours + entryHours >= salaryPlusStart) {
                             rowHTML += `
-                                <tr>
-                                    <td data-label="Date">${entry.WorkDate}</td>
+                                <tr data-date="${workDate}">
+                                    <td data-label="Date">${isFirstRowOfDay ? weekdayName : ''}</td>
                                     <td data-label="Operation">${entry.WSNumber} - ${entry.OpName}<br><small class="card-desc">(${entry.WODescription})</small></td>
-                                    <td data-label="Paychex Code">
+                                    <td data-label="Pay Code">
+                                        <select name="paychex_code_${entry.WorkDate}" class="form-control">
+                                            ${payrollPaychex_list.map(paychex => `
+                                                <option value="${paychex.id}" ${
+                                                    entry.OpCode
+                                                        ? (paychex.code === entry.OpCode ? 'selected' : '')
+                                                        : (paychex.code === 'E1' ? 'selected' : '')
+                                                }>
+                                                    ${paychex.code} - ${paychex.description}
+                                                </option>
+                                            `).join('')}
+                                        </select>
+                                    </td>
+                                    <td data-label="Hours" class="text-right">${remainingHoursTo40.toFixed(2)}</td>
+                                </tr>
+                            `;
+                            totalHours += remainingHoursTo40;
+                            dayTotal += remainingHoursTo40;
+                            isFirstRowOfDay = false; // Set to false after the first row
+                        }
+                        // Second row: Salary plus (if applicable)
+                        /* if (hoursBeyond40 > 0 && cumulativeHours + entryHours >= salaryPlusStart) {
+                            rowHTML += `
+                                <tr data-date="${workDate}">
+                                    <td data-label="Date"></td>
+                                    <td data-label="Operation">${entry.WSNumber} - ${entry.OpName}<br><small class="card-desc">(${entry.WODescription})</small></td>
+                                    <td data-label="Pay Code">
                                         <select name="paychex_code_${entry.WorkDate}" class="form-control">
                                             ${payrollPaychex_list.map(paychex => `
                                                 <option value="${paychex.id}" ${paychex.code === 'E50' ? 'selected' : ''}>
@@ -760,45 +766,179 @@
                                     </td>
                                     <td data-label="Hours" class="text-right">${hoursBeyond40.toFixed(2)}</td>
                                 </tr>
-                            `;                                   
-                            
+                            `;
+                            // Do not add hoursBeyond40 to dayTotal or totalHours if you want to exclude salary plus from regular totals
+                        } */
+                         // Second row: Hours beyond 40 with S40 code
+                        if (hoursBeyond40 > 0) {
+                            console.log("Creating S40 row for hours:", hoursBeyond40); // Debugging
+                            rowHTML += `
+                                <tr data-date="${workDate}">
+                                    <td data-label="Date">${isFirstRowOfDay ? weekdayName : ''}</td>
+                                    <td>${entry.WSNumber} - ${entry.OpName}</td>
+                                    <td>
+                                        <select name="paychex_code_${entry.EntryID}_2" class="form-control">
+                                            ${payrollPaychex_list.map(paychex => `
+                                                <option value="${paychex.id}" ${
+                                                    entry.OpCode
+                                                        ? (paychex.code === entry.OpCode ? 'selected' : '')
+                                                        : (paychex.code === 'S40' ? 'selected' : '')
+                                                }>
+                                                    ${paychex.code} - ${paychex.description}
+                                                </option>
+                                            `).join('')}
+                                        </select>
+                                    </td>
+                                    <td>${hoursBeyond40.toFixed(2)}</td>
+                                </tr>
+                            `;
                         }
-                        totalHours += remainingHoursTo40; // Add to total hours
-                    } 
-                    cumulativeHours += parseFloat(entry.tHoursWorked);
-                    // Append the row to the table body
-                    tableBody.insertAdjacentHTML('beforeend', rowHTML);
+                        
+                    } else if (cumulativeHours + entryHours > salaryPlusStart) {
+                        // Entry exceeds the salary plus threshold
+                        const remainingHoursToSalaryPlus = Math.max(0, salaryPlusStart - cumulativeHours); // Hours to reach salary plus
+                        const overtimeHours = Math.max(0, entryHours - remainingHoursToSalaryPlus); // Remaining hours beyond salary plus
+                        console.log("Salary Plus Start:", salaryPlusStart); // Debugging
+                        console.log("Remaining Hours to Salary Plus:", remainingHoursToSalaryPlus); // Debugging
+                        console.log("Overtime Hours:", overtimeHours); // Debugging
+                    
+                        // First row: Hours up to salary plus with S40 code
+                        if (remainingHoursToSalaryPlus > 0) {
+                            rowHTML += `
+                                <tr data-date="${workDate}">
+                                    <td data-label="Date">${isFirstRowOfDay ? weekdayName : ''}</td>
+                                    <td>${entry.WSNumber} - ${entry.OpName}</td>
+                                    <td>
+                                        <select name="paychex_code_${entry.EntryID}_1" class="form-control">
+                                            ${payrollPaychex_list.map(paychex => `
+                                                <option value="${paychex.id}" ${
+                                                    entry.OpCode
+                                                        ? (paychex.code === entry.OpCode ? 'selected' : '')
+                                                        : (paychex.code === 'S40' ? 'selected' : '')
+                                                }>
+                                                    ${paychex.code} - ${paychex.description}
+                                                </option>
+                                            `).join('')}
+                                        </select>
+                                    </td>
+                                    <td>${remainingHoursToSalaryPlus.toFixed(2)}</td>
+                                </tr>
+                            `;
+                            isFirstRowOfDay = false; // Set to false after the first row
+                        }
+                    
+                        // Second row: Overtime hours beyond salary plus with E50 code
+                        if (overtimeHours > 0) {
+                            rowHTML += `
+                                <tr data-date="${workDate}">
+                                    <td data-label="Date">${isFirstRowOfDay ? weekdayName : ''}</td>
+                                    <td>${entry.WSNumber} - ${entry.OpName}</td>
+                                    <td>
+                                        <select name="paychex_code_${entry.EntryID}_2" class="form-control">
+                                            ${payrollPaychex_list.map(paychex => `
+                                                <option value="${paychex.id}" ${
+                                                    entry.OpCode
+                                                        ? (paychex.code === entry.OpCode ? 'selected' : '')
+                                                        : (paychex.code === 'E50' ? 'selected' : '')
+                                                }>
+                                                    ${paychex.code} - ${paychex.description}
+                                                </option>
+                                            `).join('')}
+                                        </select>
+                                    </td>
+                                    <td>${overtimeHours.toFixed(2)}</td>
+                                </tr>
+                            `;
+                            totalHours += overtimeHours; // Add overtime hours to total
+                            dayTotal += overtimeHours; // Add overtime hours to daily total
+                        }
+                        
+                    }
+                    
+                    cumulativeHours += entryHours;
+                    lastDay = dayStr;
+                    isFirstRowOfDay = false;
 
-                    console.log("Cumulative Hours After:", cumulativeHours); // Debugging cumulative hours
-                });                
-                totalHours += salaryPlusHours; // Add salary plus hours to total hours
-                totalHoursBadge.textContent = totalHours.toFixed(2); // Update the total hours badge
+                    // If this is the last entry, add a total row for the last day
+                    if (idx === data.time_entries.length - 1) {
+                        const lastDateObj = new Date(lastDay);
+                        const lastWeekdayName = lastDateObj.toLocaleDateString('en-US', { weekday: 'long' });
+
+                        rowHTML += `
+                            <tr class="table-secondary" data-date="${lastDay}">
+                                <td colspan="3" class="text-right font-italic">Total for ${lastWeekdayName} - ${lastDay}:</td>
+                                <td class="font-weight-bold text-right">${dayTotal.toFixed(2)}</td>
+                            </tr>
+                        `;
+                    }
+                });
+
+                tableBody.innerHTML = rowHTML;
+                totalHoursBadge.textContent = totalHours.toFixed(2);
+
+                console.log("Cumulative Hours After:", cumulativeHours); // Debugging cumulative hours  
+
+                //totalHours += salaryPlusHours; // Add salary plus hours to total hours
+                //totalHoursBadge.textContent = totalHours.toFixed(2); // Update the total hours badge
                 console.log("TotalHoursBadge", totalHoursBadge.textContent); // Debugging: Log the total hours badge      
             }
         } else {
             // Hourly logic (usually detailed)
-            data.time_entries.forEach(entry => {
+            let rowHTML = '';
+            let totalHours = 0;
+            let cumulativeHours = 0;
+            let lastDay = null;
+            let dayTotal = 0;
+            let isFirstRowOfDay = true;
+            
+            data.time_entries.forEach((entry, idx) => {
                 const entryHours = parseFloat(entry.tHoursWorked);
+                const workDate = entry.WorkDate;
+                const dateObj = new Date(workDate);
+                // Get day of week name (e.g., "Monday")
+                const weekdayName = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
+                const dayStr = workDate;
+
+                // If this is a new day and not the first entry, add a total row for the previous day
+                if (lastDay && lastDay !== dayStr) {
+                    // Get the weekday name for the last day
+                    const lastDateObj = new Date(lastDay);
+                    const lastWeekdayName = lastDateObj.toLocaleDateString('en-US', { weekday: 'long' });
+
+                    rowHTML += `
+                        <tr class="table-secondary" data-date="${lastDay}">
+                            <td colspan="3" class="text-right font-italic">Total for ${lastWeekdayName} - ${lastDay}:</td>
+                            <td class="font-weight-bold text-right">${dayTotal.toFixed(2)}</td>
+                        </tr>
+                    `;
+                    dayTotal = 0;
+                    isFirstRowOfDay = true;
+                }
 
                 if (cumulativeHours + entryHours <= 40) {
                     // Entire entry fits within the first 40 hours
-                    rowHTML = `
-                        <tr>
-                            <td data-label="Date">${entry.WorkDate}</td>
+                    rowHTML += `
+                        <tr data-date="${workDate}">
+                            <td data-label="Date">${isFirstRowOfDay ? weekdayName : ''}</td>
                             <td data-label="Operation">${entry.WSNumber} - ${entry.OpName}<br><small class="card-desc">(${entry.WODescription})</small></td>
-                            <td data-label="Paychex Code">
-                                <select name="paychex_code_${entry.EntryID}" class="form-control">
+                            <td data-label="Pay Code">
+                                <select name="paychex_code_${entry.WorkDate}" class="form-control">
                                     ${payrollPaychex_list.map(paychex => `
-                                        <option value="${paychex.id}" ${paychex.code === 'E1' ? 'selected' : ''}>
+                                        <option value="${paychex.id}" ${
+                                            entry.OpCode
+                                                ? (paychex.code === entry.OpCode ? 'selected' : '')
+                                                : (paychex.code === 'E1' ? 'selected' : '')
+                                        }>
                                             ${paychex.code} - ${paychex.description}
                                         </option>
                                     `).join('')}
                                 </select>
                             </td>
-                            <td data-label="Hours">${entryHours.toFixed(2)}</td>
+                            <td data-label="Hours" class="text-right">${entryHours.toFixed(2)}</td>
                         </tr>
                     `;
-                    totalHours += entryHours; // Add to total hours
+                    totalHours += entryHours;
+                    dayTotal += entryHours;
                 } else if (cumulativeHours + entryHours > 40) {
                     // Entry crosses the 40-hour mark
                     const remainingHoursTo40 = Math.max(0, 40 - cumulativeHours); // Hours needed to reach 40
@@ -806,54 +946,85 @@
 
                     // First row: Hours up to 40
                     if (remainingHoursTo40 > 0) {
-                        rowHTML = `
-                            <tr>
-                                <td data-label="Date">${entry.WorkDate}</td>
+                        rowHTML += `
+                            <tr data-date="${workDate}">
+                                <td data-label="Date">${isFirstRowOfDay ? weekdayName : ''}</td>
                                 <td data-label="Operation">${entry.WSNumber} - ${entry.OpName}<br><small class="card-desc">(${entry.WODescription})</small></td>
-                                <td data-label="Paychex Code">
-                                    <select name="paychex_code_${entry.EntryID}" class="form-control">
+                                <td data-label="Pay Code">
+                                    <select name="paychex_code_${entry.WorkDate}" class="form-control">
                                         ${payrollPaychex_list.map(paychex => `
-                                            <option value="${paychex.id}" ${paychex.code === 'E1' ? 'selected' : ''}>
+                                            <option value="${paychex.id}" ${
+                                                entry.OpCode
+                                                    ? (paychex.code === entry.OpCode ? 'selected' : '')
+                                                    : (paychex.code === 'E1' ? 'selected' : '')
+                                            }>
                                                 ${paychex.code} - ${paychex.description}
                                             </option>
                                         `).join('')}
                                     </select>
                                 </td>
-                                <td data-label="Hours">${remainingHoursTo40.toFixed(2)}</td>
+                                <td data-label="Hours" class="text-right">${remainingHoursTo40.toFixed(2)}</td>
                             </tr>
                         `;
+                        totalHours += remainingHoursTo40;
+                        dayTotal += remainingHoursTo40;
+                        isFirstRowOfDay = false; // Set to false after the first row
                     }
 
-                    // Second row: Overtime hours beyond 40 with E15 code
+                    // Second row: Overtime hours beyond 40 with E51 code
                     if (hoursBeyond40 > 0) {
                         rowHTML += `
-                            <tr>
-                                <td data-label="Date">${entry.WorkDate}</td>
+                            <tr data-date="${workDate}">
+                                <td data-label="Date">${isFirstRowOfDay ? weekdayName : ''}</td>
                                 <td data-label="Operation">${entry.WSNumber} - ${entry.OpName}<br><small class="card-desc">(${entry.WODescription})</small></td>
-                                <td data-label="Paychex Code">
-                                    <select name="paychex_code_${entry.EntryID}" class="form-control">
+                                <td data-label="Pay Code">
+                                    <select name="paychex_code_${entry.WorkDate}" class="form-control">
                                         ${payrollPaychex_list.map(paychex => `
-                                            <option value="${paychex.id}" ${paychex.code === 'E1' ? 'selected' : ''}>
+                                            <option value="${paychex.id}" ${
+                                                entry.OpCode
+                                                    ? (paychex.code === entry.OpCode ? 'selected' : '')
+                                                    : (paychex.code === 'E51' ? 'selected' : '')
+                                            }>
                                                 ${paychex.code} - ${paychex.description}
                                             </option>
                                         `).join('')}
                                     </select>
                                 </td>
-                                <td data-label="Hours">${hoursBeyond40.toFixed(2)}</td>
+                                <td data-label="Hours" class="text-right">${hoursBeyond40.toFixed(2)}</td>
                             </tr>
                         `;
+                        totalHours += hoursBeyond40; // Add to total hours
+                        dayTotal += hoursBeyond40; // Add to daily total
+                        isFirstRowOfDay = false; // Set to false after the first row
                     }
-                    totalHours += entryHours; // Add to total hours
+                    
                 }
-                cumulativeHours += parseFloat(entry.tHoursWorked);
-                // Append the row to the table body
-                tableBody.insertAdjacentHTML('beforeend', rowHTML);
+                cumulativeHours += entryHours;
+                lastDay = dayStr;
+                isFirstRowOfDay = false;
 
-                console.log("Cumulative Hours After:", cumulativeHours); // Debugging cumulative hours
+                // If this is the last entry, add a total row for the last day
+                if (idx === data.time_entries.length - 1) {
+                    const lastDateObj = new Date(lastDay);
+                    const lastWeekdayName = lastDateObj.toLocaleDateString('en-US', { weekday: 'long' });
+
+                    rowHTML += `
+                        <tr class="table-secondary" data-date="${lastDay}">
+                            <td colspan="3" class="text-right font-italic">Total for ${lastWeekdayName} - ${lastDay}:</td>
+                            <td class="font-weight-bold text-right">${dayTotal.toFixed(2)}</td>
+                        </tr>
+                    `;
+                }
             });
 
-            totalHoursBadge.textContent = totalHours.toFixed(2); // Update the total hours badge
-            console.log("TotalHoursBadge", totalHoursBadge.textContent); // Debugging: Log the total hours badge                
+            tableBody.innerHTML = rowHTML;
+            totalHoursBadge.textContent = totalHours.toFixed(2);
+
+            console.log("Cumulative Hours After:", cumulativeHours); // Debugging cumulative hours  
+
+            //totalHours += salaryPlusHours; // Add salary plus hours to total hours
+            //totalHoursBadge.textContent = totalHours.toFixed(2); // Update the total hours badge
+            console.log("TotalHoursBadge", totalHoursBadge.textContent); // Debugging: Log the total hours badge                   
         }
     }
 
@@ -885,294 +1056,21 @@
         finalizeViewSwitch.disabled = isSalary ? false : true; // Disable switch for hourly employees
         
         //let lastFinalizeData = null;
-        finalizeViewMode = isSalary ? 'summary' : 'detailed';
+        if (isSalary) {
+            finalizeViewMode = 'summary'; // Default to summary view for salaried users
+        } else {
+            finalizeViewMode = 'detailed'; // Default to detailed view for hourly users
+        }
 
-        fetch(`/timesheet/entry/get_final_time_entries?abas_id=${abasID}&start_date=${startDate}&end_date=${endDate}`)
+        console.log("Finalize View Mode:", finalizeViewMode); // Debugging: Log the finalize view mode
+
+        fetch(`/timesheet/entry/get_final_time_entries?abas_id=${abasID}&start_date=${startDate}&end_date=${endDate}&view_mode=${finalizeViewMode}`)
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
                     //lastFinalizeData = data;
                     renderFinalizeTable(data); // <-- Call your rendering function here
-                
-                    
-/*                    const finalizeTimeButton = document.getElementById('finalizeTimeModalButton');
-                    const tableBody = document.querySelector('#finalizeTimeModal tbody');
-                    tableBody.innerHTML = ''; // Clear existing rows
-                    const totalHoursBadge = document.getElementById('finalizeTotalHoursCell');
-                    totalHoursBadge.textContent = '0'; // Reset the total hours badge
-                    let cumulativeHours = 0;
-                    let totalHours = 0; // Initialize total hours variable
-                    let salaryPlusHours = 0; // Initialize salary plus hours variable
-                    let lastWorkDate = null; // Initialize lastWorkDate variable
-                    const totalHoursWorked = data.totalHoursWorked || 0; // Get total hours worked from the response
-                    // Populate the table with the latest time entries
-                    if (data.time_entries) {
-                        
-                        data.time_entries.forEach(entry => {
-                            console.log("Processing Entry:", entry); // Debugging: Log each entry
-                            console.log("Cumulative Hours Before:", cumulativeHours); // Debugging cumulative hours                                                   
-                            let rowHTML = '';         
 
-                            if (isSalary) {
-                                const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-                                let dayHours = {};
-                                let totalHours = 0;
-                                let lastWorkDate = null;
-
-                                // Initialize dayHours for each weekday
-                                daysOfWeek.forEach(day => { dayHours[day] = 0; });
-
-                                // Map entries to weekdays and sum total
-                                data.time_entries.forEach(entry => {
-                                    const dateObj = new Date(entry.WorkDate);
-                                    const weekday = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
-                                    if (daysOfWeek.includes(weekday) && !entry.isHoliday) {
-                                        dayHours[weekday] += parseFloat(entry.tHoursWorked);
-                                        lastWorkDate = entry.WorkDate;
-                                        totalHours += parseFloat(entry.tHoursWorked);
-                                    }
-                                });
-
-                                // Salary Plus logic
-                                let salaryPlusHours = 0;
-                                let regularCap = 40;
-                                if (salaryPlusStart > 0 && totalHours > salaryPlusStart) {
-                                    salaryPlusHours = totalHours - salaryPlusStart;
-                                    regularCap = 40;
-                                } else if (totalHours > 40) {
-                                    regularCap = 40;
-                                } else {
-                                    regularCap = totalHours;
-                                }
-
-                                // Output rows
-                                let rowHTML = '';
-                                let hoursLeft = regularCap;
-
-                                daysOfWeek.forEach(day => {
-                                    // Skip if holiday or no time entered
-                                    if (!dayHours[day] || dayHours[day] === 0) return;
-
-                                    let hoursForDay = 0;
-                                    if (regularCap >= 40) {
-                                        hoursForDay = 8.00;
-                                    } else {
-                                        hoursForDay = dayHours[day];
-                                    }
-                                    rowHTML += `
-                                        <tr>
-                                            <td data-label="Date">${day}</td>
-                                            <td data-label="Paychex Code">
-                                                <select name="paychex_code_${day}" class="form-control">
-                                                    ${payrollPaychex_list.map(paychex => `
-                                                        <option value="${paychex.id}" ${paychex.code === 'E1' ? 'selected' : ''}>
-                                                            ${paychex.code} - ${paychex.description}
-                                                        </option>
-                                                    `).join('')}
-                                                </select>
-                                            </td>
-                                            <td data-label="Hours" class="text-right">${hoursForDay.toFixed(2)}</td>
-                                        </tr>
-                                    `;
-                                });
-
-                                // Add salary plus row if needed
-                                if (salaryPlusHours > 0) {
-                                    rowHTML += `
-                                        <tr>
-                                            <td data-label="Date">Salary Plus</td>
-                                            <td data-label="Paychex Code">
-                                                <select name="paychex_code_salaryplus" class="form-control">
-                                                    ${payrollPaychex_list.map(paychex => `
-                                                        <option value="${paychex.id}" ${paychex.code === 'E50' ? 'selected' : ''}>
-                                                            ${paychex.code} - ${paychex.description}
-                                                        </option>
-                                                    `).join('')}
-                                                </select>
-                                            </td>
-                                            <td data-label="Hours" class="text-right">${salaryPlusHours.toFixed(2)}</td>
-                                        </tr>
-                                    `;
-                                }
-
-                                // Insert rows into the table
-                                tableBody.innerHTML = rowHTML;
-                                totalHoursBadge.textContent = (regularCap + salaryPlusHours).toFixed(2);
-                            }
-                            /*if (isSalary) {
-                                const entryHours = parseFloat(entry.tHoursWorked);
-                                lastWorkDate = entry.WorkDate; // Update lastWorkDate
-                                if (cumulativeHours + entryHours <= 40) {
-                                    // Entire entry fits within the first 40 hours
-                                    rowHTML = `
-                                        <tr>
-                                            <td data-label="Date">${entry.WorkDate}</td>
-                                            <td data-label="Paychex Code">
-                                                <select name="paychex_code_${entry.WorkDate}" class="form-control">
-                                                    ${payrollPaychex_list.map(paychex => `
-                                                        <option value="${paychex.id}" ${paychex.code === 'E1' ? 'selected' : ''}>
-                                                            ${paychex.code} - ${paychex.description}
-                                                        </option>
-                                                    `).join('')}
-                                                </select>
-                                            </td>
-                                            <td data-label="Hours" class="text-right">${entryHours.toFixed(2)}</td>
-                                        </tr>
-                                    `;
-                                    totalHours += entryHours; // Add to total hours
-                                } else if (cumulativeHours + entryHours > 40 && salaryPlusStart == 0) {
-                                    // Entry crosses the 40-hour mark but is within the salary plus threshold
-                                    const remainingHoursTo40 = Math.max(0, 40 - cumulativeHours); // Hours needed to reach 40
-                                    const hoursBeyond40 = entryHours - remainingHoursTo40; // Remaining hours beyond 40
-                                
-                                    console.log("Remaining Hours to 40:", remainingHoursTo40); // Debugging
-                                    console.log("Hours Beyond 40:", hoursBeyond40); // Debugging
-                                
-                                    // First row: Hours up to 40
-                                    if (remainingHoursTo40 > 0) {
-                                        rowHTML = `
-                                            <tr>
-                                                <td data-label="Date">${entry.WorkDate}</td>
-                                                <td data-label="Paychex Code">
-                                                    <select name="paychex_code_${entry.WorkDate}" class="form-control">
-                                                        ${payrollPaychex_list.map(paychex => `
-                                                            <option value="${paychex.id}" ${paychex.code === 'E1' ? 'selected' : ''}>
-                                                                ${paychex.code} - ${paychex.description}
-                                                            </option>
-                                                        `).join('')}
-                                                    </select>
-                                                </td>
-                                                <td data-label="Hours" class="text-right">${remainingHoursTo40.toFixed(2)}</td>
-                                            </tr>
-                                        `;
-                                    }
-                                    totalHours += remainingHoursTo40; // Add to total hours
-                                } else if (cumulativeHours + entryHours > 40 && salaryPlusStart > 0) {
-                                    // Entry crosses the 40-hour mark but is within the salary plus threshold
-                                    const remainingHoursTo40 = Math.max(0, 40 - cumulativeHours); // Hours needed to reach 40
-                                    const hoursBeyond40 = entryHours - remainingHoursTo40; // Remaining hours beyond 40
-                                
-                                    console.log("Remaining Hours to 40:", remainingHoursTo40); // Debugging
-                                    console.log("Hours Beyond 40:", hoursBeyond40); // Debugging
-                                
-                                    // First row: Hours up to 40
-                                    if (remainingHoursTo40 > 0) {
-                                        rowHTML = `
-                                            <tr>
-                                                <td data-label="Date">${entry.WorkDate}</td>
-                                                <td data-label="Paychex Code">
-                                                    <select name="paychex_code_${entry.WorkDate}" class="form-control">
-                                                        ${payrollPaychex_list.map(paychex => `
-                                                            <option value="${paychex.id}" ${paychex.code === 'E1' ? 'selected' : ''}>
-                                                                ${paychex.code} - ${paychex.description}
-                                                            </option>
-                                                        `).join('')}
-                                                    </select>
-                                                </td>
-                                                <td data-label="Hours" class="text-right">${remainingHoursTo40.toFixed(2)}</td>
-                                            </tr>
-                                        `;
-                                    }
-                                
-                                    // Second row: Hours beyond 40 and greater then salaryplus start with E50 code
-                                    if (hoursBeyond40 > 0 && cumulativeHours + entryHours >= salaryPlusStart) {
-                                        salaryPlusHours = (cumulativeHours + entryHours) - salaryPlusStart
-                                        console.log("Salary Plus Hours:", salaryPlusHours); // Debugging                                        
-                                        
-                                    }
-                                    totalHours += remainingHoursTo40; // Add to total hours
-                                } 
-                            }*/
-        /*
-                            // For hourly employees
-                            if (!isSalary) {
-                                const entryHours = parseFloat(entry.tHoursWorked);
-
-                                if (cumulativeHours + entryHours <= 40) {
-                                    // Entire entry fits within the first 40 hours
-                                    rowHTML = `
-                                        <tr>
-                                            <td data-label="Date">${entry.WorkDate}</td>
-                                            <td data-label="Operation">${entry.WSNumber} - ${entry.OpName}<br><small class="card-desc">(${entry.WODescription})</small></td>
-                                            <td data-label="Paychex Code">
-                                                <select name="paychex_code_${entry.EntryID}" class="form-control">
-                                                    ${payrollPaychex_list.map(paychex => `
-                                                        <option value="${paychex.id}" ${paychex.code === 'E1' ? 'selected' : ''}>
-                                                            ${paychex.code} - ${paychex.description}
-                                                        </option>
-                                                    `).join('')}
-                                                </select>
-                                            </td>
-                                            <td data-label="Hours">${entryHours.toFixed(2)}</td>
-                                        </tr>
-                                    `;
-                                    totalHours += entryHours; // Add to total hours
-                                } else if (cumulativeHours + entryHours > 40) {
-                                    // Entry crosses the 40-hour mark
-                                    const remainingHoursTo40 = Math.max(0, 40 - cumulativeHours); // Hours needed to reach 40
-                                    const hoursBeyond40 = entryHours - remainingHoursTo40; // Remaining hours beyond 40
-
-                                    // First row: Hours up to 40
-                                    if (remainingHoursTo40 > 0) {
-                                        rowHTML = `
-                                            <tr>
-                                                <td data-label="Date">${entry.WorkDate}</td>
-                                                <td data-label="Operation">${entry.WSNumber} - ${entry.OpName}<br><small class="card-desc">(${entry.WODescription})</small></td>
-                                                <td data-label="Paychex Code">
-                                                    <select name="paychex_code_${entry.EntryID}" class="form-control">
-                                                        ${payrollPaychex_list.map(paychex => `
-                                                            <option value="${paychex.id}" ${paychex.code === 'E1' ? 'selected' : ''}>
-                                                                ${paychex.code} - ${paychex.description}
-                                                            </option>
-                                                        `).join('')}
-                                                    </select>
-                                                </td>
-                                                <td data-label="Hours">${remainingHoursTo40.toFixed(2)}</td>
-                                            </tr>
-                                        `;
-                                    }
-
-                                    // Second row: Overtime hours beyond 40 with E15 code
-                                    if (hoursBeyond40 > 0) {
-                                        rowHTML += `
-                                            <tr>
-                                                <td data-label="Date">${entry.WorkDate}</td>
-                                                <td data-label="Operation">${entry.WSNumber} - ${entry.OpName}<br><small class="card-desc">(${entry.WODescription})</small></td>
-                                                <td data-label="Paychex Code">
-                                                    <select name="paychex_code_${entry.EntryID}" class="form-control">
-                                                        ${payrollPaychex_list.map(paychex => `
-                                                            <option value="${paychex.id}" ${paychex.code === 'E1' ? 'selected' : ''}>
-                                                                ${paychex.code} - ${paychex.description}
-                                                            </option>
-                                                        `).join('')}
-                                                    </select>
-                                                </td>
-                                                <td data-label="Hours">${hoursBeyond40.toFixed(2)}</td>
-                                            </tr>
-                                        `;
-                                    }
-                                    totalHours += entryHours; // Add to total hours
-                                } 
-                            }
-
-                            
-                            
-                            cumulativeHours += parseFloat(entry.tHoursWorked);
-                            // Append the row to the table body
-                            tableBody.insertAdjacentHTML('beforeend', rowHTML);
-                            
-
-                            console.log("Cumulative Hours After:", cumulativeHours); // Debugging cumulative hours
-                        });
-                        
-                    } else {
-                        const noDataMessage = document.createElement('p');
-                        noDataMessage.textContent = 'No time entries available for the selected date range.';
-                        tableBody.appendChild(noDataMessage);
-                        const tableFooter = document.querySelector('#finalizeTimeModal tfoot');
-                        tableFooter.innerHTML = ''; // Clear existing rows
-                        finalizeTimeButton.disabled = true; // Disable the finalize button
-                    } */
                 } else {
                     console.error('Error fetching time entries:', data.error);
                 }
