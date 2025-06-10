@@ -20,10 +20,10 @@ DONE: don't allow time edit from previous week. Same timeframe as finalizing pre
 DONE: set PTO to correct code on finalize screen
 DONE: tie indirect codes to paychex codes if they exist.  PTO / Sick / Etc.
 TODO: Add Comments section to finalize screen or timecard screen
-TODO: Split finalize screen for Hourly and Salary
+DONE: Split finalize screen for Hourly and Salary
 TODO: Holiday exception when user works on a holiday.  hours worked over salary plus threshold go to E50
 TODO: Editing hours does not update total hours for the day
-TODO: Add switch for summary / detailed view on finalize for salaried
+DONE: Add switch for summary / detailed view on finalize for salaried
 
 TODO: See if Dan can email out a copy of the timesheet after import of attendence data. file name to be datecode of the monday of week + initials + timesheet
 TODO: Registration with abas name is showing invalid name
