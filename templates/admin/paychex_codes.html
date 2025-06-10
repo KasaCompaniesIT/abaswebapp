@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block nav_admin %}active{% endblock %}
+{% block header %}
+<div class="navbar-brand navbar-text">{% block title %}Manage Paychex Codes{% endblock %}</div>
+
+{% endblock %}
+
+{% block subheader %}
+<nav aria-label="breadcrumb" class="breadcrumb-bg">
+    <div class="d-flex justify-content-between align-items-center">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('home') }}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('admin.index') }}">Admin</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Paychex Codes</li>
+        </ol>
+        {% if g.user %}
+        <span class="text-muted pr-2">{{ g.user.EmpName.title() }}</span>
+        {% endif %}
+    </div>
+</nav>
+<p></p>
+{% endblock %}
+
+{% block content %}
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>PayChex</th>
+            <th>Description</th>
+            <th>In Use</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for code in codes %}
+        <tr>
+            <form method="post">
+                <td>{{ code.PayID }}<input type="hidden" name="payid" value="{{ code.PayID }}"></td>
+                <td><input type="text" name="paychex" value="{{ code.PayChex }}" class="form-control"></td>
+                <td><input type="text" name="description" value="{{ code.PayDescription }}" class="form-control"></td>
+                <td>
+                    <select name="in_use" class="form-control">
+                        <option value="1" {% if code.inUse %}selected{% endif %}>Yes</option>
+                        <option value="0" {% if not code.inUse %}selected{% endif %}>No</option>
+                    </select>
+                </td>
+                <td>
+                    <button name="action" value="update" class="btn btn-primary btn-sm">Update</button>
+                    <button name="action" value="delete" class="btn btn-danger btn-sm" onclick="return confirm('Delete this code?')">Delete</button>
+                </td>
+            </form>
+        </tr>
+        {% endfor %}
+        <tr>
+            <form method="post">
+                <td>New</td>
+                <td><input type="text" name="paychex" class="form-control"></td>
+                <td><input type="text" name="description" class="form-control"></td>
+                <td>
+                    <select name="in_use" class="form-control">
+                        <option value="1" selected>Yes</option>
+                        <option value="0">No</option>
+                    </select>
+                </td>
+                <td>
+                    <button name="action" value="add" class="btn btn-success btn-sm">Add</button>
+                </td>
+            </form>
+        </tr>
+    </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block nav_admin %}active{% endblock %}
+{% block header %}
+<div class="navbar-brand navbar-text">{% block title %}Manage Holidays{% endblock %}</div>
+
+{% endblock %}
+
+{% block subheader %}
+<nav aria-label="breadcrumb" class="breadcrumb-bg">
+    <div class="d-flex justify-content-between align-items-center">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('home') }}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('admin.index') }}">Admin</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Holidays</li>
+        </ol>
+        {% if g.user %}
+        <span class="text-muted pr-2">{{ g.user.EmpName.title() }}</span>
+        {% endif %}
+    </div>
+</nav>
+<p></p>
+{% endblock %}
+
+{% block content %}
+<table class="table table-bordered w-50 text-center mx-auto">
+    <thead>
+        <tr>
+            <th>Holiday Date</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for holiday in holidays %}
+        <tr>
+            <form method="post">
+                <td>
+                    <input type="hidden" name="holiday_date" value="{{ holiday.holidayDate }}">
+                    {{ holiday.holidayDate }}
+                </td>
+                <td>
+                    <button name="action" value="delete" class="btn btn-danger btn-sm" onclick="return confirm('Delete this holiday?')">Delete</button>
+                </td>
+            </form>
+        </tr>
+        {% endfor %}
+        <tr>
+            <form method="post">
+                <td>
+                    <input type="date" name="holiday_date" class="form-control" required>
+                </td>
+                <td>
+                    <button name="action" value="add" class="btn btn-success btn-sm">Add</button>
+                </td>
+            </form>
+        </tr>
+    </tbody>
+</table>
+{% endblock %}

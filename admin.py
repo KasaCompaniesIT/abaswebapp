@@ -300,6 +300,71 @@ def manage_employees():
 
     return render_template('admin/employees.html', employees=employees, paychex_entries=paychex_entries)
 
+@bp.route('/admin/paychex_codes', methods=['GET', 'POST'])
+@login_required
+def manage_paychex_codes():
+    # Only allow admin users
+    if not getattr(g.user, 'isAdmin', False):
+        return abort(403)
+
+    db = get_db()
+    dbc = db.cursor()
+
+    # Handle add/update/delete actions
+    if request.method == 'POST':
+        action = request.form.get('action')
+        payid = request.form.get('payid')
+        paychex = request.form.get('paychex')
+        description = request.form.get('description')
+        in_use = int(request.form.get('in_use', 1))
+
+        if action == 'add':
+            dbc.execute(
+                "INSERT INTO paychex (PayChex, PayDescription, inUse) VALUES (?, ?, ?)",
+                (paychex, description, in_use)
+            )
+        elif action == 'update' and payid:
+            dbc.execute(
+                "UPDATE paychex SET PayChex=?, PayDescription=?, inUse=? WHERE PayID=?",
+                (paychex, description, in_use, payid)
+            )
+        elif action == 'delete' and payid:
+            dbc.execute("DELETE FROM paychex WHERE PayID=?", (payid,))
+        db.commit()
+
+    codes = dbc.execute(
+        "SELECT PayID, PayChex, PayDescription, inUse FROM paychex ORDER BY PayDescription, PayChex"
+    ).fetchall()
+
+    return render_template('admin/paychex_codes.html', codes=codes)
+
+@bp.route('/admin/holidays', methods=['GET', 'POST'])
+@login_required
+def manage_holidays():
+    # Only allow admin users
+    if not getattr(g.user, 'isAdmin', False):
+        return abort(403)
+
+    db = get_db()
+    dbc = db.cursor()
+
+    # Handle add/delete actions
+    if request.method == 'POST':
+        action = request.form.get('action')
+        holiday_date = request.form.get('holiday_date')
+
+        if action == 'add' and holiday_date:
+            dbc.execute("INSERT INTO Holidays (holidayDate) VALUES (?)", (holiday_date,))
+        elif action == 'delete' and holiday_date:
+            dbc.execute("DELETE FROM Holidays WHERE holidayDate = ?", (holiday_date,))
+        db.commit()
+
+    holidays = dbc.execute(
+        "SELECT holidayDate FROM Holidays ORDER BY holidayDate DESC"
+    ).fetchall()
+
+    return render_template('admin/holidays.html', holidays=holidays)
+
 def existingProject(project):
     db = get_db()
     dbc = db.cursor()
