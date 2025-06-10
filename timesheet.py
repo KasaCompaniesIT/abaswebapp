@@ -213,6 +213,11 @@ def entry():
 
             can_use_summary_view = not has_opcode
 
+            # Make sure startDate is a string in 'YYYY-MM-DD' format for DB queries
+            #startDateStr = startDate.strftime("%Y-%m-%d")
+
+            comments = get_comments(abas_ID, startOfPrevWeek)
+
             today = datetime.now().strftime("%m/%d/%y")  # Format today's date as MM/DD/YY
             
             # Fetch Paychex codes
@@ -248,7 +253,8 @@ def entry():
                                     can_add_or_finalize=can_add_or_finalize,
                                     paychex_list=paychex_list,
                                     week_finalized=week_finalized,
-                                    can_use_summary_view=can_use_summary_view
+                                    can_use_summary_view=can_use_summary_view,
+                                    comments=comments
             )
 
             # return render_template('timesheet/entry.html', abasID=abas_ID, abasUser=abasUser, startOfPrevWeek=startOfPrevWeek, endOfPrevWeek=endOfPrevWeek, dateRangePrevWeek=dateRangePrevWeek)
@@ -987,3 +993,50 @@ def get_summary_flag():
         has_opcode = True
 
     return jsonify({'can_use_summary_view': not has_opcode})
+
+@bp.route('/timesheet/entry/save_comments', methods=['POST'])
+@login_required
+def save_comments():
+    data = request.get_json()
+    abas_id = data.get('abas_id')
+    start_date = data.get('start_date')
+    comments = data.get('comments')
+    # Save comments to your database here, e.g.:
+    db = get_db()
+    dbc = db.cursor()
+    
+    try:
+        if get_comments(abas_id, start_date) is None:
+            # Insert new comment if it doesn't exist
+            dbc.execute("INSERT INTO TimesheetComments (EmpID, WeekStart, comments) VALUES (?, ?, ?)", (abas_id, start_date, comments))
+        else:
+            # Update existing comment    
+            dbc.execute("UPDATE TimesheetComments SET comments=? WHERE EmpID=? AND WeekStart=?", (comments, abas_id, start_date))
+        
+        dbc.commit()
+    
+        return jsonify(success=True)
+    except Exception as e:
+        db.rollback()
+        print("Error saving comments:", str(e))        
+    
+        return jsonify(success=False, error=str(e)), 500
+    
+
+def get_comments(abas_id, start_date):
+    db = get_db()
+    dbc = db.cursor()
+    
+    if isinstance(start_date, datetime):
+        start_date = start_date.strftime("%Y-%m-%d")
+    
+    # Fetch comments for the given abas_id and start_date
+    comments = dbc.execute(
+        "SELECT comments FROM TimesheetComments WHERE empID = ? AND weekStart = ?",
+        (abas_id, start_date)
+    ).fetchone()
+    
+    if comments:
+        return comments[0]  # Return the comment text
+    else:
+        return None  # No comments found

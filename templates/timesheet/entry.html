@@ -82,16 +82,16 @@
 
     <!-- Right side: Comments Panel -->
     <div class="col-12 col-lg d-flex flex-column h-100">
-        <div class="comments-panel card mb-4 border-dark w-100">
+        <div class="comments-panel card mb-2 border-dark w-100">
             <div class="card-header bg-abas-info text-white">
                 Comments
             </div>
             <div class="card-body compact-info-panel d-flex flex-column">
                 <form id="commentsForm" class="flex-grow-1 d-flex flex-column">
                     <div class="form-group flex-grow-1 d-flex flex-column">
-                        <textarea class="form-control flex-grow-1" id="commentsText" name="comments" rows="5" placeholder="Enter comments here..."></textarea>
+                        <textarea class="form-control flex-grow-1" id="commentsText" name="comments" rows="6" placeholder="Enter comments here...">{{ comments }}</textarea>
                     </div>
-                    <button type="submit" class="btn btn-abas mt-2 align-self-end">Save Comments</button>
+                    <button type="submit" class="btn btn-abas my-0 py-1 align-self-end">Save Comments</button>
                 </form>
             </div>
         </div>
@@ -1177,6 +1177,33 @@
 
             document.getElementById('confirmFinalizeBtn').addEventListener('click', finalizeFormSubmitHandler);
         }
+    });
+
+    // Event listener for comments form submission
+    document.getElementById('commentsForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+        const comments = document.getElementById('commentsText').value;
+        const abasID = document.getElementById('abasIDInput') ? document.getElementById('abasIDInput').value : '{{ abasUser.EmpID }}';
+        const startDate = document.getElementById('startDateInput').value;
+
+        fetch('/timesheet/entry/save_comments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                abas_id: abasID,
+                start_date: startDate,
+                comments: comments
+            })
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                showSnackbar('Comments saved!', 'success');
+            } else {
+                showSnackbar('Failed to save comments.', 'error');
+            }
+        })
+        .catch(() => showSnackbar('Error saving comments.', 'error'));
     });
 
     // Event listener for project selection
