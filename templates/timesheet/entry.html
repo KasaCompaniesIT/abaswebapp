@@ -22,69 +22,81 @@
 
 
 <div class="container-fluid">
-    <!-- User Lookup Form -->
-    <form method="post" class="abasid-lookup">
-        <div class="input-group mb-3">
-            <div class="input-group-prepend">
-              <span class="input-group-text" id="inputGroup-sizing-default">Abas User ID</span>
+    <div class="row align-items-stretch">
+    <!-- Left side: Lookup, User Info, Date Selector -->
+    <div class="col-12 col-lg-auto h-100">
+        <!-- User Lookup Form -->
+        <form method="post" class="abasid-lookup-form">
+            <div class="input-group mb-3 abasid-lookup">
+                <div class="input-group-prepend">
+                    <span class="input-group-text" id="inputGroup-sizing-default">Abas User ID</span>
+                </div>
+                <input type="text" class="form-control" name="abas_ID" id="abas_ID" aria-label="Abas User ID Input" aria-describedby="inputGroup-sizing-default" value="{{ abasID if abasID else g.user.EmpID }}">
+                <div class="input-group-append">
+                    <button class="btn btn-abas" type="submit" name="button" id="btn-abasid" value="btn-abasid">Lookup</button>
+                </div>
             </div>
-            <input type="text" class="form-control" name="abas_ID" id="abas_ID" aria-label="Abas User ID Input" aria-describedby="inputGroup-sizing-default" value="{{ abasID if abasID else g.user.EmpID }}">
-            <div class="input-group-append">
-                <button class="btn btn-abas" type="submit" name="button" id="btn-abasid" value="btn-abasid">Lookup</button>
-              </div>
-          </div>
+        </form>
 
-    <!-- </form>  -->
-    <!-- 
-    {{ abasUser}}
-    ID = 0
-    Emp = 1
-    EmpName = 2
-    Dept = 3
-    Supervisor = 4
-    Wagegroup = 5
-    SupervisorName = 6 
-    -->
+        <!-- Info Panel -->
+        {% if abasUser %}
+        <div class="info-panel card mb-4 border-dark mx-auto mx-lg-0">
+            <div class="card-header bg-abas-info text-white">
+                User Information
+            </div>
+            <div class="card-body compact-info-panel">
+                <p><strong>Abas ID:</strong> {{ abasUser.EmpID }} | {{ abasUser.Emp }}</p>
+                <p><strong>Name:</strong> {{ abasUser.EmpName }}</p>
+                <p><strong>Supervisor:</strong> {{ abasUser.SupervisorName }}</p>
+                <h5 id="floatingBadge">
+                    <span class="badge badge-abas" id="totalHoursBadge">0</span>
+                </h5>
+            </div>
+        </div>
 
-    <!-- Info Panel -->
-    {% if abasUser %}
-    <div class="info-panel card mb-4 border-dark">
-        <div class="card-header bg-abas-info text-white">
-            User Information
-        </div>
-        <div class="card-body compact-info-panel">
-            <p><strong>Abas ID:</strong> {{ abasUser.EmpID }} | {{ abasUser.Emp }}</p>
-            <p><strong>Name:</strong> {{ abasUser.EmpName }}</p>
-            <p><strong>Supervisor:</strong> {{ abasUser.SupervisorName }}</p>
-            <!-- Floating Badge -->
-            <h5 id="floatingBadge">
-                <span class="badge badge-abas" id="totalHoursBadge">0</span>
-            </h5>
-        </div>
+
+        <!-- Date Selector -->
+        <form>
+            <div class="input-group">
+                <div class="input-group-prepend">
+                    <button class="btn btn-abas" type="submit" name="button" id="btnPrev" value="btnPrev">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                </div>
+                <input type="hidden" name="startDate" id="startDateInput" value="{{ startOfPrevWeek }}">
+                <input type="hidden" name="endDate" id="endDateInput" value="{{ endOfPrevWeek }}">
+                <input id="startDate" type="text" class="form-control text-center" placeholder="" aria-label="" aria-describedby="btnPrev" value="{{ startOfPrevWeek }}" disabled>
+                <input id="endDate" type="text" class="form-control text-center" placeholder="" aria-label="" aria-describedby="btnNext" value="{{ endOfPrevWeek }}" disabled>
+                <div class="input-group-append">
+                    <button class="btn btn-abas" type="submit" name="button" id="btnNext" value="btnNext">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                    <button class="btn btn-abas" type="submit" name="button" id="btnToday" value="btnToday">
+                        Today
+                    </button>
+                </div>
+            </div>
+            <p></p>
+        </form>
     </div>
 
-    <!-- <form method="post"> -->
-        <div class="input-group">
-            <div class="input-group-prepend">
-                <button class="btn btn-abas" type="submit" name="button" id="btnPrev" value="btnPrev">
-                    <i class="fas fa-chevron-left"></i> <!-- Font Awesome left arrow icon -->
-                </button>
+    <!-- Right side: Comments Panel -->
+    <div class="col-12 col-lg d-flex flex-column h-100">
+        <div class="comments-panel card mb-4 border-dark w-100">
+            <div class="card-header bg-abas-info text-white">
+                Comments
             </div>
-            <input type="hidden" name="startDate" id="startDateInput" value="{{ startOfPrevWeek }}">
-            <input type="hidden" name="endDate" id="endDateInput" value="{{ endOfPrevWeek }}">
-            <input id="startDate" type="text" class="form-control text-center" placeholder="" aria-label="" aria-describedby="btnPrev" value="{{ startOfPrevWeek }}" disabled>
-            <input id="endDate" type="text" class="form-control text-center" placeholder="" aria-label="" aria-describedby="btnNext" value="{{ endOfPrevWeek }}" disabled>
-            <div class="input-group-append">
-                <button class="btn btn-abas" type="submit" name="button" id="btnNext" value="btnNext">
-                    <i class="fas fa-chevron-right"></i> <!-- Font Awesome right arrow icon -->
-                </button>
-                <button class="btn btn-abas" type="submit" name="button" id="btnToday" value="btnToday">
-                    Today
-                </button>
+            <div class="card-body compact-info-panel d-flex flex-column">
+                <form id="commentsForm" class="flex-grow-1 d-flex flex-column">
+                    <div class="form-group flex-grow-1 d-flex flex-column">
+                        <textarea class="form-control flex-grow-1" id="commentsText" name="comments" rows="5" placeholder="Enter comments here..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-abas mt-2 align-self-end">Save Comments</button>
+                </form>
             </div>
         </div>
-        <p></p>
-    </form>
+    </div>
+</div>
 
     <!-- Timecard Section -->
     <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-4 px-2" id="timecard">
