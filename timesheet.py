@@ -850,7 +850,7 @@ def get_paychex_codes():
     dbc = db.cursor()
 
     paychex_codes = dbc.execute(
-        "SELECT PayID, PayChex FROM paychex ORDER BY PayChex"
+        "SELECT PayID, PayChex FROM paychex WHERE inUse = 1 ORDER BY PayChex"
     ).fetchall()
 
     # Convert PayID to PayChex code mapping
