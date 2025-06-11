@@ -585,7 +585,8 @@
             console.log("Finalize view mode:", finalizeViewMode); // Debugging: Log the finalize view mode
             if (finalizeViewMode === 'summary') {
                 // Render summary rows (per day, capped, etc.)
-                const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+                const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];                
+                const dayToDate = {};
                 let dayHours = {};
                 let totalHours = 0;
                 let lastWorkDate = null;
@@ -601,6 +602,7 @@
                         dayHours[weekday] += parseFloat(entry.tHoursWorked);
                         lastWorkDate = entry.WorkDate;
                         totalHours += parseFloat(entry.tHoursWorked);
+                        dayToDate[weekday] = entry.WorkDate;
                     }
                 });
 
@@ -622,7 +624,7 @@
 
                 daysOfWeek.forEach(day => {
                     // Skip if holiday or no time entered
-                    if (!dayHours[day] || dayHours[day] === 0) return;
+                    if (!dayHours[day]) return;
 
                     let hoursForDay = 0;
                     if (regularCap >= 40) {
@@ -630,8 +632,10 @@
                     } else {
                         hoursForDay = dayHours[day];
                     }
+                    const dateStr = dayToDate[day] || "";
+
                     rowHTML += `
-                        <tr>
+                        <tr data-date="${dateStr}">
                             <td data-label="Date">${day}</td>
                             <td data-label="Pay Code">
                                 <select name="paychex_code_${day}" class="form-control">
@@ -647,10 +651,11 @@
                     `;
                 });
 
+                const hourlyPlusDateStr = dayToDate["Friday"]
                 // Add salary plus row if needed
                 if (salaryPlusHours > 0) {
                     rowHTML += `
-                        <tr>
+                        <tr data-date="${hourlyPlusDateStr}">
                             <td data-label="Date">Salary Plus</td>
                             <td data-label="Pay Code">
                                 <select name="paychex_code_salaryplus" class="form-control">
@@ -1113,12 +1118,23 @@
                 const tableRows = document.querySelectorAll('#finalizeTimeModal tbody tr');
                 const finalizeData = [];
                 let totalHours = 0;
+                let firstRow = true; // Track if it's the first row
 
                 tableRows.forEach(row => {
                     // Only process rows that have a select (Paychex code), a numeric hours cell, and a data-date attribute
                     const paychexSelect = row.querySelector('select');
                     const hoursCell = row.querySelector('td[data-label="Hours"], td:last-child');
                     const rowDate = row.getAttribute('data-date');
+                    console.log('Row:', {paychexSelect, hoursCell, rowDate, row});
+                    
+                    let comments = ''
+
+                    if (firstRow) {
+                        comments = document.querySelector('#commentsText').value || ''; // Get comments from the textarea  
+                    } else {
+                        comments = 'null'; // Clear comments for subsequent rows
+                    }
+
                     if (!paychexSelect || !hoursCell || !rowDate) return;
 
                     const paychexCode = paychexSelect.value;
@@ -1127,13 +1143,26 @@
                     // Skip rows with invalid or empty data
                     if (isNaN(hours)) return;
 
+                    let formattedDate = rowDate;
+                    if (rowDate && rowDate.includes('/')) {
+                        // Handles both MM/DD/YY and MM/DD/YYYY
+                        const parts = rowDate.split('/');
+                        let year = parts[2];
+                        if (year.length === 2) {
+                            year = '20' + year; // assumes 21st century
+                        }
+                        formattedDate = `${year}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
+                    }
+
                     finalizeData.push({
-                        date: rowDate,
+                        date: formattedDate,
                         paychexCode: paychexCode,
-                        hours: hours
+                        hours: hours,
+                        comments: comments
                     });
 
                     totalHours += hours;
+                    firstRow = false; // Set to false after processing the first row
                 });
 
                 const abasID = document.getElementById('abasIDInput').value;

@@ -658,32 +658,35 @@ def payroll_export():
         # Define a mapping of Paychex codes to their values
         paychex_code_mapping = get_paychex_codes()
         print("Paychex Code Mapping:", paychex_code_mapping)  # Debugging: Log the mapping
-        
-        # Create a new copy of the JSON data with converted Paychex codes
-        # converted_data = {
-        #     "abas_id": data.get("abas_id"),
-        #     "total_hours": data.get("total_hours"),
-        #     "time_entries": [
-        #         {
-        #             "date": entry["date"],
-        #             "paychexCode": paychex_code_mapping.get(int(entry["paychexCode"]), entry["paychexCode"]),  # Map PayID to PayChex code
-        #             "hours": entry["hours"]
-        #         }
-        #         for entry in data.get("time_entries", [])
-        #     ]
-        # }
 
-        grouped = defaultdict(float)
+        # Group and prepare time entries
+        grouped = {}
         for entry in data.get("time_entries", []):
-            date = entry["date"]
+            # Convert date to m/d/yyyy
+            date_obj = datetime.strptime(entry["date"], "%Y-%m-%d")
+            date_str = date_obj.strftime("%m/%d/%Y")  # e.g., 5/19/2025
+
             paychex_code = paychex_code_mapping.get(int(entry["paychexCode"]), entry["paychexCode"])
             hours = float(entry["hours"])
-            grouped[(date, paychex_code)] += hours
+            comments = entry.get("comments") or "null"
+            key = (date_str, paychex_code)
+            if key not in grouped:
+                grouped[key] = {"hours": 0.0, "comments": comments}
+            grouped[key]["hours"] += hours
+            # If any comment is not "null", keep it
+            if comments != "null":
+                grouped[key]["comments"] = comments
 
-        # 2. Build the combined time_entries list
+        # Build the combined time_entries list
         combined_time_entries = [
-            {"date": date, "paychexCode": paychex_code, "hours": hours}
-            for (date, paychex_code), hours in grouped.items()
+            {
+                "abas_id": data.get("abas_id"),
+                "date": date,
+                "paychexCode": paychex_code,
+                "hours": f"{values['hours']:.2f}",
+                "comments": values["comments"]
+            }
+            for (date, paychex_code), values in grouped.items()
         ]
 
         converted_data = {
