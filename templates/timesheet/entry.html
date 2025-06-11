@@ -392,6 +392,27 @@
         }
     }
 
+    function updateCardFooterTotal(cardBody) {
+        let cardTotal = 0;
+        cardBody.querySelectorAll('.time-entry .badge').forEach(badge => {
+            const hours = parseFloat(badge.textContent);
+            if (!isNaN(hours)) {
+                cardTotal += hours;
+            }
+        });
+        const card = cardBody.closest('.card');
+        if (card) {
+            const cardFooter = card.querySelector('.card-footer');
+            if (cardFooter) {
+                const totalHoursElement = cardFooter.querySelector('.font-weight-bold');
+                if (totalHoursElement) {
+                    //console.log('Updating card footer:', cardFooter, 'with total:', cardTotal);
+                    totalHoursElement.textContent = cardTotal.toFixed(2);
+                }
+            }
+        }
+    }
+
     // Call the function to update the total hours on page load
     document.addEventListener('DOMContentLoaded', function () {
         updateTotalHours();
@@ -439,8 +460,9 @@
                 .then(response => response.json())
                 .then(result => {
                     if (result.success) {
-                        badge.textContent = result.hoursWorked; // Use the formatted value from backend
+                        badge.textContent = result.hoursWorked;
                         input.replaceWith(badge);
+                        updateCardFooterTotal(badge.closest('.card-body'));
                         updateTotalHours();
                         showSnackbar('Hours updated!', 'success');
                     } else {
