@@ -216,7 +216,7 @@ def entry():
             # Make sure startDate is a string in 'YYYY-MM-DD' format for DB queries
             #startDateStr = startDate.strftime("%Y-%m-%d")
 
-            comments = get_comments(abas_ID, startOfPrevWeek)
+            comments = get_comments(abasUser.EmpID, startOfPrevWeek)
 
             today = datetime.now().strftime("%m/%d/%y")  # Format today's date as MM/DD/YY
             

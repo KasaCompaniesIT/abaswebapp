@@ -606,6 +606,10 @@ a { color: #009FAA; }
     box-shadow: 0 0 0 0.2rem rgba(0, 159, 170, 0.25); /* Add a subtle focus shadow */
 }
 
+.input-group-addtime {
+    max-width: 600px !important; /* Set the maximum width */
+}
+
 @media (max-width: 576px) {  
   #startDate, #endDate {
     min-width: 0;
