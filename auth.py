@@ -28,21 +28,35 @@ def register():
         elif not password:
             error = 'Password is required.'
 
+        registerByName = False
+        if not username.isdigit():
+            registerByName = True
+            # username += '%'
+
         if error is None:
             try:
                 # cursor.execute(
                 #     "INSERT INTO login (username, password) VALUES (?, ?)",
                 #     (username, generate_password_hash(password))
                 # )
-                cursor.execute(
-                    "UPDATE Employee SET Password = ? WHERE EmpID = ?",
-                    (generate_password_hash(password), username)
-                )
+                if registerByName:
+                    cursor.execute(
+                        "UPDATE Employee SET Password = ? WHERE Emp = ?",
+                        (generate_password_hash(password), username)
+                    )
+                else:
+                    cursor.execute(
+                        "UPDATE Employee SET Password = ? WHERE EmpID = ?",
+                        (generate_password_hash(password), username)
+                    )
+                    
                 cursor.commit()
-            except pyodbc.DatabaseError as err:
-                error = f"AbasID {username} is invalid."
-            else:
+                
                 return redirect(url_for("auth.login"))
+            
+            except pyodbc.DatabaseError as err:
+                print(f"Database error: {err}")
+                error = f"AbasID {username} is invalid."
 
         flash(error)
         
