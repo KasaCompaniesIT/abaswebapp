@@ -364,6 +364,12 @@
         handle: ".modal-header"
     });
     
+    document.getElementById('commentsText').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+        }
+    });
+
     let canUseSummaryView = {{ can_use_summary_view | tojson }};
 
     function updateTotalHours() {
