@@ -21,11 +21,16 @@ DONE: set PTO to correct code on finalize screen
 DONE: tie indirect codes to paychex codes if they exist.  PTO / Sick / Etc.
 DONE: Add Comments section to finalize screen or timecard screen
 DONE: Split finalize screen for Hourly and Salary
-TODO: Holiday exception when user works on a holiday.  hours worked over salary plus threshold go to E50
-TODO: Holiday exception on summary finalize screen.
-TODO: Editing hours does not update total hours for the day
+DONE: Holiday exception when user works on a holiday.  hours worked over salary plus threshold go to E50
+DONE: Holiday exception on summary finalize screen.
+DONE: Editing hours does not update total hours for the day
 DONE: Add switch for summary / detailed view on finalize for salaried
-
-TODO: See if Dan can email out a copy of the timesheet after import of attendence data. file name to be datecode of the monday of week + initials + timesheet
+DONE: See if Dan can email out a copy of the timesheet after import of attendence data. file name to be datecode of the monday of week + initials + timesheet
 DONE: Registration with abas name is showing invalid name
-TODO: Add prompt on finalize resubmition and allow resubittion until Monday at noon.
+DONE: Add prompt on finalize resubmition and allow resubittion until Monday at noon.
+DONE: Look into finalizing or adding time on Mondays. It was disabled for Aaron on Monday at around 10am.
+DONE: Change delete button to be a menu with Delete and Copy buttons.
+DONE: Disable copy from previous week button after clicking once.
+DONE: Make Add Time button default on Add Time Modal
+TODO: Update finalize export to work wtih new screen
+

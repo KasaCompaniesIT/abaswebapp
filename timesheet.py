@@ -105,12 +105,21 @@ def entry():
 
             # Determine if adding/finalizing time is allowed
             now = datetime.now()
-            is_current_week = startOfPrevWeek <= now.date() <= endOfPrevWeek
+            this_monday = (now - timedelta(days=now.weekday())).date()
+            last_monday = this_monday - timedelta(days=7)
+
+            # True if viewing the current week
+            is_current_week = (startOfPrevWeek == this_monday)
+
+            # True if viewing the previous week, and it's Monday before noon
             is_previous_week_allowed = (
-                now.weekday() == 0 and now.hour < 12 and startOfPrevWeek == (now.date() - timedelta(days=7))
+                startOfPrevWeek == last_monday and
+                now.weekday() == 0 and
+                now.hour < 12
             )
 
             can_add_or_finalize = is_current_week or is_previous_week_allowed
+
 
             # Generate a list of dates for the previous week
             # dateRangePrevWeek = [
@@ -499,6 +508,61 @@ def delete_time_entry(time_entry_id):
     except Exception as e:
         db.rollback()
         return jsonify({'error': str(e)}), 500
+
+
+@bp.route('/timesheet/entry/copy_time_entry', methods=['POST'])
+@login_required
+def copy_time_entry():
+    import decimal
+    data = request.get_json()
+    job_entry_id = data.get('job_entry_id')
+    copy_to_day = data.get('copy_to_day')
+
+    if not job_entry_id or not copy_to_day:
+        return jsonify(success=False, error="Missing job_entry_id or copy_to_day"), 400
+
+    db = get_db()
+    dbc = db.cursor()
+
+    # Fetch the original job entry (with full details)
+    original_entry = get_time_entry(entry_id=job_entry_id)
+    if not original_entry:
+        return jsonify(success=False, error="Original job entry not found"), 404
+
+    try:
+        # original_entry: (EntryID, EmpID, WorkDate, WSNumber, TimeWorked)
+        abas_id = original_entry[1]
+        ws_number = original_entry[3]
+        time_worked = original_entry[4] 
+
+        # Create a new entry for the new day
+        new_entry = create_time_entry(abas_id, copy_to_day, ws_number, time_worked)
+        if not new_entry:
+            raise Exception("Failed to create copied job entry.")
+
+        send_response = send_timeentry_csv_to_abas(
+            abas_id, 
+            copy_to_day, 
+            ws_number, 
+            float(time_worked) if isinstance(time_worked, decimal.Decimal) else time_worked
+        )
+        if send_response.status_code != 200:
+            raise Exception(f"Failed to send copied job entry to Abas: {send_response.text}")
+
+        db.commit()
+
+        # Return the new entry's details for DOM update
+        return jsonify(success=True, data={
+            "TimeEntryID": new_entry["TimeEntryID"],
+            "WSNumber": new_entry["WSNumber"],
+            "OpNameExtended": new_entry["OpNameExtended"],
+            "WODescription": new_entry["WODescription"],
+            "tHoursWorked": new_entry["tHoursWorked"],
+            "WorkDate": copy_to_day
+        })
+    except Exception as e:
+        db.rollback()
+        return jsonify(success=False, error=str(e)), 500
     
 @bp.route('/timesheet/finalize_time', methods=['POST'])
 @login_required
@@ -540,8 +604,6 @@ def get_final_time_entries():
         start_date = request.args.get('start_date')
         end_date = request.args.get('end_date')
         abas_id = request.args.get('abas_id')
-        view_mode = request.args.get('view_mode', 'summary')
-        print("view_mode: " + view_mode)
         
         totalHoursWorked = 0.0
         
@@ -560,86 +622,41 @@ def get_final_time_entries():
         db = get_db()
         dbc = db.cursor()
 
-        if view_mode == 'detailed':
-            # Fetch time entries for the given date range of an hourly employee or detailed view for salaried employee
-            time_entries = dbc.execute(
-                """
-                SELECT EntryID, WorkDate, t.WSNumber, TimeWorked, OpName, OpNameExtended, OpCode, WODescription
-                FROM TimeEntry t 
-                INNER JOIN WorkSlips ws ON t.WSNumber = ws.WSNumber 
-                INNER JOIN Operations o ON ws.OpID = o.OpID
-                INNER JOIN WorkOrders wo ON ws.WONumber = wo.WONumber
-                WHERE EmpID = ? AND WorkDate BETWEEN ? AND ?
-                ORDER BY WorkDate
-                """,
-                (abas_id, start_date, end_date)
-            ).fetchall()
-
-            # Convert the results to a list of dictionaries
-            if time_entries:
-                time_entries_list = []
-                for entry in time_entries:
-                    # Strip whitespace from WorkDate and convert to a datetime object
-                    # work_date = entry.WorkDate.strip() if isinstance(entry.WorkDate, str) else entry.WorkDate
-                    # if isinstance(work_date, str):
-                    #     try:
-                    #         work_date = datetime.strptime(work_date, '%m/%d/%y')  # Handle MM/DD/YY format
-                    #     except ValueError:
-                    #         work_date = datetime.strptime(work_date, '%m/%d/%Y')  # Handle MM/DD/YYYY format
-
-                    time_entries_list.append({
-                        "EntryID": entry.EntryID,
-                        "WorkDate": entry.WorkDate.strftime('%m/%d/%y'),  # Format the date as MM/DD/YY,
-                        "WSNumber": entry.WSNumber,
-                        "OpName": entry.OpName,
-                        "OpNameExtended": entry.OpNameExtended,
-                        "OpCode": entry.OpCode,
-                        "tHoursWorked": entry.TimeWorked,
-                        "WODescription": entry.WODescription
-                    })
-                    totalHoursWorked += float(entry.TimeWorked) if isinstance(entry.TimeWorked, decimal.Decimal) else entry.TimeWorked
-                    
-                print("Time Entries:", time_entries_list)  # Debugging: Log the data
-                return jsonify({"success": True, "time_entries": time_entries_list}), 200
-            else:
-                print("No time entries found for the given date range.")
-                return jsonify({"success": True, "time_entries": None}), 200
-        else:
             # Fetch time entries for the given date range of a salaried employee
-            time_entries = dbc.execute(
-                """
-                SELECT WorkDate, sum(TimeWorked) as sTimeWorked
-                FROM TimeEntry 
-                WHERE EmpID = ? AND WorkDate BETWEEN ? AND ?
-                GROUP BY WorkDate
-                ORDER BY WorkDate
-                """,
-                (abas_id, start_date, end_date)
-            ).fetchall()
+        time_entries = dbc.execute(
+            """
+            SELECT WorkDate, sum(TimeWorked) as sTimeWorked
+            FROM TimeEntry 
+            WHERE EmpID = ? AND WorkDate BETWEEN ? AND ?
+            GROUP BY WorkDate
+            ORDER BY WorkDate
+            """,
+            (abas_id, start_date, end_date)
+        ).fetchall()
 
-            # Convert the results to a list of dictionaries
-            if time_entries:
-                time_entries_list = []
-                for entry in time_entries:
-                    # Strip whitespace from WorkDate and convert to a datetime object
-                    # work_date = entry.WorkDate.strip() if isinstance(entry.WorkDate, str) else entry.WorkDate
-                    # if isinstance(work_date, str):
-                    #     try:
-                    #         work_date = datetime.strptime(work_date, '%m/%d/%y')  # Handle MM/DD/YY format
-                    #     except ValueError:
-                    #         work_date = datetime.strptime(work_date, '%m/%d/%Y')  # Handle MM/DD/YYYY format
+        # Convert the results to a list of dictionaries
+        if time_entries:
+            time_entries_list = []
+            for entry in time_entries:
+                # Strip whitespace from WorkDate and convert to a datetime object
+                # work_date = entry.WorkDate.strip() if isinstance(entry.WorkDate, str) else entry.WorkDate
+                # if isinstance(work_date, str):
+                #     try:
+                #         work_date = datetime.strptime(work_date, '%m/%d/%y')  # Handle MM/DD/YY format
+                #     except ValueError:
+                #         work_date = datetime.strptime(work_date, '%m/%d/%Y')  # Handle MM/DD/YYYY format
 
-                    time_entries_list.append({
-                        "WorkDate": entry.WorkDate.strftime('%m/%d/%y'),  # Format the date as MM/DD/YY,                    
-                        "tHoursWorked": entry.sTimeWorked
-                    })
-                    totalHoursWorked += float(entry.sTimeWorked) if isinstance(entry.sTimeWorked, decimal.Decimal) else entry.sTimeWorked
-                    
-                print("Time Entries:", time_entries_list)  # Debugging: Log the data
-                return jsonify({"success": True, "time_entries": time_entries_list, "totalHoursWorked": totalHoursWorked}), 200
-            else:
-                print("No time entries found for the given date range.")
-                return jsonify({"success": True, "time_entries": None, "totalHoursWorked": 0}), 200
+                time_entries_list.append({
+                    "WorkDate": entry.WorkDate.strftime('%m/%d/%y'),  # Format the date as MM/DD/YY,                    
+                    "tHoursWorked": entry.sTimeWorked
+                })
+                totalHoursWorked += float(entry.sTimeWorked) if isinstance(entry.sTimeWorked, decimal.Decimal) else entry.sTimeWorked
+                
+            print("Time Entries:", time_entries_list)  # Debugging: Log the data
+            return jsonify({"success": True, "time_entries": time_entries_list, "totalHoursWorked": totalHoursWorked}), 200
+        else:
+            print("No time entries found for the given date range.")
+            return jsonify({"success": True, "time_entries": None, "totalHoursWorked": 0}), 200
     except Exception as e:
         print("Error fetching time entries:", str(e))  # Debugging: Log the error
         return jsonify({"success": False, "error": str(e)}), 500    
@@ -762,6 +779,27 @@ def copy_prev_week():
             print("prev_entries: ", prev_entries)
         
         if prev_entries:
+            # delete existing entries for the current week
+            curr_week_entries = get_time_entries_for_week(abas_id, curr_start, curr_start + timedelta(days=6))
+            if curr_week_entries:
+                # delete each existing entry for the current week and send a negated entry to Abas
+                for entry in curr_week_entries:
+                    print("Deleting existing entry: ", entry)
+                    dbc = get_db().cursor()
+                    dbc.execute("DELETE FROM TimeEntry WHERE EntryID = ?", (entry.EntryID,))
+                    dbc.connection.commit()
+                    
+                    # Send negated entry to Abas
+                    response = send_timeentry_csv_to_abas(
+                        abas_id, 
+                        entry.WorkDate, 
+                        entry.WSNumber, 
+                        0.0  # Negate the hours
+                    )
+                    
+                    if response.status_code != 200:
+                        raise ValueError(f"Failed to send negated data for {entry.WorkDate}.")
+            
             # 2. Copy entries to current week (adjust dates)
             for entry in prev_entries:
                 # Calculate new date for current week
@@ -785,6 +823,7 @@ def copy_prev_week():
         else:
             return jsonify({'success': False, 'error': 'No entries found for the previous week.'})
     except Exception as e:
+        print("Error copying previous week:", str(e))  # Debugging: Log the error
         return jsonify({'success': False, 'error': str(e)})
 
 
@@ -893,7 +932,7 @@ def create_time_entry(abas_id, work_date, ws_number, time_worked=None):
         # Fetch the newly added entry for the response
         new_entry = dbc.execute(
             """
-            SELECT t.EntryID AS TimeEntryID, t.WSNumber, ws.WSDescription, o.OpName, o.OpNameExtended, t.TimeWorked AS tHoursWorked, WODescription
+            SELECT t.EntryID AS TimeEntryID, t.WSNumber, ws.WSDescription, o.OpName, o.OpNameExtended, t.TimeWorked AS tHoursWorked, WODescription, OpCode
             FROM TimeEntry t
             INNER JOIN WorkSlips ws ON t.WSNumber = ws.WSNumber
             INNER JOIN Operations o ON ws.OpID = o.OpID
@@ -920,30 +959,60 @@ def create_time_entry(abas_id, work_date, ws_number, time_worked=None):
         print("Error creating time entry:", str(e))
         return None
 
-def get_time_entry(abas_id=None, work_date=None, ws_number=None, entry_id=None):
+def get_time_entry(abas_id=None, work_date=None, ws_number=None, entry_id=None, full_details=False):
     db = get_db()
     dbc = db.cursor()
 
     if entry_id:
         # If entry_id is provided, fetch the specific entry
-        time_entry = dbc.execute(
-            """
-            SELECT EntryID, EmpID, WorkDate, WSNumber, TimeWorked
-            FROM TimeEntry
-            WHERE EntryID = ?
-            """, 
-            (entry_id)
-        ).fetchone()
+        if full_details:
+            # Fetch the full details of the time entry
+            time_entry = dbc.execute(
+                """
+                SELECT t.EntryID AS TimeEntryID, t.EmpID, t.WorkDate, t.WSNumber, ws.WSDescription, o.OpName, o.OpNameExtended, t.TimeWorked AS tHoursWorked, wo.WODescription
+                FROM TimeEntry t
+                INNER JOIN WorkSlips ws ON t.WSNumber = ws.WSNumber
+                INNER JOIN Operations o ON ws.OpID = o.OpID
+                INNER JOIN WorkOrders wo ON ws.WONumber = wo.WONumber
+                WHERE t.EntryID = ?
+                """,
+                (entry_id,)
+            ).fetchone()
+        else:
+            # Fetch the time entry for the given entry_id
+            time_entry = dbc.execute(
+                """
+                SELECT EntryID, EmpID, WorkDate, WSNumber, TimeWorked
+                FROM TimeEntry
+                WHERE EntryID = ?
+                """, 
+                (entry_id)
+            ).fetchone()
     else: 
         # Fetch the time entry for the given parameters
-        time_entry = dbc.execute(
-            """
-            SELECT EntryID, EmpID, WorkDate, WSNumber, TimeWorked
-            FROM TimeEntry
-            WHERE EmpID = ? AND WorkDate = ? AND WSNumber = ?
-            """,
-            (abas_id, work_date, ws_number)
-        ).fetchone()
+        if full_details:
+            # Fetch the full details of the time entry
+            time_entry = dbc.execute(
+                """
+                SELECT t.EntryID AS TimeEntryID, t.EmpID, t.WorkDate, t.WSNumber, ws.WSDescription, o.OpName, o.OpNameExtended, t.TimeWorked AS tHoursWorked, wo.WODescription
+                FROM TimeEntry t
+                INNER JOIN WorkSlips ws ON t.WSNumber = ws.WSNumber
+                INNER JOIN Operations o ON ws.OpID = o.OpID
+                INNER JOIN WorkOrders wo ON ws.WONumber = wo.WONumber
+                WHERE t.EmpID = ? AND t.WorkDate = ? AND t.WSNumber = ?
+                """,
+                (abas_id, work_date, ws_number)
+            ).fetchone()
+        else:
+            # Fetch the time entry for the given abas_id, work_date, and ws_number
+            time_entry = dbc.execute(
+                """
+                SELECT EntryID, EmpID, WorkDate, WSNumber, TimeWorked
+                FROM TimeEntry
+                WHERE EmpID = ? AND WorkDate = ? AND WSNumber = ?
+                """,
+                (abas_id, work_date, ws_number)
+            ).fetchone()
 
     return time_entry
 

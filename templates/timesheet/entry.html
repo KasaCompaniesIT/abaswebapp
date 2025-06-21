@@ -136,6 +136,7 @@
                             <p>
                                 {{ t.WSNumber }} - {{ t.OpNameExtended }}
                                 <small class="card-desc">({{ t.WODescription }})</small>
+                                <span id="OpCode" hidden>{{ t.OpCode }}</span>
                             </p>
                             <h5>
                                 <span class="badge badge-secondary editable-hours {% if not can_add_or_finalize %}disabled-badge{% endif %}"
@@ -146,8 +147,11 @@
                                 </span>
                             </h5>
                             {% if t.TimeEntryID and can_add_or_finalize %}
+                            <button class="btn btn-abas2 btn-sm copy-entry-btn" data-timeentryid="{{ t.TimeEntryID }}" title="Copy Entry">
+                                <i class="fas fa-copy"></i>
+                            </button>
                             <button class="btn btn-danger btn-sm delete-entry-btn" data-timeentryid="{{ t.TimeEntryID }}" title="Delete Entry">
-                                <i class="fas fa-times"></i>
+                                <i class="fas fa-trash"></i>
                             </button>
                             {% endif %}
                         </div>
@@ -179,8 +183,8 @@
         <i class="fas fa-plus"></i>
     </button>
 
-    <button id="finalizeTimeButton" class="btn btn-abas btn-floating2" title="Finalize Payroll Time"
-        {% if not can_add_or_finalize %}disabled{% endif %}>
+    <button id="finalizeTimeButton" class="btn btn-abas btn-floating2" title="Finalize Payroll Time">
+        {% if not can_add_or_finalize %}disabled{% endif %}
         <i class="fas fa-check"></i>
     </button>
 
@@ -253,9 +257,9 @@
                             <p></p>                            
                         </div>
                         <div class="d-flex justify-content-between">
-                                <button type="submit" class="btn btn-abas" id="btnCopyPrev">Copy Previous Week</button>
-                                <button type="submit" class="btn btn-abas" id="btnAddTime">Add to Timesheet</button>
-                            </div>
+                            <a class="btn btn-abas" id="btnCopyPrev" href="{{ url_for('timesheet.copy_prev_week') }}">Copy Previous Week</a>
+                            <button type="submit" class="btn btn-abas" id="btnAddTime">Add to Timesheet</button>
+                        </div>
                     </form> 
                 </div>                           
             </div>
@@ -264,7 +268,7 @@
 
     <!-- Finalize Time Modal -->
     <div class="modal fade" id="finalizeTimeModal" data-backdrop="static" data-keyboard="false" tabindex="-1" aria-labelledby="finalizeTimeModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-dialog modal-lg modal-auto-width">
             <div class="modal-content">
                 <div class="modal-header bg-dark-custom">
                     <h5 class="modal-title" id="finalizeTimeModalLabel">Finalize Payroll Time</h5>                    
@@ -274,16 +278,10 @@
                 </div>
                 <div class="modal-body pt-1">
                     <form id="finalizeTimeForm" method="post" action="{{ url_for('timesheet.finalize_time') }}">
-                        <div class="custom-control custom-switch ml-3 my-1 pt-0 text-right">
-                            <input type="checkbox" class="custom-control-input" id="finalizeViewSwitch">
-                            <label class="custom-control-label" for="finalizeViewSwitch" id="finalizeViewSwitchLabel">Detailed View</label>
-                        </div>
                         <div class="table-responsive">
-                            <table class="table table-bordered" id="finalizeTimeTable">
+                            <table class="table table-bordered w-auto" id="finalizeTimeTable" style="table-layout: auto;">
                                 <thead class="thead-dark">
                                     <tr>
-                                        <th>Date</th>
-                                        <th id="operationHeader" style="display: none;">Operation</th>
                                         <th>Pay Code</th>
                                         <th>Hours</th>
                                     </tr>
@@ -293,8 +291,8 @@
                                 </tbody>
                                 <tfoot>
                                     <tr>
-                                        <td  id="finalizeTotalHoursLabel" {% if abasUser.isHourly %} colspan="3" {% else %} colspan="2" {% endif %} class="text-right font-weight-bold">Total Hours:</td>
-                                        <td class="font-weight-bold text-right" id="finalizeTotalHoursCell">00</td>
+                                        <td  id="finalizeTotalHoursLabel" colspan="2" class="text-right font-weight-bold">Total Attendance Hours for Week:</td>
+                                        <td class="font-weight-bold text-left" id="finalizeTotalHoursCell">00</td>                                        
                                     </tr>
                                 </tfoot>
                             </table>
@@ -324,6 +322,43 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
                     <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Copy Confirmation Modal -->
+    <div class="modal fade" id="copyJobConfirmModal" tabindex="-1" role="dialog" aria-labelledby="copyJobConfirmModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-dark-custom">
+                    <h5 class="modal-title" id="copyJobConfirmModalLabel">What Day You Want to Copy the Job Time to?</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="container">
+                        <div class="row text-center">
+                            {% for day in dateRangePrevWeek %}
+                            <div class="col date-card-col">
+                                <div class="date-card p-2 border rounded select-date-card 
+                                    {% if day.date == today %} bg-success text-white 
+                                    {% elif day.date | dateformat('%A') in ['Saturday', 'Sunday'] %} bg-light-grey 
+                                    {% endif %}" 
+                                    data-date="{{ day.date }}" 
+                                    data-selected="{% if day.date == today %}true{% else %}false{% endif %}">
+                                    <div class="day-of-week font-weight-bold">{{ day.date | dateformat('%a') }}</div>
+                                    <div class="date-value">{{ day.date | dateformat('%d') }}</div> <!-- Display only the day number -->
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-abas" id="confirmCopyJobBtn">Copy</button>
                 </div>
             </div>
         </div>
@@ -363,6 +398,10 @@
     $('#finalizeTimeModal').draggable({
         handle: ".modal-header"
     });
+
+    $('#copyJobConfirmModal').draggable({
+        handle: ".modal-header"
+    });
     
     document.getElementById('commentsText').addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
@@ -372,6 +411,7 @@
 
     let canUseSummaryView = {{ can_use_summary_view | tojson }};
 
+    // Update total hours for cards
     function updateTotalHours() {
         let totalHours = 0;
 
@@ -392,6 +432,7 @@
         }
     }
 
+    // update card footer total hours
     function updateCardFooterTotal(cardBody) {
         let cardTotal = 0;
         cardBody.querySelectorAll('.time-entry .badge').forEach(badge => {
@@ -418,6 +459,7 @@
         updateTotalHours();
     });
 
+    // Handle editing hours in the time entry badges
     document.addEventListener('click', function(e) {
         if (e.target.classList.contains('editable-hours')) {
             // Prevent editing if badge is disabled
@@ -478,7 +520,7 @@
         }
     });
 
-
+    // Handle copying previous week entries
     document.getElementById('btnCopyPrev').addEventListener('click', function (event) {
         event.preventDefault();
 
@@ -539,32 +581,62 @@
             .catch(error => console.error('Error fetching projects:', error));
     });
 
-    let finalizeViewMode = 'summary'; // or 'detailed'
-    //let lastFinalizeData = null;
-    // Listen for switch toggle
-    document.getElementById('finalizeViewSwitch').addEventListener('change', function () {
-        finalizeViewMode = this.checked ? 'detailed' : 'summary';
-        fetchAndRenderFinalizeTable(); // Fetch new data for the selected view
-    });
+    function getTimeEntriesFromTimecards() {
+        const entries = [];
+        document.querySelectorAll('.card-body').forEach(cardBody => {
+            // Get the date from the parent card's id
+            const card = cardBody.closest('.col');
+            if (!card) return;
+            const cardId = card.id; // e.g., "card_06/17/2025"
+            const workDate = cardId.replace('card_', '').replace(/_/g, '/');
 
-    function fetchAndRenderFinalizeTable() {
-        const abasID = document.getElementById('abasIDInput').value;
-        const startDate = document.getElementById('startDateInput').value;
-        const endDate = document.getElementById('endDateInput').value;
+            cardBody.querySelectorAll('.time-entry').forEach(entryDiv => {
+                const wsNumber = entryDiv.querySelector('p')?.textContent.split(' ')[0] || '';
+                const opNameExtended = entryDiv.querySelector('p small')?.textContent.replace(/[()]/g, '') || '';
+                const tHoursWorked = parseFloat(entryDiv.querySelector('.badge')?.textContent) || 0;
+                const opCode = entryDiv.querySelector('#OpCode')?.textContent || '';
 
-        // Optionally, pass the view mode as a query param if your backend needs it
-        fetch(`/timesheet/entry/get_final_time_entries?abas_id=${abasID}&start_date=${startDate}&end_date=${endDate}&view_mode=${finalizeViewMode}`)
-            .then(response => response.json())
-            .then(data => {
-                renderFinalizeTable(data);
+                entries.push({
+                    WorkDate: workDate,
+                    WSNumber: wsNumber,
+                    OpNameExtended: opNameExtended,
+                    tHoursWorked: tHoursWorked,
+                    OpCode: opCode
+                });
             });
+        });
+        return entries;
     }
 
+    function groupEntriesByDayAndOpCode(entries) {
+        const grouped = {};
+        entries.forEach(entry => {
+            const key = `${entry.WorkDate}|${entry.OpCode || 'NOOP'}`;
+            if (!grouped[key]) {
+                grouped[key] = { ...entry };
+            } else {
+                grouped[key].tHoursWorked += entry.tHoursWorked;
+            }
+        });
+        // Convert grouped object to array
+        return Object.values(grouped);
+    }
+
+    // Render the finalize table with the fetched data
     function renderFinalizeTable(data) {
 
         const finalizeTimeButton = document.getElementById('finalizeTimeModalButton');
         const tableBody = document.querySelector('#finalizeTimeModal tbody');
         tableBody.innerHTML = ''; // Clear existing rows
+
+        // Add "Actions" column to the header if not already present
+        const tableHeadRow = document.querySelector('#finalizeTimeModal thead tr');
+        if (tableHeadRow && !tableHeadRow.querySelector('.actions-header')) {
+            const th = document.createElement('th');
+            th.textContent = 'Actions';
+            th.className = 'actions-header';
+            tableHeadRow.appendChild(th);
+        }
 
         if (!data || !data.time_entries) {             
             const noDataMessage = document.createElement('p');
@@ -578,558 +650,261 @@
 
         // Declare payrollPaychex_list inside the function
         const payrollPaychex_list = {{ paychex_list | tojson }};
-        console.log("Paychex List:", payrollPaychex_list); // Debugging: Log the paychex_list
+        //console.log("Paychex List:", payrollPaychex_list); // Debugging: Log the paychex_list
         
         const totalHoursBadge = document.getElementById('finalizeTotalHoursCell');
         totalHoursBadge.textContent = '0'; // Reset the total hours badge
 
         const isSalary = {{ abasUser.isHourly | tojson }} === false; // Check if the employee is salaried
-        const salaryPlusStart = {{ abasUser.SalaryPlusStart | tojson }};
     
         console.log("Is Salary:", isSalary); // Debugging: Log if the user is salaried
-        console.log("Salary Plus Start:", salaryPlusStart); // Debugging: Log the salary plus start
 
         let cumulativeHours = 0;
-        let totalHours = 0; // Initialize total hours variable
-        let salaryPlusHours = 0; // Initialize salary plus hours variable
         let lastWorkDate = null; // Initialize lastWorkDate variable
         const totalHoursWorked = data.totalHoursWorked || 0; // Get total hours worked from the response
 
-        const operationHeader = document.getElementById('operationHeader');
         const totalHoursLabel = document.getElementById('finalizeTotalHoursLabel');
+        
+        let rowHTML = '';
+        let lastDay = null;
+        let dayTotal = 0;
+        let dayEntries = [];
+        let totalHours = 0;
 
-        // Show Operation column for hourly users, or for salary+detailed view if you want
-        if (!isSalary || (isSalary && finalizeViewMode === 'detailed')) {
-            operationHeader.style.display = '';
-            totalHoursLabel.colSpan = 3; // Adjust colspan for hourly users or detailed view
-        } else {
-            operationHeader.style.display = 'none';
-            totalHoursLabel.colSpan = 2; // Adjust colspan for salary summary
+        function renderDayHeader(weekdayName, dayStr, dayTotal) {
+            return `
+                <tr class="table-primary">
+                    <th colspan="1" class="text-left">${weekdayName} - ${dayStr}</th>
+                    <th colspan="2" class="text-right font-italic">Total Job Hours: ${dayTotal.toFixed(2)}</th>
+                </tr>
+            `;
         }
 
-        // Populate the table with the latest time entries          
-        if (isSalary) {
-            console.log("Finalize view mode:", finalizeViewMode); // Debugging: Log the finalize view mode
-            if (finalizeViewMode === 'summary') {
-                // Render summary rows (per day, capped, etc.)
-                const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];                
-                const dayToDate = {};
-                let dayHours = {};
-                let totalHours = 0;
-                let lastWorkDate = null;
+        function renderDaySummary(dayStr, summaryTotal) {
+            return `
+                <tr class="table-secondary day-summary-row" data-date="${dayStr}">
+                    <th colspan="2" class="text-right font-italic">Total Attendance Hours:</th>
+                    <th class="text-left font-italic day-summary-total" data-date="${dayStr}">${summaryTotal.toFixed(2)}</th>
+                </tr>
+            `;
+        }
 
-                // Initialize dayHours for each weekday
-                daysOfWeek.forEach(day => { dayHours[day] = 0; });
-
-                // Map entries to weekdays and sum total
-                data.time_entries.forEach(entry => {
-                    const dateObj = new Date(entry.WorkDate);
-                    const weekday = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
-                    if (daysOfWeek.includes(weekday) && !entry.isHoliday) {
-                        dayHours[weekday] += parseFloat(entry.tHoursWorked);
-                        lastWorkDate = entry.WorkDate;
-                        totalHours += parseFloat(entry.tHoursWorked);
-                        dayToDate[weekday] = entry.WorkDate;
-                    }
-                });
-
-                // Salary Plus logic
-                let salaryPlusHours = 0;
-                let regularCap = 40;
-                if (salaryPlusStart > 0 && totalHours > salaryPlusStart) {
-                    salaryPlusHours = totalHours - salaryPlusStart;
-                    regularCap = 40;
-                } else if (totalHours > 40) {
-                    regularCap = 40;
-                } else {
-                    regularCap = totalHours;
-                }
-
-                // Output rows
-                let rowHTML = '';
-                let hoursLeft = regularCap;
-
-                daysOfWeek.forEach(day => {
-                    // Skip if holiday or no time entered
-                    if (!dayHours[day]) return;
-
-                    let hoursForDay = 0;
-                    if (regularCap >= 40) {
-                        hoursForDay = 8.00;
-                    } else {
-                        hoursForDay = dayHours[day];
-                    }
-                    const dateStr = dayToDate[day] || "";
-
-                    rowHTML += `
-                        <tr data-date="${dateStr}">
-                            <td data-label="Date">${day}</td>
-                            <td data-label="Pay Code">
-                                <select name="paychex_code_${day}" class="form-control">
-                                    ${payrollPaychex_list.map(paychex => `
-                                        <option value="${paychex.id}" ${paychex.code === 'E1' ? 'selected' : ''}>
-                                            ${paychex.code} - ${paychex.description}
-                                        </option>
-                                    `).join('')}
-                                </select>
-                            </td>
-                            <td data-label="Hours" class="text-right">${hoursForDay.toFixed(2)}</td>
-                        </tr>
-                    `;
-                });
-
-                const hourlyPlusDateStr = dayToDate["Friday"]
-                // Add salary plus row if needed
-                if (salaryPlusHours > 0) {
-                    rowHTML += `
-                        <tr data-date="${hourlyPlusDateStr}">
-                            <td data-label="Date">Salary Plus</td>
-                            <td data-label="Pay Code">
-                                <select name="paychex_code_salaryplus" class="form-control">
-                                    ${payrollPaychex_list.map(paychex => `
-                                        <option value="${paychex.id}" ${paychex.code === 'E50' ? 'selected' : ''}>
-                                            ${paychex.code} - ${paychex.description}
-                                        </option>
-                                    `).join('')}
-                                </select>
-                            </td>
-                            <td data-label="Hours" class="text-right">${salaryPlusHours.toFixed(2)}</td>
-                        </tr>
-                    `;
-                }
-
-                // Insert rows into the table
-                tableBody.innerHTML = rowHTML;
-                totalHoursBadge.textContent = (regularCap + salaryPlusHours).toFixed(2);
-            } else {
-                console.log("Rendering detailed view for salaried user"); // Debugging
-                // Render detailed rows (one per entry)
-                
-                let rowHTML = '';
-                let totalHours = 0;
-                let cumulativeHours = 0;
-                let lastDay = null;
-                let dayTotal = 0;
-                let isFirstRowOfDay = true;
-
-                data.time_entries.forEach((entry, idx) => {
-                    const entryHours = parseFloat(entry.tHoursWorked);
-                    const workDate = entry.WorkDate;
-                    const dateObj = new Date(workDate);
-                    // Get day of week name (e.g., "Monday")
-                    const weekdayName = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
-                    const dayStr = workDate;
-
-                    // If this is a new day and not the first entry, add a total row for the previous day
-                    if (lastDay && lastDay !== dayStr) {
-                        // Get the weekday name for the last day
-                        const lastDateObj = new Date(lastDay);
-                        const lastWeekdayName = lastDateObj.toLocaleDateString('en-US', { weekday: 'long' });
-
-                        rowHTML += `
-                            <tr class="table-secondary" data-date="${lastDay}">
-                                <td colspan="3" class="text-right font-italic">Total for ${lastWeekdayName} - ${lastDay}:</td>
-                                <td class="font-weight-bold text-right">${dayTotal.toFixed(2)}</td>
-                            </tr>
-                        `;
-                        dayTotal = 0;
-                        isFirstRowOfDay = true;
-                    }
-
-                    // --- Your existing logic for salary caps and salary plus ---
-                    if (cumulativeHours + entryHours <= 40) {
-                        // Entire entry fits within the first 40 hours
-                        rowHTML += `
-                            <tr data-date="${workDate}">
-                                <td data-label="Date">${isFirstRowOfDay ? weekdayName : ''}</td>
-                                <td data-label="Operation">${entry.WSNumber} - ${entry.OpName}<br><small class="card-desc">(${entry.WODescription})</small></td>
-                                <td data-label="Pay Code">
-                                    <select name="paychex_code_${entry.WorkDate}" class="form-control">
-                                        ${payrollPaychex_list.map(paychex => `
-                                            <option value="${paychex.id}" ${
-                                                entry.OpCode
-                                                    ? (paychex.code === entry.OpCode ? 'selected' : '')
-                                                    : (paychex.code === 'E1' ? 'selected' : '')
-                                            }>
-                                                ${paychex.code} - ${paychex.description}
-                                            </option>
-                                        `).join('')}
-                                    </select>
-                                </td>
-                                <td data-label="Hours" class="text-right">${entryHours.toFixed(2)}</td>
-                            </tr>
-                        `;
-                        totalHours += entryHours;
-                        dayTotal += entryHours;
-                    } else if (cumulativeHours + entryHours > 40 && cumulativeHours + entryHours <= salaryPlusStart) {
-                    //else if (cumulativeHours < 40) {
-                        // Entry crosses the 40-hour mark
-                        const remainingHoursTo40 = Math.max(0, 40 - cumulativeHours);
-                        const hoursBeyond40 = entryHours - remainingHoursTo40;
-
-                        // First row: Hours up to 40
-                        if (remainingHoursTo40 > 0) {
-                            rowHTML += `
-                                <tr data-date="${workDate}">
-                                    <td data-label="Date">${isFirstRowOfDay ? weekdayName : ''}</td>
-                                    <td data-label="Operation">${entry.WSNumber} - ${entry.OpName}<br><small class="card-desc">(${entry.WODescription})</small></td>
-                                    <td data-label="Pay Code">
-                                        <select name="paychex_code_${entry.WorkDate}" class="form-control">
-                                            ${payrollPaychex_list.map(paychex => `
-                                                <option value="${paychex.id}" ${
-                                                    entry.OpCode
-                                                        ? (paychex.code === entry.OpCode ? 'selected' : '')
-                                                        : (paychex.code === 'E1' ? 'selected' : '')
-                                                }>
-                                                    ${paychex.code} - ${paychex.description}
-                                                </option>
-                                            `).join('')}
-                                        </select>
-                                    </td>
-                                    <td data-label="Hours" class="text-right">${remainingHoursTo40.toFixed(2)}</td>
-                                </tr>
-                            `;
-                            totalHours += remainingHoursTo40;
-                            dayTotal += remainingHoursTo40;
-                            isFirstRowOfDay = false; // Set to false after the first row
-                        }
-                        // Second row: Salary plus (if applicable)
-                        /* if (hoursBeyond40 > 0 && cumulativeHours + entryHours >= salaryPlusStart) {
-                            rowHTML += `
-                                <tr data-date="${workDate}">
-                                    <td data-label="Date"></td>
-                                    <td data-label="Operation">${entry.WSNumber} - ${entry.OpName}<br><small class="card-desc">(${entry.WODescription})</small></td>
-                                    <td data-label="Pay Code">
-                                        <select name="paychex_code_${entry.WorkDate}" class="form-control">
-                                            ${payrollPaychex_list.map(paychex => `
-                                                <option value="${paychex.id}" ${paychex.code === 'E50' ? 'selected' : ''}>
-                                                    ${paychex.code} - ${paychex.description}
-                                                </option>
-                                            `).join('')}
-                                        </select>
-                                    </td>
-                                    <td data-label="Hours" class="text-right">${hoursBeyond40.toFixed(2)}</td>
-                                </tr>
-                            `;
-                            // Do not add hoursBeyond40 to dayTotal or totalHours if you want to exclude salary plus from regular totals
-                        } */
-                         // Second row: Hours beyond 40 with S40 code
-                        if (hoursBeyond40 > 0) {
-                            console.log("Creating S40 row for hours:", hoursBeyond40); // Debugging
-                            rowHTML += `
-                                <tr data-date="${workDate}">
-                                    <td data-label="Date">${isFirstRowOfDay ? weekdayName : ''}</td>
-                                    <td>${entry.WSNumber} - ${entry.OpName}</td>
-                                    <td>
-                                        <select name="paychex_code_${entry.EntryID}_2" class="form-control">
-                                            ${payrollPaychex_list.map(paychex => `
-                                                <option value="${paychex.id}" ${
-                                                    entry.OpCode
-                                                        ? (paychex.code === entry.OpCode ? 'selected' : '')
-                                                        : (paychex.code === 'S40' ? 'selected' : '')
-                                                }>
-                                                    ${paychex.code} - ${paychex.description}
-                                                </option>
-                                            `).join('')}
-                                        </select>
-                                    </td>
-                                    <td>${hoursBeyond40.toFixed(2)}</td>
-                                </tr>
-                            `;
-                        }
-                        
-                    } else if (cumulativeHours + entryHours > salaryPlusStart) {
-                        // Entry exceeds the salary plus threshold
-                        const remainingHoursToSalaryPlus = Math.max(0, salaryPlusStart - cumulativeHours); // Hours to reach salary plus
-                        const overtimeHours = Math.max(0, entryHours - remainingHoursToSalaryPlus); // Remaining hours beyond salary plus
-                        console.log("Salary Plus Start:", salaryPlusStart); // Debugging
-                        console.log("Remaining Hours to Salary Plus:", remainingHoursToSalaryPlus); // Debugging
-                        console.log("Overtime Hours:", overtimeHours); // Debugging
-                    
-                        // First row: Hours up to salary plus with S40 code
-                        if (remainingHoursToSalaryPlus > 0) {
-                            rowHTML += `
-                                <tr data-date="${workDate}">
-                                    <td data-label="Date">${isFirstRowOfDay ? weekdayName : ''}</td>
-                                    <td>${entry.WSNumber} - ${entry.OpName}</td>
-                                    <td>
-                                        <select name="paychex_code_${entry.EntryID}_1" class="form-control">
-                                            ${payrollPaychex_list.map(paychex => `
-                                                <option value="${paychex.id}" ${
-                                                    entry.OpCode
-                                                        ? (paychex.code === entry.OpCode ? 'selected' : '')
-                                                        : (paychex.code === 'S40' ? 'selected' : '')
-                                                }>
-                                                    ${paychex.code} - ${paychex.description}
-                                                </option>
-                                            `).join('')}
-                                        </select>
-                                    </td>
-                                    <td>${remainingHoursToSalaryPlus.toFixed(2)}</td>
-                                </tr>
-                            `;
-                            isFirstRowOfDay = false; // Set to false after the first row
-                        }
-                    
-                        // Second row: Overtime hours beyond salary plus with E50 code
-                        if (overtimeHours > 0) {
-                            rowHTML += `
-                                <tr data-date="${workDate}">
-                                    <td data-label="Date">${isFirstRowOfDay ? weekdayName : ''}</td>
-                                    <td>${entry.WSNumber} - ${entry.OpName}</td>
-                                    <td>
-                                        <select name="paychex_code_${entry.EntryID}_2" class="form-control">
-                                            ${payrollPaychex_list.map(paychex => `
-                                                <option value="${paychex.id}" ${
-                                                    entry.OpCode
-                                                        ? (paychex.code === entry.OpCode ? 'selected' : '')
-                                                        : (paychex.code === 'E50' ? 'selected' : '')
-                                                }>
-                                                    ${paychex.code} - ${paychex.description}
-                                                </option>
-                                            `).join('')}
-                                        </select>
-                                    </td>
-                                    <td>${overtimeHours.toFixed(2)}</td>
-                                </tr>
-                            `;
-                            totalHours += overtimeHours; // Add overtime hours to total
-                            dayTotal += overtimeHours; // Add overtime hours to daily total
-                        }
-                        
-                    }
-                    
-                    cumulativeHours += entryHours;
-                    lastDay = dayStr;
-                    isFirstRowOfDay = false;
-
-                    // If this is the last entry, add a total row for the last day
-                    if (idx === data.time_entries.length - 1) {
-                        const lastDateObj = new Date(lastDay);
-                        const lastWeekdayName = lastDateObj.toLocaleDateString('en-US', { weekday: 'long' });
-
-                        rowHTML += `
-                            <tr class="table-secondary" data-date="${lastDay}">
-                                <td colspan="3" class="text-right font-italic">Total for ${lastWeekdayName} - ${lastDay}:</td>
-                                <td class="font-weight-bold text-right">${dayTotal.toFixed(2)}</td>
-                            </tr>
-                        `;
-                    }
-                });
-
-                tableBody.innerHTML = rowHTML;
-                totalHoursBadge.textContent = totalHours.toFixed(2);
-
-                console.log("Cumulative Hours After:", cumulativeHours); // Debugging cumulative hours  
-
-                //totalHours += salaryPlusHours; // Add salary plus hours to total hours
-                //totalHoursBadge.textContent = totalHours.toFixed(2); // Update the total hours badge
-                console.log("TotalHoursBadge", totalHoursBadge.textContent); // Debugging: Log the total hours badge      
+        function flushDayRows() {
+            if (dayEntries.length > 0 && lastDay) {
+                const lastDateObj = new Date(lastDay);
+                const lastWeekdayName = lastDateObj.toLocaleDateString('en-US', { weekday: 'long' });
+                rowHTML += renderDayHeader(lastWeekdayName, lastDay, dayTotal); // static header total
+                rowHTML += dayEntries.join('');
+                rowHTML += renderDaySummary(lastDay, dayTotal); // summary row, initially same as header
+                dayEntries = [];
+                dayTotal = 0;
             }
-        } else {
-            // Hourly logic (usually detailed)
-            let rowHTML = '';
-            let totalHours = 0;
-            let cumulativeHours = 0;
-            let lastDay = null;
-            let dayTotal = 0;
-            let isFirstRowOfDay = true;
-            
-            data.time_entries.forEach((entry, idx) => {
-                const entryHours = parseFloat(entry.tHoursWorked);
-                const workDate = entry.WorkDate;
-                const dateObj = new Date(workDate);
-                // Get day of week name (e.g., "Monday")
-                const weekdayName = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
-                const dayStr = workDate;
+        }
 
-                // If this is a new day and not the first entry, add a total row for the previous day
-                if (lastDay && lastDay !== dayStr) {
-                    // Get the weekday name for the last day
-                    const lastDateObj = new Date(lastDay);
-                    const lastWeekdayName = lastDateObj.toLocaleDateString('en-US', { weekday: 'long' });
+        function updateWeeklyTotal() {
+            let weekTotal = 0;
+            document.querySelectorAll('.day-summary-total').forEach(cell => {
+                const val = parseFloat(cell.textContent);
+                if (!isNaN(val)) weekTotal += val;
+            });
+            const totalHoursBadge = document.getElementById('finalizeTotalHoursCell');
+            if (totalHoursBadge) totalHoursBadge.textContent = weekTotal.toFixed(2);
+        }
 
-                    rowHTML += `
-                        <tr class="table-secondary" data-date="${lastDay}">
-                            <td colspan="3" class="text-right font-italic">Total for ${lastWeekdayName} - ${lastDay}:</td>
-                            <td class="font-weight-bold text-right">${dayTotal.toFixed(2)}</td>
-                        </tr>
-                    `;
-                    dayTotal = 0;
-                    isFirstRowOfDay = true;
-                }
-
-                if (cumulativeHours + entryHours <= 40) {
-                    // Entire entry fits within the first 40 hours
-                    rowHTML += `
-                        <tr data-date="${workDate}">
-                            <td data-label="Date">${isFirstRowOfDay ? weekdayName : ''}</td>
-                            <td data-label="Operation">${entry.WSNumber} - ${entry.OpName}<br><small class="card-desc">(${entry.WODescription})</small></td>
-                            <td data-label="Pay Code">
-                                <select name="paychex_code_${entry.WorkDate}" class="form-control">
-                                    ${payrollPaychex_list.map(paychex => `
-                                        <option value="${paychex.id}" ${
-                                            entry.OpCode
-                                                ? (paychex.code === entry.OpCode ? 'selected' : '')
-                                                : (paychex.code === 'E1' ? 'selected' : '')
-                                        }>
-                                            ${paychex.code} - ${paychex.description}
-                                        </option>
-                                    `).join('')}
-                                </select>
-                            </td>
-                            <td data-label="Hours" class="text-right">${entryHours.toFixed(2)}</td>
-                        </tr>
-                    `;
-                    totalHours += entryHours;
-                    dayTotal += entryHours;
-                } else if (cumulativeHours + entryHours > 40) {
-                    // Entry crosses the 40-hour mark
-                    const remainingHoursTo40 = Math.max(0, 40 - cumulativeHours); // Hours needed to reach 40
-                    const hoursBeyond40 = entryHours - remainingHoursTo40; // Remaining hours beyond 40
-
-                    // First row: Hours up to 40
-                    if (remainingHoursTo40 > 0) {
-                        rowHTML += `
-                            <tr data-date="${workDate}">
-                                <td data-label="Date">${isFirstRowOfDay ? weekdayName : ''}</td>
-                                <td data-label="Operation">${entry.WSNumber} - ${entry.OpName}<br><small class="card-desc">(${entry.WODescription})</small></td>
-                                <td data-label="Pay Code">
-                                    <select name="paychex_code_${entry.WorkDate}" class="form-control">
-                                        ${payrollPaychex_list.map(paychex => `
-                                            <option value="${paychex.id}" ${
-                                                entry.OpCode
-                                                    ? (paychex.code === entry.OpCode ? 'selected' : '')
-                                                    : (paychex.code === 'E1' ? 'selected' : '')
-                                            }>
-                                                ${paychex.code} - ${paychex.description}
-                                            </option>
-                                        `).join('')}
-                                    </select>
-                                </td>
-                                <td data-label="Hours" class="text-right">${remainingHoursTo40.toFixed(2)}</td>
-                            </tr>
-                        `;
-                        totalHours += remainingHoursTo40;
-                        dayTotal += remainingHoursTo40;
-                        isFirstRowOfDay = false; // Set to false after the first row
-                    }
-
-                    // Second row: Overtime hours beyond 40 with E51 code
-                    if (hoursBeyond40 > 0) {
-                        rowHTML += `
-                            <tr data-date="${workDate}">
-                                <td data-label="Date">${isFirstRowOfDay ? weekdayName : ''}</td>
-                                <td data-label="Operation">${entry.WSNumber} - ${entry.OpName}<br><small class="card-desc">(${entry.WODescription})</small></td>
-                                <td data-label="Pay Code">
-                                    <select name="paychex_code_${entry.WorkDate}" class="form-control">
-                                        ${payrollPaychex_list.map(paychex => `
-                                            <option value="${paychex.id}" ${
-                                                entry.OpCode
-                                                    ? (paychex.code === entry.OpCode ? 'selected' : '')
-                                                    : (paychex.code === 'E51' ? 'selected' : '')
-                                            }>
-                                                ${paychex.code} - ${paychex.description}
-                                            </option>
-                                        `).join('')}
-                                    </select>
-                                </td>
-                                <td data-label="Hours" class="text-right">${hoursBeyond40.toFixed(2)}</td>
-                            </tr>
-                        `;
-                        totalHours += hoursBeyond40; // Add to total hours
-                        dayTotal += hoursBeyond40; // Add to daily total
-                        isFirstRowOfDay = false; // Set to false after the first row
-                    }
-                    
-                }
-                cumulativeHours += entryHours;
-                lastDay = dayStr;
-                isFirstRowOfDay = false;
-
-                // If this is the last entry, add a total row for the last day
-                if (idx === data.time_entries.length - 1) {
-                    const lastDateObj = new Date(lastDay);
-                    const lastWeekdayName = lastDateObj.toLocaleDateString('en-US', { weekday: 'long' });
-
-                    rowHTML += `
-                        <tr class="table-secondary" data-date="${lastDay}">
-                            <td colspan="3" class="text-right font-italic">Total for ${lastWeekdayName} - ${lastDay}:</td>
-                            <td class="font-weight-bold text-right">${dayTotal.toFixed(2)}</td>
-                        </tr>
-                    `;
+        function updateDaySummary(dayStr) {
+            // Find all rows for this day
+            const rows = document.querySelectorAll(`#finalizeTimeModal tbody tr[data-date="${dayStr}"]`);
+            let sum = 0;
+            rows.forEach(row => {
+                const input = row.querySelector('input.hours-input');
+                if (input) {
+                    const val = parseFloat(input.value);
+                    if (!isNaN(val)) sum += val;
                 }
             });
+            // Update the summary cell
+            const summaryCell = document.querySelector(`.day-summary-total[data-date="${dayStr}"]`);
+            if (summaryCell) summaryCell.textContent = sum.toFixed(2);
 
-            tableBody.innerHTML = rowHTML;
-            totalHoursBadge.textContent = totalHours.toFixed(2);
-
-            console.log("Cumulative Hours After:", cumulativeHours); // Debugging cumulative hours  
-
-            //totalHours += salaryPlusHours; // Add salary plus hours to total hours
-            //totalHoursBadge.textContent = totalHours.toFixed(2); // Update the total hours badge
-            console.log("TotalHoursBadge", totalHoursBadge.textContent); // Debugging: Log the total hours badge                   
+            // Update the weekly total whenever a day's summary changes
+            updateWeeklyTotal();
         }
+
+        data.time_entries.forEach((entry, idx) => {
+            const entryHours = parseFloat(entry.tHoursWorked);
+            const workDate = entry.WorkDate;
+            const dateObj = new Date(workDate);
+            const weekdayName = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
+            const dayStr = workDate;
+
+            // If new day, flush previous day's rows
+            if (lastDay && lastDay !== dayStr) {
+                flushDayRows();
+            }
+
+            // Determine the paychex code: use OpCode if present, else 'E1'
+            const paychexCode = entry.OpCode && entry.OpCode.trim() !== '' ? entry.OpCode : 'E1';
+
+            dayEntries.push(`
+                <tr data-date="${workDate}">
+                    <td data-label="Pay Code">
+                        <select name="paychex_code_${entry.WorkDate}" class="form-control">
+                            ${payrollPaychex_list.map(paychex => `
+                                <option value="${paychex.id}" ${paychex.code === paychexCode ? 'selected' : ''}>
+                                    ${paychex.code} - ${paychex.description}
+                                </option>
+                            `).join('')}
+                        </select>
+                    </td>
+                    <td data-label="Hours" class="text-right">
+                        <input type="text" class="form-control form-control-sm hours-input" value="${entryHours.toFixed(2)}" style="width:55px; text-align:right;">
+                    </td>
+                    <td>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button type="button" class="btn btn-success add-row-btn" data-date="${workDate}" title="Add Row">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                            <button type="button" class="btn btn-danger remove-row-btn" data-date="${workDate}" title="Remove Row">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `);
+
+            dayTotal += entryHours;
+            totalHours += entryHours;
+            lastDay = dayStr;
+
+            // If this is the last entry, flush the last day's rows
+            if (idx === data.time_entries.length - 1) {
+                flushDayRows();
+            }
+        });
+
+        tableBody.innerHTML = rowHTML;
+        totalHoursBadge.textContent = totalHours.toFixed(2);
+   
+        // event listeners for input changes in the hours fields
+        tableBody.querySelectorAll('input.hours-input').forEach(input => {
+            input.addEventListener('input', function() {
+                const row = input.closest('tr');
+                const dayStr = row.getAttribute('data-date');
+                updateDaySummary(dayStr);
+            });
+            input.addEventListener('blur', function() {
+                let val = parseFloat(input.value);
+                if (!isNaN(val)) {
+                    input.value = val.toFixed(2);
+                } else {
+                    input.value = '0.00';
+                }
+            });
+        });
+
+        // Attach event listeners for add/remove buttons
+        tableBody.querySelectorAll('.add-row-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const date = this.getAttribute('data-date');
+                // Find all rows for this date
+                const rows = Array.from(tableBody.querySelectorAll(`tr[data-date="${date}"]`));
+                if (rows.length === 0) return;
+
+                // Clone the last row for this date
+                const lastRow = rows[rows.length - 2];
+                const newRow = lastRow.cloneNode(true);
+
+                // Reset the select and hours input value in the new row
+                const select = newRow.querySelector('select');
+                if (select) {
+                    // Set E1 as selected by default
+                    select.value = select.querySelector('option[value]').value; // fallback to first if E1 not found
+                    const e1Option = Array.from(select.options).find(opt => opt.textContent.trim().startsWith('E1 '));
+                    if (e1Option) select.value = e1Option.value;
+                }
+
+                // Find the hours cell and replace its content with a new input
+                const hoursCell = newRow.querySelector('td[data-label="Hours"]');
+                if (hoursCell) {
+                    hoursCell.innerHTML = `<input type="text" class="form-control form-control-sm hours-input" value="0.00" style="width:55px; text-align:right;">`;
+                }
+
+                // Insert before the summary row for this day, if it exists
+                let nextRow = lastRow.nextElementSibling;
+                while (nextRow && nextRow.classList.contains('table-secondary')) {
+                    nextRow = nextRow.nextElementSibling;
+                }
+                lastRow.parentNode.insertBefore(newRow, lastRow.nextElementSibling);
+
+
+                // Re-attach event listeners to the new row's buttons and input
+                newRow.querySelector('.add-row-btn').addEventListener('click', arguments.callee);
+                newRow.querySelector('.remove-row-btn').addEventListener('click', function() {
+                    newRow.remove();
+                    // Optionally update the summary after removal
+                    const dayStr = newRow.getAttribute('data-date');
+                    updateDaySummary(dayStr);
+                });
+                // Attach input event for live summary update
+                const newInput = newRow.querySelector('input.hours-input');
+                if (newInput) {
+                    newInput.addEventListener('input', function() {
+                        const row = newInput.closest('tr');
+                        const dayStr = row.getAttribute('data-date');
+                        updateDaySummary(dayStr);
+                    });
+                    input.addEventListener('blur', function() {
+                        let val = parseFloat(input.value);
+                        if (!isNaN(val)) {
+                            input.value = val.toFixed(2);
+                        } else {
+                            input.value = '0.00';
+                        }
+                    });
+                }
+                // Update the summary for this day
+                const dayStr = newRow.getAttribute('data-date');
+                updateDaySummary(dayStr);
+            });
+        });
+
+        tableBody.querySelectorAll('.remove-row-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const row = this.closest('tr');
+                // Optionally, prevent removing the last row for a day
+                const date = row.getAttribute('data-date');
+                const rowsForDate = tableBody.querySelectorAll(`tr[data-date="${date}"]`);
+                if (rowsForDate.length > 1) {
+                    row.remove();
+                } else {
+                    alert('At least one row per day is required.');
+                }
+            });
+        });
     }
 
     // Show the finalize time modal when the button is clicked
     document.getElementById('finalizeTimeButton').addEventListener('click', function () {
-        const finalizeTimeModal = new bootstrap.Modal(document.getElementById('finalizeTimeModal'));
-        finalizeTimeModal.show();
+        //const finalizeTimeModal = new bootstrap.Modal(document.getElementById('finalizeTimeModal'));
+        var myModal = new bootstrap.Modal(document.getElementById('finalizeTimeModal'), {
+            backdrop: 'static',
+            keyboard: false
+        });
+        myModal.show();        
+
+        //finalizeTimeModal.show();
         document.getElementById('finalizeTimeModalButton').disabled = false;
-        // Declare payrollPaychex_list inside the function
-        // const payrollPaychex_list = {{ paychex_list | tojson }};
-        // console.log("Paychex List:", payrollPaychex_list); // Debugging: Log the paychex_list
-    
-        // Fetch the latest time entries
-        const abasID = document.getElementById('abasIDInput').value;
-        const startDate = document.getElementById('startDateInput').value;
-        const endDate = document.getElementById('endDateInput').value;
-        //const canUseSummaryView = {{ can_use_summary_view | tojson }}; // Check if the user can use summary view
-        const isSalary = {{ abasUser.isHourly | tojson }} === false; // Check if the employee is salaried
-        //const salaryPlusStart = {{ abasUser.SalaryPlusStart | tojson }};
-    
-        console.log("Is Salary:", isSalary); // Debugging: Log if the user is salaried
-        //console.log("Salary Plus Start:", salaryPlusStart); // Debugging: Log the salary plus start
 
-        // Set default view mode based on user type
-        const finalizeViewSwitch = document.getElementById('finalizeViewSwitch');
-        const finalizeViewSwitchLabel = document.getElementById('finalizeViewSwitchLabel');
-
-        //finalizeViewSwitch.checked = isSalary ? false : true; // Set initial state based on user type
-        //finalizeViewSwitch.disabled = isSalary ? false : true; // Disable switch for hourly employees
-        
-        //let lastFinalizeData = null;
-        if (isSalary && canUseSummaryView) {
-            finalizeViewMode = 'summary'; // Default to summary view for salaried users
-            finalizeViewSwitch.checked = false;
-            finalizeViewSwitch.disabled = false;
-        } else {
-            finalizeViewMode = 'detailed'; // Default to detailed view for hourly users
-            finalizeViewSwitch.checked = true; // Ensure switch is on for detailed view
-            finalizeViewSwitch.disabled = true; // Enable switch for hourly users if they can use summary view
-        }
-
-        console.log("Finalize View Mode:", finalizeViewMode); // Debugging: Log the finalize view mode
-
-        fetch(`/timesheet/entry/get_final_time_entries?abas_id=${abasID}&start_date=${startDate}&end_date=${endDate}&view_mode=${finalizeViewMode}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    //lastFinalizeData = data;
-                    renderFinalizeTable(data); // <-- Call your rendering function here
-
-                } else {
-                    console.error('Error fetching time entries:', data.error);
-                }
-            })
-            .catch(error => console.error('Error fetching time entries:', error));
+        const timeEntries = getTimeEntriesFromTimecards();
+        const groupedEntries = groupEntriesByDayAndOpCode(timeEntries);
+        renderFinalizeTable({ time_entries: groupedEntries });
     });
 
     // Event listener for Finalize Time Modal form submission
     let finalizeFormSubmitHandler = null;
 
 
+    // Event listener for finalize time form submission
     document.getElementById('finalizeTimeForm').addEventListener('submit', function (event) {
         event.preventDefault();
 
@@ -1289,11 +1064,19 @@
                             option.value = workOrder.id;
                             option.textContent = workOrder.id + " - " + workOrder.part + " - " + workOrder.desc;
                             workOrderDropdown.appendChild(option);
-                        });
+                        });                        
 
                         // Show the dropdown and refresh Bootstrap Select
                         workOrderDropdown.style.display = 'block';
                         $('.selectpicker').selectpicker('refresh');
+
+                        // select the first work order by default if there is only one work order
+                        if (data.workOrders.length === 1) {
+                            workOrderDropdown.value = data.workOrders[0].id;
+                            workOrderDropdown.dispatchEvent(new Event('change')); // Trigger change event to load workslips
+                        } else {
+                            workOrderDropdown.value = ''; // Reset if multiple work orders
+                        }
                     } else {
                         // Hide the dropdown if no work orders are available
                         workOrderDropdown.style.display = 'none';
@@ -1386,7 +1169,7 @@
     let deleteEntryID = null;
     let deleteButton = null;
 
-    // Event listener for time entry deletion
+    // Event listener for time entry deletion and copy 
     document.addEventListener('DOMContentLoaded', function () {
         // Add event listener to all delete buttons        
         document.querySelectorAll('.delete-entry-btn').forEach(button => {
@@ -1396,9 +1179,98 @@
                 $('#deleteConfirmModal').modal('show');
             });
         });
+        document.querySelectorAll('.copy-entry-btn').forEach(button => {
+            button.addEventListener('click', function () {
+                copyJobEntryID = this.getAttribute('data-timeentryid');
+                copyJobButton = this;
+                $('#copyJobConfirmModal').modal('show');
+            });
+        });
     });
 
-    
+    // function to copy job entry to a new day
+    document.getElementById('confirmCopyJobBtn').addEventListener('click', function (event) {
+        event.preventDefault();
+
+        // Get the job entry ID to copy (set when user clicks the copy icon)
+        const jobEntryId = window.copyJobEntryID;
+
+        // Get the selected day from the modal
+        const selectedCard = document.querySelector('#copyJobConfirmModal .select-date-card.bg-success');
+        if (!jobEntryId || !selectedCard) {
+            showSnackbar('Please select a day to copy to.', 'error');
+            return;
+        }
+        const copyToDay = selectedCard.getAttribute('data-date');
+
+        fetch('/timesheet/entry/copy_time_entry', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ job_entry_id: jobEntryId, copy_to_day: copyToDay })
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success && result.data) {
+                showSnackbar('Job copied successfully!', 'success');
+
+                // Find the card body for the target day
+                const cardBody = document.querySelector(`#card_${result.data.WorkDate.replace(/\//g, '_')} .card-body`);
+                if (cardBody) {
+                    // Remove "No data available" message if it exists
+                    const noDataMessage = cardBody.querySelector('p');
+                    if (noDataMessage && noDataMessage.textContent === 'No data available for this date.') {
+                        noDataMessage.remove();
+                    }
+
+                    // Create the new time entry DOM
+                    const timeEntryDiv = document.createElement('div');
+                    timeEntryDiv.classList.add('d-flex', 'justify-content-between', 'align-items-center', 'time-entry');
+                    timeEntryDiv.innerHTML = `
+                        <p>
+                            ${result.data.WSNumber} ${result.data.OpNameExtended}
+                            <small class="card-desc">(${result.data.WODescription})</small>
+                        </p>
+                        <h5>
+                            <span class="badge badge-secondary editable-hours"
+                                data-timeentryid="${result.data.TimeEntryID}"
+                                style="cursor:pointer;">
+                                ${result.data.tHoursWorked}
+                            </span>
+                        </h5>
+                        <button class="btn btn-abas2 btn-sm copy-entry-btn" data-timeentryid="${result.data.TimeEntryID}" title="Copy Entry">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                        <button class="btn btn-danger btn-sm delete-entry-btn" data-timeentryid="${result.data.TimeEntryID}" title="Delete Entry">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    `;
+                    cardBody.appendChild(timeEntryDiv);
+
+                    // Update the total hours in the card footer
+                    const cardFooter = cardBody.nextElementSibling;
+                    const totalHoursElement = cardFooter.querySelector('.font-weight-bold');
+                    const currentTotal = parseFloat(totalHoursElement.textContent) || 0;
+                    const newTotal = currentTotal + parseFloat(result.data.tHoursWorked);
+                    totalHoursElement.textContent = newTotal.toFixed(2);
+
+                    // Recalculate the total hours for the floating badge
+                    updateTotalHours();
+
+                    // Reattach event listeners for the new buttons
+                    attachDeleteEvent(timeEntryDiv.querySelector('.delete-entry-btn'));
+                    attachCopyJobEvent(timeEntryDiv.querySelector('.copy-entry-btn'));
+                }
+            } else {
+                showSnackbar('Failed to copy job: ' + result.error, 'error');
+            }
+        })
+        .catch(error => {
+            showSnackbar('An unexpected error occurred.', 'error');
+            console.error(error);
+        });
+    });
+
+    // Confirm deletion of time entry
     document.getElementById('confirmDeleteBtn').addEventListener('click', function () {
         if (!deleteEntryID) return;
         fetch(`/timesheet/entry/delete/${deleteEntryID}`, {
@@ -1463,7 +1335,17 @@
         });
     }
 
-    // Event listener for form submission
+    // Function to attach copy event to dynamically created buttons
+    function attachCopyJobEvent(button) {
+        button.addEventListener('click', function () {
+            copyJobEntryID = this.getAttribute('data-timeentryid');
+            copyJobButton = this;
+            $('#copyJobConfirmModal').modal('show');
+            
+        });
+    }
+
+    // Event listener for Add time form submission
     document.getElementById('dateForm').addEventListener('submit', function (event) {
         event.preventDefault(); // Prevent the default form submission
 
@@ -1496,12 +1378,22 @@
                     timeEntryDiv.classList.add('d-flex', 'justify-content-between', 'align-items-center', 'time-entry');
                     timeEntryDiv.innerHTML = `
                         <p>
-                        ${result.data.WSNumber} ${result.data.OpNameExtended}
-                        <small class="card-desc">(${result.data.WODescription})</small>
+                            ${result.data.WSNumber} ${result.data.OpNameExtended}
+                            <small class="card-desc">(${result.data.WODescription})</small>
+                            <span id="OpCode" hidden>${result.data.OpCode}</span>
                         </p>
-                        <h5><span class="badge badge-secondary">${result.data.tHoursWorked}</span></h5>
+                        <h5>
+                            <span class="badge badge-secondary editable-hours"
+                                data-timeentryid="${result.data.TimeEntryID}"
+                                style="cursor:pointer;">
+                                ${result.data.tHoursWorked}
+                            </span>
+                        </h5>
+                        <button class="btn btn-abas2 btn-sm copy-entry-btn" data-timeentryid="${result.data.TimeEntryID}" title="Copy Entry">
+                            <i class="fas fa-copy"></i>
+                        </button>
                         <button class="btn btn-danger btn-sm delete-entry-btn" data-timeentryid="${result.data.TimeEntryID}" title="Delete Entry">
-                            <i class="fas fa-times"></i>
+                            <i class="fas fa-trash"></i>
                         </button>
                     `;
                     cardBody.appendChild(timeEntryDiv);
@@ -1527,6 +1419,7 @@
 
                     // Reattach the delete button event listener
                     attachDeleteEvent(timeEntryDiv.querySelector('.delete-entry-btn'));
+                    attachCopyJobEvent(timeEntryDiv.querySelector('.copy-entry-btn'));
 
                     // Close the modal
                     // const addTimeModal = bootstrap.Modal.getInstance(document.getElementById('addTimeModal'));
