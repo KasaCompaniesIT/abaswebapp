@@ -920,38 +920,34 @@
                 const tableRows = document.querySelectorAll('#finalizeTimeModal tbody tr');
                 const finalizeData = [];
                 let totalHours = 0;
-                let firstRow = true; // Track if it's the first row
+                let firstRow = true;
 
                 tableRows.forEach(row => {
-                    // Only process rows that have a select (Paychex code), a numeric hours cell, and a data-date attribute
                     const paychexSelect = row.querySelector('select');
-                    const hoursCell = row.querySelector('td[data-label="Hours"], td:last-child');
+                    const hoursInput = row.querySelector('input.hours-input');
                     const rowDate = row.getAttribute('data-date');
-                    console.log('Row:', {paychexSelect, hoursCell, rowDate, row});
-                    
-                    let comments = ''
+                    let comments = '';
 
                     if (firstRow) {
-                        comments = document.querySelector('#commentsText').value || ''; // Get comments from the textarea  
+                        comments = document.querySelector('#commentsText').value || '';
                     } else {
-                        comments = 'null'; // Clear comments for subsequent rows
+                        comments = '';
                     }
 
-                    if (!paychexSelect || !hoursCell || !rowDate) return;
+                    if (!paychexSelect || !hoursInput || !rowDate) return;
 
                     const paychexCode = paychexSelect.value;
-                    const hours = parseFloat(hoursCell.textContent.trim());
+                    const hours = parseFloat(hoursInput.value);
 
-                    // Skip rows with invalid or empty data
-                    if (isNaN(hours)) return;
+                    if (isNaN(hours) || hours <= 0) return;
 
+                    // Format date as YYYY-MM-DD
                     let formattedDate = rowDate;
                     if (rowDate && rowDate.includes('/')) {
-                        // Handles both MM/DD/YY and MM/DD/YYYY
                         const parts = rowDate.split('/');
                         let year = parts[2];
                         if (year.length === 2) {
-                            year = '20' + year; // assumes 21st century
+                            year = '20' + year;
                         }
                         formattedDate = `${year}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
                     }
@@ -964,7 +960,7 @@
                     });
 
                     totalHours += hours;
-                    firstRow = false; // Set to false after processing the first row
+                    firstRow = false;
                 });
 
                 const abasID = document.getElementById('abasIDInput').value;
@@ -989,9 +985,6 @@
                         if (result.success) {
                             showSnackbar('Time data finalized successfully!', 'success');
                             document.getElementById('finalizeTimeModalButton').disabled = true;
-                            //document.getElementById('finalizeTimeButton').disabled = true;
-                            //document.getElementById('addTimeButton').disabled = true;
-                            // ...rest of your success logic...
                         } else {
                             showSnackbar('Failed to finalize time data: ' + result.error, 'error');
                         }

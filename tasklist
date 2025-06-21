@@ -32,5 +32,5 @@ DONE: Look into finalizing or adding time on Mondays. It was disabled for Aaron 
 DONE: Change delete button to be a menu with Delete and Copy buttons.
 DONE: Disable copy from previous week button after clicking once.
 DONE: Make Add Time button default on Add Time Modal
-TODO: Update finalize export to work wtih new screen
+DONE: Update finalize export to work wtih new screen
 
