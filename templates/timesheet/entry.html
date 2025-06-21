@@ -88,9 +88,9 @@
             <div class="card-body compact-info-panel d-flex flex-column">
                 <form id="commentsForm" class="flex-grow-1 d-flex flex-column">
                     <div class="form-group flex-grow-1 d-flex flex-column">
-                        <textarea class="form-control flex-grow-1" id="commentsText" name="comments" rows="6" placeholder="Enter comments here...">{{ comments }}</textarea>
+                        <textarea class="form-control flex-grow-1" id="commentsText" name="comments" rows="6" placeholder="Enter comments here..." {% if not can_add_or_finalize %}disabled{% endif %}>{{ comments }}</textarea>
                     </div>
-                    <button type="submit" class="btn btn-abas my-0 py-1 align-self-end">Save Comments</button>
+                    <button type="submit" class="btn btn-abas my-0 py-1 align-self-end" {% if not can_add_or_finalize %}disabled{% endif %}>Save Comments</button>
                 </form>
             </div>
         </div>
