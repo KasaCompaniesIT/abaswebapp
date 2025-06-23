@@ -428,6 +428,32 @@ a { color: #009FAA; }
     font-size: 1.5rem; /* Adjust icon size */
 }
 
+.btn-floating-help {
+    position: fixed;
+    bottom: 20px; /* Distance from the bottom of the page */
+    left: 20px; /* Distance from the right side of the page */
+    z-index: 1000; /* Ensure it stays on top of other elements */
+    background-color: #009FAA; /* Customize button color */
+    color: #212529; /* Text/icon color */
+    border-radius: 50%; /* Make it circular */
+    width: 60px; /* Button width */
+    height: 60px; /* Button height */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Add a shadow */
+    border: 1px solid #212529; /* Add a border similar to btn-abas */
+    cursor: pointer;
+}
+
+.btn-floating-help:hover {
+    background-color: #007B8A; /* Darken the button on hover */
+}
+
+.btn-floating-help i {
+    font-size: 1.5rem; /* Adjust icon size */
+}
+
 .info-panel {
     position: relative; /* Make the box a positioning context */
 }
