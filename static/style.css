@@ -272,7 +272,7 @@ a { color: #009FAA; }
 .comments-panel {
     border-radius: 5px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    max-width: 100%; /* Remove any max-width restriction */
+    max-width: 1200px; /* Remove any max-width restriction */
     width: 100%;     /* Ensure it fills the column */
     min-width: 0;
     margin: 0.25rem 0; /* Add some margin for spacing */
