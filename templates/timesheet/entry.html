@@ -270,7 +270,7 @@
         <div class="modal-dialog modal-lg modal-auto-width">
             <div class="modal-content">
                 <div class="modal-header bg-dark-custom">
-                    <h5 class="modal-title" id="finalizeTimeModalLabel">Finalize Payroll Time</h5>                    
+                    <h5 class="modal-title" id="finalizeTimeModalLabel">Submit Attendance Time</h5>                    
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
@@ -297,7 +297,7 @@
                             </table>
                         </div>
                         <div class="text-right">
-                            <button id="finalizeTimeModalButton" type="submit" class="btn btn-abas">Finalize</button>
+                            <button id="finalizeTimeModalButton" type="submit" class="btn btn-abas">Submit</button>
                         </div>
                     </form>
                 </div>
@@ -368,13 +368,13 @@
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header bg-dark-custom">
-                    <h5 class="modal-title" id="finalizeConfirmModalLabel">Confirm Finalize</h5>
+                    <h5 class="modal-title" id="finalizeConfirmModalLabel">Confirm Submission</h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
                 <div class="modal-body">
-                    Are you sure you want to finalize this weeks time entries and submit them for payroll? This action is final and can only be fixed in Abas.
+                    You are about to submit your attendance time for the week to abas for import.  <br><br> Once your data is imported, you will receive an email with a copy of your timesheet.
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
@@ -623,7 +623,6 @@
 
     // Render the finalize table with the fetched data
     function renderFinalizeTable(data) {
-
         const finalizeTimeButton = document.getElementById('finalizeTimeModalButton');
         const tableBody = document.querySelector('#finalizeTimeModal tbody');
         tableBody.innerHTML = ''; // Clear existing rows
@@ -649,21 +648,9 @@
 
         // Declare payrollPaychex_list inside the function
         const payrollPaychex_list = {{ paychex_list | tojson }};
-        //console.log("Paychex List:", payrollPaychex_list); // Debugging: Log the paychex_list
-        
         const totalHoursBadge = document.getElementById('finalizeTotalHoursCell');
         totalHoursBadge.textContent = '0'; // Reset the total hours badge
 
-        const isSalary = {{ abasUser.isHourly | tojson }} === false; // Check if the employee is salaried
-    
-        console.log("Is Salary:", isSalary); // Debugging: Log if the user is salaried
-
-        let cumulativeHours = 0;
-        let lastWorkDate = null; // Initialize lastWorkDate variable
-        const totalHoursWorked = data.totalHoursWorked || 0; // Get total hours worked from the response
-
-        const totalHoursLabel = document.getElementById('finalizeTotalHoursLabel');
-        
         let rowHTML = '';
         let lastDay = null;
         let dayTotal = 0;
@@ -672,7 +659,7 @@
 
         function renderDayHeader(weekdayName, dayStr, dayTotal) {
             return `
-                <tr class="table-primary">
+                <tr class="table-primary day-header-row">
                     <th colspan="1" class="text-left">${weekdayName} - ${dayStr}</th>
                     <th colspan="2" class="text-right font-italic">Total Job Hours: ${dayTotal.toFixed(2)}</th>
                 </tr>
@@ -692,9 +679,9 @@
             if (dayEntries.length > 0 && lastDay) {
                 const lastDateObj = new Date(lastDay);
                 const lastWeekdayName = lastDateObj.toLocaleDateString('en-US', { weekday: 'long' });
-                rowHTML += renderDayHeader(lastWeekdayName, lastDay, dayTotal); // static header total
+                rowHTML += renderDayHeader(lastWeekdayName, lastDay, dayTotal);
                 rowHTML += dayEntries.join('');
-                rowHTML += renderDaySummary(lastDay, dayTotal); // summary row, initially same as header
+                rowHTML += renderDaySummary(lastDay, dayTotal);
                 dayEntries = [];
                 dayTotal = 0;
             }
@@ -711,7 +698,6 @@
         }
 
         function updateDaySummary(dayStr) {
-            // Find all rows for this day
             const rows = document.querySelectorAll(`#finalizeTimeModal tbody tr[data-date="${dayStr}"]`);
             let sum = 0;
             rows.forEach(row => {
@@ -721,11 +707,8 @@
                     if (!isNaN(val)) sum += val;
                 }
             });
-            // Update the summary cell
             const summaryCell = document.querySelector(`.day-summary-total[data-date="${dayStr}"]`);
             if (summaryCell) summaryCell.textContent = sum.toFixed(2);
-
-            // Update the weekly total whenever a day's summary changes
             updateWeeklyTotal();
         }
 
@@ -736,7 +719,6 @@
             const weekdayName = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
             const dayStr = workDate;
 
-            // If new day, flush previous day's rows
             if (lastDay && lastDay !== dayStr) {
                 flushDayRows();
             }
@@ -758,7 +740,7 @@
                     <td data-label="Hours" class="text-right">
                         <input type="text" class="form-control form-control-sm hours-input" value="${entryHours.toFixed(2)}" style="width:55px; text-align:right;">
                     </td>
-                    <td>
+                    <td data-label="Actions">
                         <div class="btn-group btn-group-sm" role="group">
                             <button type="button" class="btn btn-success add-row-btn" data-date="${workDate}" title="Add Row">
                                 <i class="fas fa-plus"></i>
@@ -775,7 +757,6 @@
             totalHours += entryHours;
             lastDay = dayStr;
 
-            // If this is the last entry, flush the last day's rows
             if (idx === data.time_entries.length - 1) {
                 flushDayRows();
             }
@@ -783,7 +764,7 @@
 
         tableBody.innerHTML = rowHTML;
         totalHoursBadge.textContent = totalHours.toFixed(2);
-   
+
         // event listeners for input changes in the hours fields
         tableBody.querySelectorAll('input.hours-input').forEach(input => {
             input.addEventListener('input', function() {
@@ -805,7 +786,6 @@
         tableBody.querySelectorAll('.add-row-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 const date = this.getAttribute('data-date');
-                // Find all rows for this date
                 const rows = Array.from(tableBody.querySelectorAll(`tr[data-date="${date}"]`));
                 if (rows.length === 0) return;
 
@@ -816,35 +796,28 @@
                 // Reset the select and hours input value in the new row
                 const select = newRow.querySelector('select');
                 if (select) {
-                    // Set E1 as selected by default
-                    select.value = select.querySelector('option[value]').value; // fallback to first if E1 not found
+                    select.value = select.querySelector('option[value]').value;
                     const e1Option = Array.from(select.options).find(opt => opt.textContent.trim().startsWith('E1 '));
                     if (e1Option) select.value = e1Option.value;
                 }
 
-                // Find the hours cell and replace its content with a new input
                 const hoursCell = newRow.querySelector('td[data-label="Hours"]');
                 if (hoursCell) {
                     hoursCell.innerHTML = `<input type="text" class="form-control form-control-sm hours-input" value="0.00" style="width:55px; text-align:right;">`;
                 }
 
-                // Insert before the summary row for this day, if it exists
                 let nextRow = lastRow.nextElementSibling;
                 while (nextRow && nextRow.classList.contains('table-secondary')) {
                     nextRow = nextRow.nextElementSibling;
                 }
                 lastRow.parentNode.insertBefore(newRow, lastRow.nextElementSibling);
 
-
-                // Re-attach event listeners to the new row's buttons and input
                 newRow.querySelector('.add-row-btn').addEventListener('click', arguments.callee);
                 newRow.querySelector('.remove-row-btn').addEventListener('click', function() {
                     newRow.remove();
-                    // Optionally update the summary after removal
                     const dayStr = newRow.getAttribute('data-date');
                     updateDaySummary(dayStr);
                 });
-                // Attach input event for live summary update
                 const newInput = newRow.querySelector('input.hours-input');
                 if (newInput) {
                     newInput.addEventListener('input', function() {
@@ -852,16 +825,15 @@
                         const dayStr = row.getAttribute('data-date');
                         updateDaySummary(dayStr);
                     });
-                    input.addEventListener('blur', function() {
-                        let val = parseFloat(input.value);
+                    newInput.addEventListener('blur', function() {
+                        let val = parseFloat(newInput.value);
                         if (!isNaN(val)) {
-                            input.value = val.toFixed(2);
+                            newInput.value = val.toFixed(2);
                         } else {
-                            input.value = '0.00';
+                            newInput.value = '0.00';
                         }
                     });
                 }
-                // Update the summary for this day
                 const dayStr = newRow.getAttribute('data-date');
                 updateDaySummary(dayStr);
             });
@@ -870,7 +842,6 @@
         tableBody.querySelectorAll('.remove-row-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 const row = this.closest('tr');
-                // Optionally, prevent removing the last row for a day
                 const date = row.getAttribute('data-date');
                 const rowsForDate = tableBody.querySelectorAll(`tr[data-date="${date}"]`);
                 if (rowsForDate.length > 1) {
@@ -878,6 +849,7 @@
                 } else {
                     alert('At least one row per day is required.');
                 }
+                updateDaySummary(date);
             });
         });
     }
@@ -982,8 +954,11 @@
                     .then(response => response.json())
                     .then(result => {
                         if (result.success) {
-                            showSnackbar('Time data finalized successfully!', 'success');
+                            showSnackbar('Attendance time data submitted successfully!', 'success');
                             document.getElementById('finalizeTimeModalButton').disabled = true;
+                            setTimeout(() => {
+                                document.getElementById('finalizeTimeModalButton').disabled = false;
+                            }, 10000); // 10 seconds
                         } else {
                             showSnackbar('Failed to finalize time data: ' + result.error, 'error');
                         }

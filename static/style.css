@@ -757,13 +757,15 @@ a { color: #009FAA; }
 #snackbar {
     visibility: hidden;
     min-width: 250px;
-    margin-left: -125px;
+    max-width: 90vw; /* Set a maximum width */
+    margin: 0 auto;
+    left: 50%;
+    transform: translateX(-50%);
     text-align: center;
     border-radius: 2px;
     padding: 16px;
     position: fixed;
     z-index: 1100; /* Higher than Bootstrap modal (1050) */
-    left: 50%;
     top: 16px; /* Position it above the modal */
     font-size: 18px;
     color: #fff; /* Default text color */
@@ -771,7 +773,7 @@ a { color: #009FAA; }
 
 #snackbar.show {
     visibility: visible;
-    animation: fadein 0.5s, fadeout 0.5s 5s;
+    /* animation: fadein 0.5s, fadeout 0.5s 5s; */
 }
 
 /* Success notification */
@@ -868,6 +870,7 @@ a { color: #009FAA; }
 
 /* Stacked table rows for finalize time modal on mobile */
 @media (max-width: 576px) {
+  /* Stack all table elements for mobile */
   #finalizeTimeModal #finalizeTimeTable,
   #finalizeTimeModal #finalizeTimeTable thead,
   #finalizeTimeModal #finalizeTimeTable tbody,
@@ -881,12 +884,40 @@ a { color: #009FAA; }
   #finalizeTimeModal #finalizeTimeTable thead {
     display: none !important;
   }
-  #finalizeTimeModal #finalizeTimeTable tr {
-    margin-bottom: .5rem;
-    border: 1px solid #dee2e6;
-    border-radius: 0.25rem;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  /* Card effect for each day */
+  #finalizeTimeModal #finalizeTimeTable tr.day-header-row,
+  #finalizeTimeModal #finalizeTimeTable tr.day-summary-row,
+  #finalizeTimeModal #finalizeTimeTable tr:not(.day-header-row):not(.day-summary-row) {
+    border-left: 1px solid #dee2e6;
+    border-right: 1px solid #dee2e6;
     background: #fff;
+  }
+  #finalizeTimeModal #finalizeTimeTable tr.day-header-row {
+    border-top: 1.5px solid #009FAA;
+    border-radius: 0.5rem 0.5rem 0 0;
+    background: #f8f9fa !important;
+    margin-top: 1.2rem !important;
+    margin-bottom: 0 !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+  }
+  #finalizeTimeModal #finalizeTimeTable tr.day-header-row:first-child {
+    margin-top: 0 !important;
+  }
+  #finalizeTimeModal #finalizeTimeTable tr.day-summary-row {
+    border-bottom: 1.5px solid #009FAA;
+    border-radius: 0 0 0.5rem 0.5rem;
+    background: #f8f9fa !important;
+    margin-bottom: 0.8rem !important;
+    margin-top: 0 !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+  }
+  #finalizeTimeModal #finalizeTimeTable tr:not(.day-header-row):not(.day-summary-row) {
+    border-top: none;
+    border-bottom: 1px solid #ccc;
+    border-radius: 0;
+    margin-bottom: 0;
+    background: #fff;
+    box-shadow: none;
     padding: 0.5rem 0;
   }
   #finalizeTimeModal #finalizeTimeTable td {
@@ -899,6 +930,7 @@ a { color: #009FAA; }
     word-break: break-word;
     vertical-align: top;
     font-size: 1em;
+    background: inherit;
   }
   #finalizeTimeModal #finalizeTimeTable td:last-child {
     border-bottom: none;
@@ -919,33 +951,100 @@ a { color: #009FAA; }
     line-height: 1.2;
     overflow-wrap: break-word;
   }
-  #finalizeTimeModal #finalizeTimeTable tfoot tr,
-  #finalizeTimeModal #finalizeTimeTable tfoot td {
+  #finalizeTimeModal #finalizeTimeTable tr.day-header-row th,
+  #finalizeTimeModal #finalizeTimeTable tr.day-summary-row th {
     display: table-cell !important;
     width: auto !important;
-    text-align: right !important;
-    white-space: nowrap;
-    vertical-align: middle;
-    background: #f8f9fa;
-    font-size: 1.1em;
+    text-align: inherit !important;
     position: static !important;
-    padding-left: 0 !important;
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+    font-size: 16px !important;
+    white-space: nowrap !important;
+    background: transparent !important;
+    border: none !important;
+  }
+  /* Remove :before labels from header/footer cells */
+  #finalizeTimeModal #finalizeTimeTable tr.day-header-row th:before,
+  #finalizeTimeModal #finalizeTimeTable tr.day-summary-row th:before {
+    display: none !important;
+    content: none !important;
+  }
+  /* Weekly total row (tfoot) always on a single line */
+  #finalizeTimeModal #finalizeTimeTable tfoot tr,
+  #finalizeTimeModal #finalizeTimeTable tfoot td {
+    display: table-row !important;
+    width: auto !important;
+    text-align: right !important;
+    white-space: nowrap !important;
+    vertical-align: middle !important;
+    background: transparent !important;
+    font-size: 1.1em !important;
+    position: static !important;
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+    border: none !important;
   }
   #finalizeTimeModal #finalizeTimeTable tfoot td:before {
     display: none !important;
     content: none !important;
   }
-  /* Make the label cell expand, value cell shrink */
-  #finalizeTimeModal #finalizeTimeTable tfoot td[colspan] {
-    width: 99%;
-    text-align: right;
+  /* --- Force tfoot to always be a single row --- */
+  #finalizeTimeModal #finalizeTimeTable tfoot,
+  #finalizeTimeModal #finalizeTimeTable tfoot tr {
+    display: table-row-group !important;
   }
-  #finalizeTimeModal #finalizeTimeTable tfoot td:last-child {
-    width: 1%;
-    white-space: nowrap;
-    text-align: right;
-    padding-right: 1rem;
-    font-weight: bold;
+  #finalizeTimeModal #finalizeTimeTable tfoot td,
+  #finalizeTimeModal #finalizeTimeTable tfoot th {
+    display: table-cell !important;
+    width: auto !important;
+    white-space: nowrap !important;
+    text-align: right !important;
+    vertical-align: middle !important;
+    background: transparent !important;
+    font-size: 1.1em !important;
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+    border: none !important;
+  }
+  #finalizeTimeModal #finalizeTimeTable tfoot td:before,
+  #finalizeTimeModal #finalizeTimeTable tfoot th:before {
+    display: none !important;
+    content: none !important;
+  }
+
+  /* --- FLEX Hours & Actions on the same line, Pay Code stays above --- */
+
+  #finalizeTimeModal #finalizeTimeTable td[data-label="Hours"],
+  #finalizeTimeModal #finalizeTimeTable td[data-label="Actions"] {
+    display: inline-flex !important;
+    align-items: center;
+    border: none;
+    padding: 0.25rem 0.5rem 0.25rem 0.75rem;
+    min-height: 2.2em;
+    background: inherit;
+    position: relative;
+    width: auto !important;
+    vertical-align: middle;
+  }
+  #finalizeTimeModal #finalizeTimeTable td[data-label="Hours"] {
+    width: 60%;
+    padding-right: 0.5rem;
+    padding-left: 24%;
+  }
+  #finalizeTimeModal #finalizeTimeTable td[data-label="Actions"] {
+    width: 40%;
+    justify-content: flex-end;
+    padding-left: 30%;
+  }
+  #finalizeTimeModal #finalizeTimeTable td[data-label="Actions"]:before {
+    display: none !important;
+  }
+  #finalizeTimeModal #finalizeTimeTable .hours-input {
+    width: 100%;
+    min-width: 60px;
+    max-width: 100px;
+    margin-right: 0.5rem;
   }
 }
 

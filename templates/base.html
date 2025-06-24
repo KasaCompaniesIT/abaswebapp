@@ -91,11 +91,11 @@
   <script src="https://cdn.jsdelivr.net/npm/use-bootstrap-select@2.2.1/dist/use-bootstrap-select.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script>
-    function showSnackbar(message, type = 'success') {
+    function showSnackbar(message, type = 'success', duration = 3000) {
       const snackbar = document.getElementById('snackbar');
   
       // Set the message
-      snackbar.textContent = message;
+      snackbar.innerHTML = message;
   
       // Remove any existing type classes
       snackbar.className = '';
@@ -103,10 +103,14 @@
       // Add the base class and the type-specific class
       snackbar.classList.add('show', type);
   
-      // Automatically hide the snackbar after 3 seconds
+      // Set animation duration dynamically
+      snackbar.style.animation = `fadein 0.5s, fadeout 0.5s ${duration / 1000}s`;
+
+      // Automatically hide the snackbar after (duration) seconds
       setTimeout(() => {
           snackbar.className = snackbar.className.replace('show', '').trim();
-      }, 3000);
+          snackbar.style.animation = ''; // Reset animation
+      }, duration);
   }
   </script>
 
