@@ -1,13 +1,17 @@
 from flask import Flask, render_template, g
 # from turbo_flask import Turbo
 from datetime import datetime
+import os
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 app = Flask(__name__)
 # turbo = Turbo(app)
 
 app.config.from_mapping(
-        SECRET_KEY='dev'
-    )
+    SECRET_KEY=os.environ.get('SECRET_KEY', 'dev')
+)
+
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 # @app.before_request
 # def before_request():
