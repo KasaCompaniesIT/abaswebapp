@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block nav_admin %}active{% endblock %}
+{% block header %}
+<div class="navbar-brand navbar-text">{% block title %}Manage Operations{% endblock %}</div>
+
+{% endblock %}
+
+{% block subheader %}
+<nav aria-label="breadcrumb" class="breadcrumb-bg">
+    <div class="d-flex justify-content-between align-items-center">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('home') }}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('admin.index') }}">Admin</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Operations</li>
+        </ol>
+        {% if g.user %}
+        <span class="text-muted pr-2">{{ g.user.EmpName.title() }}</span>
+        {% endif %}
+    </div>
+</nav>
+<p></p>
+{% endblock %}
+
+{% block content %}
+<form method="post">
+  <table class="table table-bordered">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Extended Name</th>
+        <th>Op Code</th>
+        <th>Enabled</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for op in operations %}
+      <tr>
+        <td>{{ op.OpID }}</td>
+        <td>{{ op.OpName }}</td>
+        <td>{{ op.OpNameExtended }}</td>
+        <td>
+          <input type="text" name="OpCode_{{ op.OpID }}" value="{{ op.OpCode or '' }}" class="form-control" />
+        </td>
+        <td>
+          <input type="checkbox" name="isEnabled_{{ op.OpID }}" {% if op.isEnabled %}checked{% endif %} />
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+    <div class="d-flex justify-content-end" style="position:relative;">
+    <button type="submit" class="btn btn-abas shadow rounded-circle" title="Save Changes"
+      style="position:fixed; bottom:32px; right:32px; width:56px; height:56px; z-index:1050; display:flex; align-items:center; justify-content:center; font-size:1.5rem;">
+      <span class="sr-only">Save Changes</span>
+      <i class="fas fa-save"></i>
+    </button>
+  </div>
+</form>
+</form>
+{% endblock %}

@@ -234,8 +234,8 @@ def importCSV():
 @bp.route('/admin/employees', methods=('GET', 'POST'))
 @login_required
 def manage_employees():
-    if not g.user.isAdmin:
-        return "Unauthorized access"
+    if not getattr(g.user, 'isAdmin', False):
+        return abort(403)
 
     db = get_db()
     dbc = db.cursor()
@@ -364,6 +364,35 @@ def manage_holidays():
     ).fetchall()
 
     return render_template('admin/holidays.html', holidays=holidays)
+
+@bp.route('/admin/operations', methods=['GET', 'POST'])
+@login_required
+def manage_operations():
+    if not getattr(g.user, 'isAdmin', False):
+        return abort(403)
+    
+    db = get_db()
+    dbc = db.cursor()
+
+    if request.method == 'POST':
+        # Update OpCode and isEnabled for all rows in the form
+        for key, value in request.form.items():
+            if key.startswith('OpCode_'):
+                op_id = key.split('_')[1]
+                op_code = value
+                is_enabled = 1 if request.form.get(f'isEnabled_{op_id}') == 'on' else 0
+                dbc.execute(
+                    "UPDATE Operations SET OpCode=?, isEnabled=? WHERE OpID=?",
+                    (op_code, is_enabled, op_id)
+                )
+        db.commit()
+        flash('Operations updated successfully.', 'success')
+        return redirect(url_for('admin.manage_operations'))
+
+    operations = dbc.execute(
+        "SELECT OpID, OpName, OpNameExtended, OpCode, isEnabled FROM Operations ORDER BY OpID"
+    ).fetchall()
+    return render_template('admin/operations.html', operations=operations)
 
 def existingProject(project):
     db = get_db()
