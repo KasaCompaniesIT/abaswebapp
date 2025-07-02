@@ -919,6 +919,53 @@ def update_hours(entry_id):
         db.rollback()
         print("Error updating hours:", str(e))  # Debugging: Log the error
         return jsonify({'success': False, 'error': str(e)})
+    
+    
+@bp.route('/timesheet/entry/delete_day/<path:date_str>', methods=['POST'])
+@login_required
+def delete_day_entries(date_str):
+    """
+    Delete all time entries for a given day for the current user,
+    and send negated entries to the API server.
+    Expects date_str in MM/DD/YY or MM-DD-YYYY format.
+    """
+    try:
+        # Parse date
+        try:
+            if '-' in date_str and len(date_str.split('-')[2]) == 4:
+                work_date = datetime.strptime(date_str, "%m-%d-%Y").date()
+            else:
+                work_date = datetime.strptime(date_str, "%m/%d/%y").date()
+        except Exception:
+            work_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+
+        abas_id = g.user.EmpID
+        db = get_db()
+        dbc = db.cursor()
+
+        # Fetch all entries for this user and date
+        entries = dbc.execute(
+            "SELECT EntryID, WSNumber, TimeWorked FROM TimeEntry WHERE EmpID = ? AND WorkDate = ?",
+            (abas_id, work_date)
+        ).fetchall()
+
+        # Send negated entry to API for each entry
+        for entry in entries:
+            ws_number = entry.WSNumber
+            # Send negated entry (hours = 0)
+            response = send_timeentry_csv_to_abas(abas_id, work_date, ws_number, 0.0)
+            if response.status_code != 200:
+                raise ValueError(f"Failed to send negated data for {work_date} WS {ws_number}.")
+
+        # Delete all entries for this user and date
+        dbc.execute("DELETE FROM TimeEntry WHERE EmpID = ? AND WorkDate = ?", (abas_id, work_date))
+        db.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.rollback()
+        print("Error deleting day entries:", str(e))
+        return jsonify({'success': False, 'error': str(e)})
+    
 
 def get_time_entries_for_week(abas_id, start_date, end_date):
     db = get_db()

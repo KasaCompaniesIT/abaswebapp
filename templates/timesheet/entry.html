@@ -115,17 +115,19 @@
                     {% endif %}
                 ">
                     {{ day.date | dateformat("%A") }} - {{ day.date }}
-                    <!--{% if week_finalized %}
-                        <span class="float-right 
-                            {% if day.date == today or day.isHoliday %}
-                                text-dark
-                            {% else %}
-                                text-abas
-                            {% endif %}
-                        ">
-                            <i class="fas fa-check"></i>
-                        </span>
-                    {% endif %} -->
+                    {% if can_add_or_finalize %}
+                        <button type="button"
+                            class="float-right btn btn-sm delete-day-btn
+                                {% if day.date == today or day.isHoliday %}
+                                    text-dark
+                                {% else %}
+                                    text-abas
+                                {% endif %}"
+                            title="Delete all entries for this day"
+                            {% if day.is_locked %}disabled aria-disabled="true"{% endif %}>
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    {% endif %}
                 </div>
                 <div class="card-body compact-card">
                     {% set ns = namespace(total_hours=0) %} <!-- Create a mutable namespace object -->
@@ -149,7 +151,7 @@
                             <button class="btn btn-abas2 btn-sm copy-entry-btn" data-timeentryid="{{ t.TimeEntryID }}" title="Copy Entry">
                                 <i class="fas fa-copy"></i>
                             </button>
-                            <button class="btn btn-danger btn-sm delete-entry-btn{% if day.is_locked %} disabled{% endif %}"
+                            <button class="btn btn-danger btn-sm delete-entry-btn me-2{% if day.is_locked %} disabled{% endif %}"
                                     data-timeentryid="{{ t.TimeEntryID }}"
                                     title="Delete Entry"
                                     {% if day.is_locked %}disabled aria-disabled="true"{% endif %}>
@@ -1416,6 +1418,45 @@
                 }
             })
             .catch(error => console.error('Error adding time entry:', error));
+    });
+
+    // Attach event handler for the delete button in each day card header
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.delete-day-btn').forEach(button => {
+            button.addEventListener('click', function () {
+                if (button.disabled || button.getAttribute('aria-disabled') === 'true') return;
+
+                const card = button.closest('.col');
+                if (!card) return;
+                const cardId = card.id; // e.g., "card_06_17_2025"
+                const dayDate = cardId.replace('card_', '').replace(/_/g, '/');
+
+                if (!confirm('Are you sure you want to delete all entries for this day?')) return;
+
+                fetch(`/timesheet/entry/delete_day/${encodeURIComponent(dayDate)}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        // Remove all time entries from the card body
+                        const cardBody = card.querySelector('.card-body');
+                        if (cardBody) {
+                            cardBody.innerHTML = '<p>No data available for this date.</p>';
+                        }
+                        // Reset total hours in the card footer
+                        const cardFooter = card.querySelector('.card-footer .font-weight-bold');
+                        if (cardFooter) cardFooter.textContent = '0.00';
+                        updateTotalHours();
+                        showSnackbar('All entries for this day deleted!', 'success');
+                    } else {
+                        showSnackbar('Failed to delete entries for this day.', 'error');
+                    }
+                })
+                .catch(() => showSnackbar('Error deleting entries for this day.', 'error'));
+            });
+        });
     });
 
 </script>

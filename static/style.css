@@ -1070,3 +1070,36 @@ a { color: #009FAA; }
     background: #eee !important;
     color: #aaa !important;
 }
+
+/* Make delete-day-btn look like a plain icon/text link */
+.delete-day-btn {
+    background: none !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0;
+    margin-top: 0.15rem;
+    color: inherit; /* Inherit text color from parent */
+    box-shadow: none !important;
+    cursor: pointer;
+    outline: none;
+    font-size: 1em; /* Adjust as needed for icon size */
+    line-height: 1;
+    transition: color 0.2s;
+}
+
+.delete-day-btn:disabled,
+.delete-day-btn[aria-disabled="true"] {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.delete-day-btn:hover:not(:disabled):not([aria-disabled="true"]),
+.delete-day-btn:focus:not(:disabled):not([aria-disabled="true"]) {
+    color: #c82333 !important; /* Or your preferred hover color */
+    text-decoration: none;
+}
+
+.card-header {
+    padding: .75rem .75rem;
+}
