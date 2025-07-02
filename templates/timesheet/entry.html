@@ -417,6 +417,12 @@
         }
     });
 
+    $('#addTimeModal').on('show.bs.modal', function () {
+        $('#projectDropdown').val('').empty().selectpicker('refresh');
+        $('#workOrderDropdown').val('').empty().selectpicker('refresh');
+        $('#workSlipDropdown').val('').empty().selectpicker('refresh');
+    });
+
     let canUseSummaryView = {{ can_use_summary_view | tojson }};
 
     // Update total hours for cards
@@ -572,9 +578,16 @@
                 const projectDropdown = document.getElementById('projectDropdown');
                 const workOrderDropdown = document.getElementById('workOrderDropdown');
                 const workSlipDropdown = document.getElementById('workSlipDropdown');
-                projectDropdown.innerHTML = ''; // Clear existing options
-                workOrderDropdown.innerHTML = ''; // Clear existing options
-                workSlipDropdown.innerHTML = ''; // Clear existing options
+                
+                // Clear options
+                projectDropdown.innerHTML = '';
+                workOrderDropdown.innerHTML = '';
+                workSlipDropdown.innerHTML = '';
+
+                // Explicitly reset value
+                projectDropdown.value = '';
+                workOrderDropdown.value = '';
+                workSlipDropdown.value = '';
 
                 data.projects.forEach(project => {
                     const option = document.createElement('option');
