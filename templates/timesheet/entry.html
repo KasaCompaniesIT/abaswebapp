@@ -421,6 +421,7 @@
         $('#projectDropdown').val('').empty().selectpicker('refresh');
         $('#workOrderDropdown').val('').empty().selectpicker('refresh');
         $('#workSlipDropdown').val('').empty().selectpicker('refresh');
+        $('#hoursWorked').val('');
     });
 
     let canUseSummaryView = {{ can_use_summary_view | tojson }};
