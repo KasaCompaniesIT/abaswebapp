@@ -126,13 +126,17 @@ def entry():
             #     (startOfPrevWeek + timedelta(days=i)).strftime("%m/%d/%y")
             #     for i in range((endOfPrevWeek - startOfPrevWeek).days + 1)
             # ]
+            today = datetime.now().date()
+            current_month = today.month
+
             dateRangePrevWeek = [
                 {
                     "date": (startOfPrevWeek + timedelta(days=i)).strftime("%m/%d/%y"),
                     "isHoliday": dbc.execute(
                         "SELECT 1 FROM Holidays WHERE holidayDate = ?",
                         ((startOfPrevWeek + timedelta(days=i)).strftime("%Y-%m-%d"),)
-                    ).fetchone() is not None  # Check if the date exists in the Holidays table
+                    ).fetchone() is not None,
+                    "is_locked": (startOfPrevWeek + timedelta(days=i)).month != current_month
                 }
                 for i in range((endOfPrevWeek - startOfPrevWeek).days + 1)
             ]
@@ -754,41 +758,30 @@ def copy_prev_week():
         curr_start = data.get('curr_start')
         
         curr_start = datetime.strptime(curr_start, "%Y-%m-%d").date()
-        
+        curr_month = datetime.now().month  # The month of the current week
+
         # Calculate the start and end of the week
         prev_start = curr_start - timedelta(days=7)
-        print("prev_start: ", prev_start)
         prev_end = prev_start + timedelta(days=6)
-        print("prev_end: ", prev_end)
 
         # 1. Fetch previous week's entries
-        print("get_time_entries_for_week")
-        prev_entries = get_time_entries_for_week(abas_id, prev_start, prev_end)  # Implement this helper
-        print("prev_entries: ", prev_entries)
+        prev_entries = get_time_entries_for_week(abas_id, prev_start, prev_end)
         
         if not prev_entries:
             # Calculate the start and end of the week for 2 weeks ago
             prev_start = curr_start - timedelta(days=14)
-            print("prev_start: ", prev_start)
             prev_end = prev_start + timedelta(days=6)
-            print("prev_end: ", prev_end)
-
-            # 1. Fetch previous week's entries
-            print("get_time_entries_for_week")
-            prev_entries = get_time_entries_for_week(abas_id, prev_start, prev_end)  # Implement this helper
-            print("prev_entries: ", prev_entries)
+            prev_entries = get_time_entries_for_week(abas_id, prev_start, prev_end)
         
         if prev_entries:
-            # delete existing entries for the current week
+            # delete existing entries for the current week, but only for days in the current month
             curr_week_entries = get_time_entries_for_week(abas_id, curr_start, curr_start + timedelta(days=6))
-            if curr_week_entries:
-                # delete each existing entry for the current week and send a negated entry to Abas
-                for entry in curr_week_entries:
-                    print("Deleting existing entry: ", entry)
+            for entry in curr_week_entries:
+                entry_date = entry.WorkDate if isinstance(entry.WorkDate, date) else datetime.strptime(entry.WorkDate, "%Y-%m-%d").date()
+                if entry_date.month == curr_month:
                     dbc = get_db().cursor()
                     dbc.execute("DELETE FROM TimeEntry WHERE EntryID = ?", (entry.EntryID,))
                     dbc.connection.commit()
-                    
                     # Send negated entry to Abas
                     response = send_timeentry_csv_to_abas(
                         abas_id, 
@@ -796,35 +789,105 @@ def copy_prev_week():
                         entry.WSNumber, 
                         0.0  # Negate the hours
                     )
-                    
                     if response.status_code != 200:
                         raise ValueError(f"Failed to send negated data for {entry.WorkDate}.")
-            
-            # 2. Copy entries to current week (adjust dates)
+
+            # 2. Copy entries to current week (adjust dates), but only for days in the current month
             for entry in prev_entries:
-                # Calculate new date for current week
-                prev_date = entry.WorkDate
+                prev_date = entry.WorkDate if isinstance(entry.WorkDate, date) else datetime.strptime(entry.WorkDate, "%Y-%m-%d").date()
                 days_offset = (prev_date - prev_start).days
                 new_date = curr_start + timedelta(days=days_offset)
-                print("new_date: ", new_date)
-                # Create new entry (implement create_time_entry as needed)
-                new_entry = create_time_entry(abas_id, new_date, entry.WSNumber, entry.TimeWorked)
+                if new_date.month != curr_month:
+                    continue  # Skip copying to locked days (previous month)
+                eTimeWorked = 0 #entry.TimeWorked
+                new_entry = create_time_entry(abas_id, new_date, entry.WSNumber, eTimeWorked)
                 print("new_entry: ", new_entry)
-                
-                if new_entry:
-                    # After creating new_entry or when building any JSON response:
-                    time_worked = float(entry.TimeWorked) if isinstance(entry.TimeWorked, decimal.Decimal) else entry.TimeWorked
-                    response = send_timeentry_csv_to_abas(abas_id, new_date, entry.WSNumber, time_worked)
-                    if response.status_code != 200:
-                        raise ValueError(f"Failed to send data for {new_date}.")
-
             flash("Previous week's entries copied successfully.", "success")
             return jsonify({'success': True})
         else:
             return jsonify({'success': False, 'error': 'No entries found for the previous week.'})
     except Exception as e:
-        print("Error copying previous week:", str(e))  # Debugging: Log the error
+        print("Error copying previous week:", str(e))
         return jsonify({'success': False, 'error': str(e)})
+# def copy_prev_week():
+#     try:
+#         data = request.get_json()
+#         abas_id = data.get('abas_id')
+#         curr_start = data.get('curr_start')
+        
+#         curr_start = datetime.strptime(curr_start, "%Y-%m-%d").date()
+        
+#         # Calculate the start and end of the week
+#         prev_start = curr_start - timedelta(days=7)
+#         print("prev_start: ", prev_start)
+#         prev_end = prev_start + timedelta(days=6)
+#         print("prev_end: ", prev_end)
+
+#         # 1. Fetch previous week's entries
+#         print("get_time_entries_for_week")
+#         prev_entries = get_time_entries_for_week(abas_id, prev_start, prev_end)  # Implement this helper
+#         print("prev_entries: ", prev_entries)
+        
+#         if not prev_entries:
+#             # Calculate the start and end of the week for 2 weeks ago
+#             prev_start = curr_start - timedelta(days=14)
+#             print("prev_start: ", prev_start)
+#             prev_end = prev_start + timedelta(days=6)
+#             print("prev_end: ", prev_end)
+
+#             # 1. Fetch previous week's entries
+#             print("get_time_entries_for_week")
+#             prev_entries = get_time_entries_for_week(abas_id, prev_start, prev_end)  # Implement this helper
+#             print("prev_entries: ", prev_entries)
+        
+#         if prev_entries:
+#             # delete existing entries for the current week
+#             curr_week_entries = get_time_entries_for_week(abas_id, curr_start, curr_start + timedelta(days=6))
+#             if curr_week_entries:
+#                 # delete each existing entry for the current week and send a negated entry to Abas
+#                 for entry in curr_week_entries:
+#                     print("Deleting existing entry: ", entry)
+#                     dbc = get_db().cursor()
+#                     dbc.execute("DELETE FROM TimeEntry WHERE EntryID = ?", (entry.EntryID,))
+#                     dbc.connection.commit()
+                    
+#                     # Send negated entry to Abas
+#                     response = send_timeentry_csv_to_abas(
+#                         abas_id, 
+#                         entry.WorkDate, 
+#                         entry.WSNumber, 
+#                         0.0  # Negate the hours
+#                     )
+                    
+#                     if response.status_code != 200:
+#                         raise ValueError(f"Failed to send negated data for {entry.WorkDate}.")
+            
+#             # 2. Copy entries to current week (adjust dates)
+#             for entry in prev_entries:
+#                 # Calculate new date for current week
+#                 prev_date = entry.WorkDate
+#                 days_offset = (prev_date - prev_start).days
+#                 new_date = curr_start + timedelta(days=days_offset)
+#                 print("new_date: ", new_date)
+#                 # Create new entry (implement create_time_entry as needed)
+#                 eTimeWorked = 0 #entry.TimeWorked
+#                 new_entry = create_time_entry(abas_id, new_date, entry.WSNumber, eTimeWorked)
+#                 print("new_entry: ", new_entry)
+                
+#                 # if new_entry:
+#                 #     # After creating new_entry or when building any JSON response:
+#                 #     time_worked = float(eTimeWorked) if isinstance(eTimeWorked, decimal.Decimal) else eTimeWorked
+#                 #     response = send_timeentry_csv_to_abas(abas_id, new_date, entry.WSNumber, time_worked)
+#                 #     if response.status_code != 200:
+#                 #         raise ValueError(f"Failed to send data for {new_date}.")
+
+#             flash("Previous week's entries copied successfully.", "success")
+#             return jsonify({'success': True})
+#         else:
+#             return jsonify({'success': False, 'error': 'No entries found for the previous week.'})
+#     except Exception as e:
+#         print("Error copying previous week:", str(e))  # Debugging: Log the error
+#         return jsonify({'success': False, 'error': str(e)})
 
 
 @bp.route('/timesheet/entry/update_hours/<int:entry_id>', methods=['POST'])

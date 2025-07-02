@@ -33,4 +33,4 @@ DONE: Change delete button to be a menu with Delete and Copy buttons.
 DONE: Disable copy from previous week button after clicking once.
 DONE: Make Add Time button default on Add Time Modal
 DONE: Update finalize export to work wtih new screen
-
+DONE: Disable the ability to edit previous month days once you move to a new month in a week with split months.

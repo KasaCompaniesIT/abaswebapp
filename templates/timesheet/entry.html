@@ -115,7 +115,7 @@
                     {% endif %}
                 ">
                     {{ day.date | dateformat("%A") }} - {{ day.date }}
-                    {% if week_finalized %}
+                    <!--{% if week_finalized %}
                         <span class="float-right 
                             {% if day.date == today or day.isHoliday %}
                                 text-dark
@@ -125,7 +125,7 @@
                         ">
                             <i class="fas fa-check"></i>
                         </span>
-                    {% endif %}
+                    {% endif %} -->
                 </div>
                 <div class="card-body compact-card">
                     {% set ns = namespace(total_hours=0) %} <!-- Create a mutable namespace object -->
@@ -138,10 +138,10 @@
                                 <span id="OpCode" hidden>{{ t.OpCode }}</span>
                             </p>
                             <h5>
-                                <span class="badge badge-secondary editable-hours {% if not can_add_or_finalize %}disabled-badge{% endif %}"
+                                <span class="badge badge-secondary editable-hours {% if not can_add_or_finalize or day.is_locked %}disabled-badge{% endif %}"
                                     data-timeentryid="{{ t.TimeEntryID }}"
                                     style="cursor:pointer;"
-                                    {% if not can_add_or_finalize %} aria-disabled="true" tabindex="-1" {% endif %}>
+                                    {% if not can_add_or_finalize or day.is_locked %} aria-disabled="true" tabindex="-1" {% endif %}>
                                     {{ t.tHoursWorked }}
                                 </span>
                             </h5>
@@ -149,7 +149,10 @@
                             <button class="btn btn-abas2 btn-sm copy-entry-btn" data-timeentryid="{{ t.TimeEntryID }}" title="Copy Entry">
                                 <i class="fas fa-copy"></i>
                             </button>
-                            <button class="btn btn-danger btn-sm delete-entry-btn" data-timeentryid="{{ t.TimeEntryID }}" title="Delete Entry">
+                            <button class="btn btn-danger btn-sm delete-entry-btn{% if day.is_locked %} disabled{% endif %}"
+                                    data-timeentryid="{{ t.TimeEntryID }}"
+                                    title="Delete Entry"
+                                    {% if day.is_locked %}disabled aria-disabled="true"{% endif %}>
                                 <i class="fas fa-trash"></i>
                             </button>
                             {% endif %}
@@ -207,12 +210,14 @@
                             <div class="row text-center">
                                 {% for day in dateRangePrevWeek %}
                                 <div class="col date-card-col">
-                                    <div class="date-card p-2 border rounded select-date-card 
-                                        {% if day.date == today %} bg-success text-white 
-                                        {% elif day.date | dateformat('%A') in ['Saturday', 'Sunday'] %} bg-light-grey 
-                                        {% endif %}" 
-                                        data-date="{{ day.date }}" 
-                                        data-selected="{% if day.date == today %}true{% else %}false{% endif %}">
+                                    <div class="date-card p-2 border rounded select-date-card
+                                        {% if day.date == today %} bg-success text-white
+                                        {% elif day.date | dateformat('%A') in ['Saturday', 'Sunday'] %} bg-light-grey
+                                        {% endif %}
+                                        {% if day.is_locked %} disabled-date-card{% endif %}"
+                                        data-date="{{ day.date }}"
+                                        data-selected="{% if day.date == today %}true{% else %}false{% endif %}"
+                                        {% if day.is_locked %}data-locked="true"{% endif %}>
                                         <div class="day-of-week font-weight-bold">{{ day.date | dateformat('%a') }}</div>
                                         <div class="date-value">{{ day.date | dateformat('%d') }}</div> <!-- Display only the day number -->
                                     </div>
@@ -341,12 +346,14 @@
                         <div class="row text-center">
                             {% for day in dateRangePrevWeek %}
                             <div class="col date-card-col">
-                                <div class="date-card p-2 border rounded select-date-card 
-                                    {% if day.date == today %} bg-success text-white 
-                                    {% elif day.date | dateformat('%A') in ['Saturday', 'Sunday'] %} bg-light-grey 
-                                    {% endif %}" 
-                                    data-date="{{ day.date }}" 
-                                    data-selected="{% if day.date == today %}true{% else %}false{% endif %}">
+                                <div class="date-card p-2 border rounded select-date-card
+                                    {% if day.date == today %} bg-success text-white
+                                    {% elif day.date | dateformat('%A') in ['Saturday', 'Sunday'] %} bg-light-grey
+                                    {% endif %}
+                                    {% if day.is_locked %} disabled-date-card{% endif %}"
+                                    data-date="{{ day.date }}"
+                                    data-selected="{% if day.date == today %}true{% else %}false{% endif %}"
+                                    {% if day.is_locked %}data-locked="true"{% endif %}>
                                     <div class="day-of-week font-weight-bold">{{ day.date | dateformat('%a') }}</div>
                                     <div class="date-value">{{ day.date | dateformat('%d') }}</div> <!-- Display only the day number -->
                                 </div>
@@ -1109,6 +1116,10 @@
     // Select the first date card by default (current day)
     document.querySelectorAll('.select-date-card').forEach(card => {
         card.addEventListener('click', function () {
+            if (this.classList.contains('disabled-date-card') || this.getAttribute('data-locked') === 'true') {
+                showSnackbar('You cannot add time to a locked day.', 'error');
+                return;
+            }
             // Deselect all cards
             document.querySelectorAll('.select-date-card').forEach(item => {
                 item.classList.remove('bg-success', 'text-white'); // Remove selected style
@@ -1141,6 +1152,7 @@
         // Add event listener to all delete buttons        
         document.querySelectorAll('.delete-entry-btn').forEach(button => {
             button.addEventListener('click', function () {
+                if (button.disabled) return; // Skip if disabled
                 deleteEntryID = this.getAttribute('data-timeentryid');
                 deleteButton = this;
                 $('#deleteConfirmModal').modal('show');
@@ -1166,6 +1178,10 @@
         const selectedCard = document.querySelector('#copyJobConfirmModal .select-date-card.bg-success');
         if (!jobEntryId || !selectedCard) {
             showSnackbar('Please select a day to copy to.', 'error');
+            return;
+        }
+        if (selectedCard.classList.contains('disabled-date-card') || selectedCard.getAttribute('data-locked') === 'true') {
+            showSnackbar('You cannot copy to a locked day.', 'error');
             return;
         }
         const copyToDay = selectedCard.getAttribute('data-date');
