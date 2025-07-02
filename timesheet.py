@@ -141,6 +141,8 @@ def entry():
                 for i in range((endOfPrevWeek - startOfPrevWeek).days + 1)
             ]
 
+            locked_days = {day['date']: day['is_locked'] for day in dateRangePrevWeek}
+
             # Fetch timecard data for each date
             timecard_data = {}
             for day in dateRangePrevWeek:
@@ -267,7 +269,8 @@ def entry():
                                     paychex_list=paychex_list,
                                     week_finalized=week_finalized,
                                     can_use_summary_view=can_use_summary_view,
-                                    comments=comments
+                                    comments=comments,
+                                    locked_days=locked_days
             )
 
             # return render_template('timesheet/entry.html', abasID=abas_ID, abasUser=abasUser, startOfPrevWeek=startOfPrevWeek, endOfPrevWeek=endOfPrevWeek, dateRangePrevWeek=dateRangePrevWeek)

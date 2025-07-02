@@ -123,7 +123,7 @@
                                 {% else %}
                                     text-abas
                                 {% endif %}"
-                            title="Delete all entries for this day"
+                            title="Clear all job time entries for this day"
                             {% if day.is_locked %}disabled aria-disabled="true"{% endif %}>
                             <i class="fas fa-trash"></i>
                         </button>
@@ -182,12 +182,12 @@
         {% endfor %}
     </div>
 
-    <button id="addTimeButton" class="btn btn-abas btn-floating" title="Add Time"
+    <button id="addTimeButton" class="btn btn-abas btn-floating" title="Add Job Time"
         {% if not can_add_or_finalize %}disabled{% endif %}>
         <i class="fas fa-plus"></i>
     </button>
 
-    <button id="finalizeTimeButton" class="btn btn-abas btn-floating2" title="Finalize Payroll Time"
+    <button id="finalizeTimeButton" class="btn btn-abas btn-floating2" title="Submit Attendance Time"
         {% if not can_add_or_finalize %}disabled{% endif %}>
         <i class="fas fa-check"></i>
     </button>
@@ -424,6 +424,7 @@
         $('#hoursWorked').val('');
     });
 
+    const lockedDays = {{ locked_days | tojson }};
     let canUseSummaryView = {{ can_use_summary_view | tojson }};
 
     // Update total hours for cards
@@ -612,6 +613,9 @@
             const cardId = card.id; // e.g., "card_06/17/2025"
             const workDate = cardId.replace('card_', '').replace(/_/g, '/');
 
+            // Determine if this day is locked
+            const isLocked = lockedDays && lockedDays[workDate];
+
             cardBody.querySelectorAll('.time-entry').forEach(entryDiv => {
                 const wsNumber = entryDiv.querySelector('p')?.textContent.split(' ')[0] || '';
                 const opNameExtended = entryDiv.querySelector('p small')?.textContent.replace(/[()]/g, '') || '';
@@ -623,7 +627,8 @@
                     WSNumber: wsNumber,
                     OpNameExtended: opNameExtended,
                     tHoursWorked: tHoursWorked,
-                    OpCode: opCode
+                    OpCode: opCode,
+                    locked: isLocked
                 });
             });
         });
@@ -750,9 +755,9 @@
             const paychexCode = entry.OpCode && entry.OpCode.trim() !== '' ? entry.OpCode : 'E1';
 
             dayEntries.push(`
-                <tr data-date="${workDate}">
+                <tr data-date="${workDate}" data-locked="${entry.locked}">
                     <td data-label="Pay Code">
-                        <select name="paychex_code_${entry.WorkDate}" class="form-control">
+                        <select name="paychex_code_${entry.WorkDate}" class="form-control"  ${entry.locked ? 'disabled' : ''}>
                             ${payrollPaychex_list.map(paychex => `
                                 <option value="${paychex.id}" ${paychex.code === paychexCode ? 'selected' : ''}>
                                     ${paychex.code} - ${paychex.description}
@@ -761,14 +766,14 @@
                         </select>
                     </td>
                     <td data-label="Hours" class="text-right">
-                        <input type="text" class="form-control form-control-sm hours-input" value="${entryHours.toFixed(2)}" style="width:55px; text-align:right;">
+                        <input type="text" class="form-control form-control-sm hours-input" value="${entryHours.toFixed(2)}" style="width:55px; text-align:right;" ${entry.locked ? 'readonly disabled' : ''}>
                     </td>
                     <td data-label="Actions">
                         <div class="btn-group btn-group-sm" role="group">
-                            <button type="button" class="btn btn-success add-row-btn" data-date="${workDate}" title="Add Row">
+                            <button type="button" class="btn btn-success add-row-btn" data-date="${workDate}" title="Add Row" ${entry.locked ? 'disabled' : ''}>
                                 <i class="fas fa-plus"></i>
                             </button>
-                            <button type="button" class="btn btn-danger remove-row-btn" data-date="${workDate}" title="Remove Row">
+                            <button type="button" class="btn btn-danger remove-row-btn" data-date="${workDate}" title="Remove Row" ${entry.locked ? 'disabled' : ''}>
                                 <i class="fas fa-minus"></i>
                             </button>
                         </div>
@@ -917,6 +922,11 @@
                 let firstRow = true;
 
                 tableRows.forEach(row => {
+                    // Skip locked days
+                    if (row.getAttribute('data-locked') === 'true' || row.getAttribute('data-locked') === true) {
+                        return;
+                    }
+
                     const paychexSelect = row.querySelector('select');
                     const hoursInput = row.querySelector('input.hours-input');
                     const rowDate = row.getAttribute('data-date');
@@ -1019,7 +1029,7 @@
         .then(response => response.json())
         .then(result => {
             if (result.success) {
-                showSnackbar('Comments saved!', 'success');
+                showSnackbar('Comments saved! You will not see the new comments in Abas until you submit your attendance time.', 'success');
             } else {
                 showSnackbar('Failed to save comments.', 'error');
             }
