@@ -537,21 +537,21 @@ def copy_time_entry():
         # original_entry: (EntryID, EmpID, WorkDate, WSNumber, TimeWorked)
         abas_id = original_entry[1]
         ws_number = original_entry[3]
-        time_worked = original_entry[4] 
+        time_worked = 0 #original_entry[4] 
 
         # Create a new entry for the new day
         new_entry = create_time_entry(abas_id, copy_to_day, ws_number, time_worked)
         if not new_entry:
             raise Exception("Failed to create copied job entry.")
 
-        send_response = send_timeentry_csv_to_abas(
-            abas_id, 
-            copy_to_day, 
-            ws_number, 
-            float(time_worked) if isinstance(time_worked, decimal.Decimal) else time_worked
-        )
-        if send_response.status_code != 200:
-            raise Exception(f"Failed to send copied job entry to Abas: {send_response.text}")
+        # send_response = send_timeentry_csv_to_abas(
+        #     abas_id, 
+        #     copy_to_day, 
+        #     ws_number, 
+        #     float(time_worked) if isinstance(time_worked, decimal.Decimal) else time_worked
+        # )
+        # if send_response.status_code != 200:
+        #     raise Exception(f"Failed to send copied job entry to Abas: {send_response.text}")
 
         db.commit()
 
