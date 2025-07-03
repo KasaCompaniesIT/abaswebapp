@@ -1182,6 +1182,8 @@ def get_summary_flag():
 @bp.route('/timesheet/entry/save_comments', methods=['POST'])
 @login_required
 def save_comments():
+    external_api_url = "http://abas.kasa.kasacontrols.com:8000/add_comments"
+    
     data = request.get_json()
     abas_id = data.get('abas_id')
     start_date = data.get('start_date')
@@ -1189,6 +1191,18 @@ def save_comments():
     # Save comments to your database here, e.g.:
     db = get_db()
     dbc = db.cursor()
+    
+    date_obj = datetime.strptime(start_date, "%Y-%m-%d")
+    date_str = date_obj.strftime("%m/%d/%Y")  # e.g., 5/19/2025
+    
+    if comments <= "": comments = "None"
+    print("comments: ", comments)
+          
+    comment_entry = {
+        "abas_id": abas_id,
+        "date": date_str,
+        "comments": comments
+    }
     
     try:
         if get_comments(abas_id, start_date) is None:
@@ -1198,7 +1212,12 @@ def save_comments():
             # Update existing comment    
             dbc.execute("UPDATE TimesheetComments SET comments=? WHERE EmpID=? AND WeekStart=?", (comments, abas_id, start_date))
         
-        dbc.commit()
+        # Forward the converted JSON data to the external API
+        response = requests.post(external_api_url, json=comment_entry)
+        print("Response from external API:", response.status_code, response.text)  # Debugging: Log the response
+
+        if response.status_code == 200:        
+            dbc.commit()
     
         return jsonify(success=True)
     except Exception as e:
