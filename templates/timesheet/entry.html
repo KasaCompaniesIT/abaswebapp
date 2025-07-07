@@ -651,7 +651,7 @@
 
     // Render the finalize table with the fetched data
     function renderFinalizeTable(data) {
-        const finalizeTimeButton = document.getElementById('finalizeTimeModalButton');
+        const finalizeTimeMButton = document.getElementById('finalizeTimeModalButton');
         const tableBody = document.querySelector('#finalizeTimeModal tbody');
         tableBody.innerHTML = ''; // Clear existing rows
 
@@ -664,13 +664,13 @@
             tableHeadRow.appendChild(th);
         }
 
-        if (!data || !data.time_entries) {             
+        if (!data || !data.time_entries.length > 0) {             
             const noDataMessage = document.createElement('p');
             noDataMessage.textContent = 'No time entries available for the selected date range.';
             tableBody.appendChild(noDataMessage);
             const tableFooter = document.querySelector('#finalizeTimeModal tfoot');
             tableFooter.innerHTML = ''; // Clear existing rows
-            finalizeTimeButton.disabled = true; // Disable the finalize button
+            finalizeTimeMButton.disabled = true; // Disable the finalize button
             return;
         }
 
@@ -892,7 +892,7 @@
         myModal.show();        
 
         //finalizeTimeModal.show();
-        document.getElementById('finalizeTimeModalButton').disabled = false;
+        //document.getElementById('finalizeTimeModalButton').disabled = false;
 
         const timeEntries = getTimeEntriesFromTimecards();
         const groupedEntries = groupEntriesByDayAndOpCode(timeEntries);
@@ -1029,7 +1029,7 @@
         .then(response => response.json())
         .then(result => {
             if (result.success) {
-                showSnackbar('Comments saved! You will not see the new comments in Abas until you submit your attendance time.', 'success');
+                showSnackbar('Comments saved!', 'success');
             } else {
                 showSnackbar('Failed to save comments.', 'error');
             }
