@@ -245,6 +245,7 @@ def manage_employees():
         emp_id = request.form.get('EmpID')
         is_admin = request.form.get('isAdmin') == 'on'  # Checkbox value
         is_hourly = request.form.get('isHourly') == 'on'  # Checkbox value
+        is_mxemp = request.form.get('isMxEmp') == 'on'  # Checkbox value
         paychex_id = request.form.get('PayChexID')
         salary_plus_start = request.form.get('SalaryPlusStart')
 
@@ -262,20 +263,20 @@ def manage_employees():
                 dbc.execute(
                     """
                     UPDATE Employee
-                    SET isAdmin = ?, PayChexID = ?, SalaryPlusStart = ?, isHourly = ?, isSuperAdmin = ?
+                    SET isAdmin = ?, PayChexID = ?, SalaryPlusStart = ?, isHourly = ?, isSuperAdmin = ?, isMxEmp = ?
                     WHERE EmpID = ?
                     """,
-                    (is_admin, paychex_id, salary_plus_start, is_hourly, is_superadmin, emp_id)
+                    (is_admin, paychex_id, salary_plus_start, is_hourly, is_superadmin, is_mxemp, emp_id)
                 )
             else:
                 # Exclude isSuperAdmin from the update if the user is not a super admin
                 dbc.execute(
                     """
                     UPDATE Employee
-                    SET isAdmin = ?, PayChexID = ?, SalaryPlusStart = ?, isHourly = ?
+                    SET isAdmin = ?, PayChexID = ?, SalaryPlusStart = ?, isHourly = ?, isMxEmp = ?
                     WHERE EmpID = ?
                     """,
-                    (is_admin, paychex_id, salary_plus_start, is_hourly, emp_id)
+                    (is_admin, paychex_id, salary_plus_start, is_hourly, is_mxemp, emp_id)
                 )
 
             db.commit()
@@ -286,7 +287,7 @@ def manage_employees():
 
     # Fetch all employees to display in the table
     employees = dbc.execute("""
-        SELECT EmpID, Emp, EmpName, Dept, Supervisor, Wagegroup, isAdmin, PayChexID, SalaryPlusStart, isHourly, isSuperAdmin
+        SELECT EmpID, Emp, EmpName, Dept, Supervisor, Wagegroup, isAdmin, PayChexID, SalaryPlusStart, isHourly, isSuperAdmin, isMxEmp
         FROM Employee
         ORDER BY EmpName
     """).fetchall()

@@ -38,7 +38,8 @@
                     <th>Name</th>
                     <th>Dept</th>
                     <th>Supervisor</th>
-                    <th>Wage<br>Group</th>                    
+                    <th>Wage<br>Group</th>  
+                    <th>MX Emp</th>                  
                     <th>Hourly</th>
                     <th>PayChex</th>
                     <th>Salary Plus<br>Start</th>
@@ -57,6 +58,9 @@
                         <td>{{ employee.Dept }}</td>
                         <td>{{ employee.Supervisor }}</td>
                         <td>{{ employee.Wagegroup }}</td>
+                        <td>
+                            <input type="checkbox" name="isMxEmp" {% if employee.isMxEmp %}checked{% endif %}>
+                        </td>
                         <td>
                             <input type="checkbox" name="isHourly" {% if employee.isHourly %}checked{% endif %}>
                         </td>
