@@ -146,14 +146,14 @@ def entry():
                         # Lock if not in current month (existing rule)
                         (startOfPrevWeek + timedelta(days=i)).month != current_month
                         # For MX: Lock Sat/Sun if after 12pm on Monday
-                        or (
-                            isMxEmp and
-                            (startOfPrevWeek + timedelta(days=i)).weekday() in [5, 6] and  # 5=Sat, 6=Sun
-                            (
-                                now.weekday() > 0 or  # After Monday
-                                (now.weekday() == 0 and now.hour >= 12)  # Monday after 12pm
-                            )
-                        )
+                        # or (
+                        #     isMxEmp and
+                        #     (startOfPrevWeek + timedelta(days=i)).weekday() in [5, 6] and  # 5=Sat, 6=Sun
+                        #     (
+                        #         now.weekday() > 0 or  # After Monday
+                        #         (now.weekday() == 0 and now.hour >= 12)  # Monday after 12pm
+                        #     )
+                        # )
                     )
                 }
                 for i in range((endOfPrevWeek - startOfPrevWeek).days + 1)

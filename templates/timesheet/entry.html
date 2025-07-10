@@ -115,23 +115,23 @@
                     {% endif %}
                 ">
                     {{ day.date | dateformat("%A") }} - {{ day.date }}
-                    {% if can_add_or_finalize %}
-                        <button type="button"
-                            class="float-right btn btn-sm delete-day-btn
-                                {% if day.date == today or day.isHoliday %}
-                                    text-dark
-                                {% else %}
-                                    text-abas
-                                {% endif %}"
-                            title="Clear all job time entries for this day"
-                            {% if day.is_locked %}disabled aria-disabled="true"{% endif %}>
-                            {% if day.is_locked %}
-                                <i class="fas fa-lock"></i>
+                    
+                    <button type="button"
+                        class="float-right btn btn-sm delete-day-btn
+                            {% if day.date == today or day.isHoliday %}
+                                text-dark
                             {% else %}
-                                <i class="fas fa-trash"></i>
-                            {% endif %}
-                        </button>
-                    {% endif %}
+                                text-abas
+                            {% endif %}"
+                        title="Clear all job time entries for this day"
+                        {% if day.is_locked or not can_add_or_finalize %}disabled aria-disabled="true"{% endif %}>
+                        {% if day.is_locked or not can_add_or_finalize %}
+                            <i class="fas fa-lock"></i>
+                        {% else %}
+                            <i class="fas fa-trash"></i>
+                        {% endif %}
+                    </button>
+                    
                 </div>
                 <div class="card-body compact-card">
                     {% set ns = namespace(total_hours=0) %} <!-- Create a mutable namespace object -->
