@@ -125,7 +125,11 @@
                                 {% endif %}"
                             title="Clear all job time entries for this day"
                             {% if day.is_locked %}disabled aria-disabled="true"{% endif %}>
-                            <i class="fas fa-trash"></i>
+                            {% if day.is_locked %}
+                                <i class="fas fa-lock"></i>
+                            {% else %}
+                                <i class="fas fa-trash"></i>
+                            {% endif %}
                         </button>
                     {% endif %}
                 </div>
@@ -188,7 +192,7 @@
     </button>
 
     <button id="finalizeTimeButton" class="btn btn-abas btn-floating2" title="Submit Attendance Time"
-        {% if not can_add_or_finalize %}disabled{% endif %}>
+        {% if not can_add_or_finalize or abasUser.isMxEmp %}disabled{% endif %}>
         <i class="fas fa-check"></i>
     </button>
 
@@ -398,6 +402,7 @@
 {% endblock %} <!-- end content block -->
 {% block script %}
 <script>
+    const WEEKDAY_START = {{ weekday_start|default(0) }};
     // Make the modal draggable by its header
     $('#addTimeModal').draggable({
         handle: ".modal-header"

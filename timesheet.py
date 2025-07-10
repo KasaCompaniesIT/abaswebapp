@@ -31,6 +31,8 @@ def entry():
     abas_ID = ""
     abasUser = None
     error = None
+    isMxEmp = False
+    weekday_start = 0  # 0=Monday, 5=Saturday
 
     if request.method == 'POST' or g.user.EmpID != 0:
         if request.method == 'POST':
@@ -84,7 +86,11 @@ def entry():
                     error = "You are not authorized to view this user's timesheet."
                     flash(error)
                     return render_template('timesheet/entry.html')
-                
+            
+            if abasUser.isMxEmp:
+                isMxEmp = True
+                weekday_start = 0 #Leaving like non-mx employees for now. #5 Saturday as the start of the week for MX employees
+            
             # Parse the startDate into a datetime object
             if startDate:
                 startDate = datetime.strptime(startDate, "%Y-%m-%d").date()
@@ -100,21 +106,21 @@ def entry():
                 startDate = datetime.now().date()
                 
             # Calculate the start and end of the week
-            startOfPrevWeek = startDate - timedelta(days=startDate.weekday())
+            startOfPrevWeek = get_week_start(startDate, weekday_start)
             endOfPrevWeek = startOfPrevWeek + timedelta(days=6)
 
             # Determine if adding/finalizing time is allowed
             now = datetime.now()
-            this_monday = (now - timedelta(days=now.weekday())).date()
-            last_monday = this_monday - timedelta(days=7)
-
+            this_week_start = get_week_start(now.date(), weekday_start)
+            last_week_start = this_week_start - timedelta(days=7)
+            
             # True if viewing the current week
-            is_current_week = (startOfPrevWeek == this_monday)
-
+            is_current_week = (startOfPrevWeek == this_week_start)
+            
             # True if viewing the previous week, and it's Monday before noon
             is_previous_week_allowed = (
-                startOfPrevWeek == last_monday and
-                now.weekday() == 0 and
+                startOfPrevWeek == last_week_start and
+                now.weekday() == weekday_start and
                 now.hour < 12
             )
 
@@ -136,7 +142,19 @@ def entry():
                         "SELECT 1 FROM Holidays WHERE holidayDate = ?",
                         ((startOfPrevWeek + timedelta(days=i)).strftime("%Y-%m-%d"),)
                     ).fetchone() is not None,
-                    "is_locked": (startOfPrevWeek + timedelta(days=i)).month != current_month
+                    "is_locked": (
+                        # Lock if not in current month (existing rule)
+                        (startOfPrevWeek + timedelta(days=i)).month != current_month
+                        # For MX: Lock Sat/Sun if after 12pm on Monday
+                        or (
+                            isMxEmp and
+                            (startOfPrevWeek + timedelta(days=i)).weekday() in [5, 6] and  # 5=Sat, 6=Sun
+                            (
+                                now.weekday() > 0 or  # After Monday
+                                (now.weekday() == 0 and now.hour >= 12)  # Monday after 12pm
+                            )
+                        )
+                    )
                 }
                 for i in range((endOfPrevWeek - startOfPrevWeek).days + 1)
             ]
@@ -270,7 +288,8 @@ def entry():
                                     week_finalized=week_finalized,
                                     can_use_summary_view=can_use_summary_view,
                                     comments=comments,
-                                    locked_days=locked_days
+                                    locked_days=locked_days,
+                                    weekday_start=weekday_start
             )
 
             # return render_template('timesheet/entry.html', abasID=abas_ID, abasUser=abasUser, startOfPrevWeek=startOfPrevWeek, endOfPrevWeek=endOfPrevWeek, dateRangePrevWeek=dateRangePrevWeek)
@@ -1244,3 +1263,8 @@ def get_comments(abas_id, start_date):
         return comments[0]  # Return the comment text
     else:
         return None  # No comments found
+    
+def get_week_start(date, week_start_day=0):
+    """Return the start of the week for a given date and week_start_day (0=Mon, 5=Sat)."""
+    days_to_subtract = (date.weekday() - week_start_day) % 7
+    return date - timedelta(days=days_to_subtract)
