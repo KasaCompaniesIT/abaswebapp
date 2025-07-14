@@ -1037,6 +1037,7 @@
                 showSnackbar('Comments saved!', 'success');
             } else {
                 showSnackbar('Failed to save comments.', 'error');
+                console.error('Error saving comments:', result.error);
             }
         })
         .catch(() => showSnackbar('Error saving comments.', 'error'));
