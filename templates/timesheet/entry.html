@@ -992,7 +992,7 @@
                     .then(response => response.json())
                     .then(result => {
                         if (result.success) {
-                            showSnackbar('Attendance time data submitted successfully!', 'success');
+                            showSnackbar('Attendance time data submitted successfully!  A copy of your timesheet will be emailed to you shortly.', 'success');
                             document.getElementById('finalizeTimeModalButton').disabled = true;
                             setTimeout(() => {
                                 document.getElementById('finalizeTimeModalButton').disabled = false;
