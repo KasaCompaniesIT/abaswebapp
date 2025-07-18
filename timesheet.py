@@ -911,6 +911,71 @@ def copy_prev_week():
 #         print("Error copying previous week:", str(e))  # Debugging: Log the error
 #         return jsonify({'success': False, 'error': str(e)})
 
+@bp.route('/timesheet/entry/copy_day', methods=['POST'])
+@login_required
+def copy_day():
+    try:
+        data = request.get_json()
+        abas_id = g.user.EmpID  # Use the logged-in user's ID
+        copy_from_day = data.get('copy_from_day')  # Format: MM/DD/YY or MM/DD/YYYY
+        copy_to_day = data.get('copy_to_day')      # Format: MM/DD/YY or MM/DD/YYYY
+
+        # Parse dates to datetime.date objects
+        try:
+            if '-' in copy_from_day:
+                from_date = datetime.strptime(copy_from_day, "%m-%d-%Y").date()
+            else:
+                try:
+                    from_date = datetime.strptime(copy_from_day, "%m/%d/%Y").date()
+                except ValueError:
+                    from_date = datetime.strptime(copy_from_day, "%m/%d/%y").date()
+            if '-' in copy_to_day:
+                to_date = datetime.strptime(copy_to_day, "%m-%d-%Y").date()
+            else:
+                try:
+                    to_date = datetime.strptime(copy_to_day, "%m/%d/%Y").date()
+                except ValueError:
+                    to_date = datetime.strptime(copy_to_day, "%m/%d/%y").date()
+        except Exception as e:
+            return jsonify({'success': False, 'error': f'Invalid date format: {e}'}), 400
+
+        db = get_db()
+        dbc = db.cursor()
+
+        # Fetch all entries for the source day
+        from_entries = dbc.execute(
+            "SELECT WSNumber, TimeWorked FROM TimeEntry WHERE EmpID = ? AND WorkDate = ?",
+            (abas_id, from_date)
+        ).fetchall()
+
+        if not from_entries:
+            return jsonify({'success': False, 'error': 'No entries found for the source day.'}), 404
+
+        # Optionally: Delete all entries for the target day before copying
+        dbc.execute(
+            "DELETE FROM TimeEntry WHERE EmpID = ? AND WorkDate = ?",
+            (abas_id, to_date)
+        )
+
+        # Copy each entry to the target day
+        for entry in from_entries:
+            ws_number = entry.WSNumber
+            time_worked = 0
+            # Insert new entry
+            dbc.execute(
+                "INSERT INTO TimeEntry (EmpID, WorkDate, WSNumber, TimeWorked) VALUES (?, ?, ?, ?)",
+                (abas_id, to_date, ws_number, time_worked)
+            )
+            # Optionally, send to Abas API
+            # send_timeentry_csv_to_abas(abas_id, to_date, ws_number, time_worked)
+
+        db.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.rollback()
+        print("Error copying day:", str(e))
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 
 @bp.route('/timesheet/entry/update_hours/<int:entry_id>', methods=['POST'])
 @login_required

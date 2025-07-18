@@ -115,23 +115,38 @@
                     {% endif %}
                 ">
                     {{ day.date | dateformat("%A") }} - {{ day.date }}
-                    
-                    <button type="button"
-                        class="float-right btn btn-sm delete-day-btn
-                            {% if day.date == today or day.isHoliday %}
-                                text-dark
+                    <div class="float-right">
+                                 
+
+                        <button type="button"
+                            class="float-right btn btn-sm delete-day-btn
+                                {% if day.date == today or day.isHoliday %}
+                                    text-dark
+                                {% else %}
+                                    text-abas
+                                {% endif %}"
+                            title="Clear all job time entries for this day"
+                            {% if day.is_locked or not can_add_or_finalize %}disabled aria-disabled="true"{% endif %}>
+                            {% if day.is_locked or not can_add_or_finalize %}
+                                <i class="fas fa-lock"></i>
                             {% else %}
-                                text-abas
-                            {% endif %}"
-                        title="Clear all job time entries for this day"
-                        {% if day.is_locked or not can_add_or_finalize %}disabled aria-disabled="true"{% endif %}>
-                        {% if day.is_locked or not can_add_or_finalize %}
-                            <i class="fas fa-lock"></i>
-                        {% else %}
-                            <i class="fas fa-trash"></i>
-                        {% endif %}
-                    </button>
-                    
+                                <i class="fas fa-trash"></i>
+                            {% endif %}
+                        </button>
+
+                        {% if can_add_or_finalize %}
+                            <button type="button"
+                                class="float-right btn btn-sm copy-day-btn
+                                    {% if day.date == today or day.isHoliday %}
+                                        text-dark
+                                    {% else %}
+                                        text-abas
+                                    {% endif %}"
+                                title="Copy all job time entries for this day to another day of the week">
+                                <i class="fas fa-copy"></i>                            
+                            </button>
+                        {% endif %}           
+                    </div>  
                 </div>
                 <div class="card-body compact-card">
                     {% set ns = namespace(total_hours=0) %} <!-- Create a mutable namespace object -->
@@ -530,11 +545,13 @@
                         showSnackbar('Hours updated!', 'success');
                     } else {
                         showSnackbar('Failed to update hours.', 'error');
+                        console.error('Error updating hours:', result.error);
                         input.replaceWith(badge);
                     }
                 })
                 .catch(() => {
                     showSnackbar('Error updating hours.', 'error');
+                    console.error('Error updating hours:', error);
                     input.replaceWith(badge);
                 });
             }
@@ -565,6 +582,7 @@
 
             } else {
                 showSnackbar('Failed to copy previous week: ' + result.error, 'error');
+                console.error('Error copying previous week:', result.error);
             }
         })
         .catch(error => {
@@ -607,6 +625,7 @@
                 $('.selectpicker').selectpicker('refresh');
             })
             .catch(error => console.error('Error fetching projects:', error));
+            console.error('Error fetching projects:', error);
     });
 
     function getTimeEntriesFromTimecards() {
@@ -999,6 +1018,7 @@
                             }, 10000); // 10 seconds
                         } else {
                             showSnackbar('Failed to finalize time data: ' + result.error, 'error');
+                            console.error('Error finalizing time data:', result.error);
                         }
                     })
                     .catch(error => {
@@ -1041,6 +1061,7 @@
             }
         })
         .catch(() => showSnackbar('Error saving comments.', 'error'));
+        console.error('Error saving comments:', error);
     });
 
     // Event listener for project selection
@@ -1089,6 +1110,7 @@
                     }
                 })
                 .catch(error => console.error('Error fetching work orders:', error));
+                console.error('Error fetching work orders:', error);
         }
     });
 
@@ -1128,6 +1150,7 @@
                     }
                 })
                 .catch(error => console.error('Error fetching workslips:', error));
+                console.error('Error fetching workslips:', error);
         }
     });
 
@@ -1192,9 +1215,28 @@
         });
         document.querySelectorAll('.copy-entry-btn').forEach(button => {
             button.addEventListener('click', function () {
-                copyJobEntryID = this.getAttribute('data-timeentryid');
-                copyJobButton = this;
+                window.copyMode = 'job';
+                window.copyJobEntryID = this.getAttribute('data-timeentryid');
+                window.copyDaySourceDate = null;
                 $('#copyJobConfirmModal').modal('show');
+            });
+        });
+    });
+    
+    // event listener for copy day button
+    document.addEventListener('DOMContentLoaded', function () {
+        // For copy-day-btn (copy the whole day)
+        document.querySelectorAll('.copy-day-btn').forEach(button => {
+            button.addEventListener('click', function () {
+                if (button.disabled || button.getAttribute('aria-disabled') === 'true') return;
+                const card = button.closest('.col');
+                if (!card) return;
+                const cardId = card.id;
+                const dayDate = cardId.replace('card_', '').replace(/_/g, '/');
+                $('#copyJobConfirmModal').modal('show');
+                window.copyMode = 'day';
+                window.copyDaySourceDate = dayDate;
+                window.copyJobEntryID = null;
             });
         });
     });
@@ -1203,12 +1245,8 @@
     document.getElementById('confirmCopyJobBtn').addEventListener('click', function (event) {
         event.preventDefault();
 
-        // Get the job entry ID to copy (set when user clicks the copy icon)
-        const jobEntryId = window.copyJobEntryID;
-
-        // Get the selected day from the modal
         const selectedCard = document.querySelector('#copyJobConfirmModal .select-date-card.bg-success');
-        if (!jobEntryId || !selectedCard) {
+        if (!selectedCard) {
             showSnackbar('Please select a day to copy to.', 'error');
             return;
         }
@@ -1218,71 +1256,100 @@
         }
         const copyToDay = selectedCard.getAttribute('data-date');
 
-        fetch('/timesheet/entry/copy_time_entry', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ job_entry_id: jobEntryId, copy_to_day: copyToDay })
-        })
-        .then(response => response.json())
-        .then(result => {
-            if (result.success && result.data) {
-                showSnackbar('Job copied successfully!', 'success');
-
-                // Find the card body for the target day
-                const cardBody = document.querySelector(`#card_${result.data.WorkDate.replace(/\//g, '_')} .card-body`);
-                if (cardBody) {
-                    // Remove "No data available" message if it exists
-                    const noDataMessage = cardBody.querySelector('p');
-                    if (noDataMessage && noDataMessage.textContent === 'No data available for this date.') {
-                        noDataMessage.remove();
-                    }
-
-                    // Create the new time entry DOM
-                    const timeEntryDiv = document.createElement('div');
-                    timeEntryDiv.classList.add('d-flex', 'justify-content-between', 'align-items-center', 'time-entry');
-                    timeEntryDiv.innerHTML = `
-                        <p>
-                            ${result.data.WSNumber} ${result.data.OpNameExtended}
-                            <small class="card-desc">(${result.data.WODescription})</small>
-                        </p>
-                        <h5>
-                            <span class="badge badge-secondary editable-hours"
-                                data-timeentryid="${result.data.TimeEntryID}"
-                                style="cursor:pointer;">
-                                ${result.data.tHoursWorked}
-                            </span>
-                        </h5>
-                        <button class="btn btn-abas2 btn-sm copy-entry-btn" data-timeentryid="${result.data.TimeEntryID}" title="Copy Entry">
-                            <i class="fas fa-copy"></i>
-                        </button>
-                        <button class="btn btn-danger btn-sm delete-entry-btn" data-timeentryid="${result.data.TimeEntryID}" title="Delete Entry">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    `;
-                    cardBody.appendChild(timeEntryDiv);
-
-                    // Update the total hours in the card footer
-                    const cardFooter = cardBody.nextElementSibling;
-                    const totalHoursElement = cardFooter.querySelector('.font-weight-bold');
-                    const currentTotal = parseFloat(totalHoursElement.textContent) || 0;
-                    const newTotal = currentTotal + parseFloat(result.data.tHoursWorked);
-                    totalHoursElement.textContent = newTotal.toFixed(2);
-
-                    // Recalculate the total hours for the floating badge
-                    updateTotalHours();
-
-                    // Reattach event listeners for the new buttons
-                    attachDeleteEvent(timeEntryDiv.querySelector('.delete-entry-btn'));
-                    attachCopyJobEvent(timeEntryDiv.querySelector('.copy-entry-btn'));
+        // Copy a whole day
+        if (window.copyMode === 'day' && window.copyDaySourceDate) {
+            fetch('/timesheet/entry/copy_day', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ copy_from_day: window.copyDaySourceDate, copy_to_day: copyToDay })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    showSnackbar('Day copied successfully!', 'success');
+                    location.reload(); // Or update the UI as needed
+                } else {
+                    showSnackbar('Failed to copy day: ' + result.error, 'error');
+                    console.error('Error copying day:', result.error);
                 }
-            } else {
-                showSnackbar('Failed to copy job: ' + result.error, 'error');
-            }
-        })
-        .catch(error => {
-            showSnackbar('An unexpected error occurred.', 'error');
-            console.error(error);
-        });
+            })
+            .catch(error => {
+                showSnackbar('An unexpected error occurred.', 'error');
+                console.error(error);
+            });
+            return;
+        }
+
+
+        // Copy a single job entry
+        if (window.copyMode === 'job' && window.copyJobEntryID) {
+            fetch('/timesheet/entry/copy_time_entry', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ job_entry_id: window.copyJobEntryID, copy_to_day: copyToDay })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success && result.data) {
+                    showSnackbar('Job copied successfully!', 'success');
+
+                    // Find the card body for the target day
+                    const cardBody = document.querySelector(`#card_${result.data.WorkDate.replace(/\//g, '_')} .card-body`);
+                    if (cardBody) {
+                        // Remove "No data available" message if it exists
+                        const noDataMessage = cardBody.querySelector('p');
+                        if (noDataMessage && noDataMessage.textContent === 'No data available for this date.') {
+                            noDataMessage.remove();
+                        }
+
+                        // Create the new time entry DOM
+                        const timeEntryDiv = document.createElement('div');
+                        timeEntryDiv.classList.add('d-flex', 'justify-content-between', 'align-items-center', 'time-entry');
+                        timeEntryDiv.innerHTML = `
+                            <p>
+                                ${result.data.WSNumber} ${result.data.OpNameExtended}
+                                <small class="card-desc">(${result.data.WODescription})</small>
+                            </p>
+                            <h5>
+                                <span class="badge badge-secondary editable-hours"
+                                    data-timeentryid="${result.data.TimeEntryID}"
+                                    style="cursor:pointer;">
+                                    ${result.data.tHoursWorked}
+                                </span>
+                            </h5>
+                            <button class="btn btn-abas2 btn-sm copy-entry-btn" data-timeentryid="${result.data.TimeEntryID}" title="Copy Entry">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                            <button class="btn btn-danger btn-sm delete-entry-btn" data-timeentryid="${result.data.TimeEntryID}" title="Delete Entry">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        `;
+                        cardBody.appendChild(timeEntryDiv);
+
+                        // Update the total hours in the card footer
+                        const cardFooter = cardBody.nextElementSibling;
+                        const totalHoursElement = cardFooter.querySelector('.font-weight-bold');
+                        const currentTotal = parseFloat(totalHoursElement.textContent) || 0;
+                        const newTotal = currentTotal + parseFloat(result.data.tHoursWorked);
+                        totalHoursElement.textContent = newTotal.toFixed(2);
+
+                        // Recalculate the total hours for the floating badge
+                        updateTotalHours();
+
+                        // Reattach event listeners for the new buttons
+                        attachDeleteEvent(timeEntryDiv.querySelector('.delete-entry-btn'));
+                        attachCopyJobEvent(timeEntryDiv.querySelector('.copy-entry-btn'));
+                    }
+                } else {
+                    showSnackbar('Failed to copy job: ' + result.error, 'error');
+                    console.error('Error copying job:', result.error);
+                }
+            })
+            .catch(error => {
+                showSnackbar('An unexpected error occurred.', 'error');
+                console.error(error);
+            });
+        }
     });
 
     // Confirm deletion of time entry
@@ -1327,6 +1394,7 @@
                 showSnackbar('Time entry deleted successfully!', 'success');
             } else {
                 showSnackbar('Failed to delete time entry.', 'error');
+                console.error('Error deleting time entry:', response.statusText);
             }
             $('#deleteConfirmModal').modal('hide');
             deleteEntryID = null;
@@ -1334,6 +1402,7 @@
         })
         .catch(error => {
             showSnackbar('Error deleting time entry.', 'error');
+            console.error('Error deleting time entry:', error);
             $('#deleteConfirmModal').modal('hide');
             deleteEntryID = null;
             deleteButton = null;
@@ -1353,8 +1422,9 @@
     // Function to attach copy event to dynamically created buttons
     function attachCopyJobEvent(button) {
         button.addEventListener('click', function () {
-            copyJobEntryID = this.getAttribute('data-timeentryid');
-            copyJobButton = this;
+            window.copyMode = 'job';
+            window.copyJobEntryID = this.getAttribute('data-timeentryid');
+            window.copyDaySourceDate = null;
             $('#copyJobConfirmModal').modal('show');
             
         });
@@ -1445,9 +1515,11 @@
                 } else {
                     //alert('Failed to add time entry: ' + result.error);
                     showSnackbar(result.error, 'error');
+                    console.error('Error adding time entry:', result.error);
                 }
             })
             .catch(error => console.error('Error adding time entry:', error));
+            console.error('Error adding time entry:', error);
     });
 
     // Attach event handler for the delete button in each day card header
@@ -1482,9 +1554,11 @@
                         showSnackbar('All entries for this day deleted!', 'success');
                     } else {
                         showSnackbar('Failed to delete entries for this day.', 'error');
+                        console.error('Error deleting entries for this day:', result.error);
                     }
                 })
                 .catch(() => showSnackbar('Error deleting entries for this day.', 'error'));
+                console.error('Error deleting entries for this day:', error);
             });
         });
     });
