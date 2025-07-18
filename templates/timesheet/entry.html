@@ -1038,7 +1038,9 @@
     // Event listener for comments form submission
     document.getElementById('commentsForm').addEventListener('submit', function(event) {
         event.preventDefault();
-        const comments = document.getElementById('commentsText').value;
+        let comments = document.getElementById('commentsText').value;
+        // Remove all line feed and carriage return characters
+        comments = comments.replace(/[\r\n]+/g, ' ');
         const abasID = document.getElementById('abasIDInput') ? document.getElementById('abasIDInput').value : '{{ abasUser.EmpID }}';
         const startDate = document.getElementById('startDateInput').value;
 
