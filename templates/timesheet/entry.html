@@ -89,7 +89,12 @@
                     <div class="form-group flex-grow-1 d-flex flex-column">
                         <textarea class="form-control flex-grow-1" id="commentsText" name="comments" rows="6" placeholder="Enter comments here..." {% if not can_add_or_finalize %}disabled{% endif %}>{{ comments }}</textarea>
                     </div>
-                    <button type="submit" class="btn btn-abas my-0 py-1 align-self-end" {% if not can_add_or_finalize %}disabled{% endif %}>Save Comments</button>
+                    <div class="d-flex justify-content-between">
+                        <span>
+                            <small class="text-muted font-italic">** Changes can take up to 10 minutes to reflect in abas.</small>
+                        </span>
+                        <button type="submit" class="btn btn-abas my-0 py-1 align-self-end" {% if not can_add_or_finalize %}disabled{% endif %}>Save Comments</button>
+                    </div>
                 </form>
             </div>
         </div>
@@ -198,8 +203,11 @@
             </div>
         </div>
         {% set nswk.total_hours = nswk.total_hours|float + ns.total_hours|float %}
-        {% endfor %}
+        {% endfor %}        
     </div>
+    <span>
+        <small class="text-muted font-italic">** Changes can take up to 10 minutes to reflect in abas.</small>
+    </span>
 
     <button id="addTimeButton" class="btn btn-abas btn-floating" title="Add Job Time"
         {% if not can_add_or_finalize %}disabled{% endif %}>
@@ -278,11 +286,10 @@
                                     </div>
                                 </div>
                             </div>
-
                             <p></p>                            
                         </div>
                         <div class="d-flex justify-content-between">
-                            <a class="btn btn-abas" id="btnCopyPrev" href="{{ url_for('timesheet.copy_prev_week') }}">Copy Previous Week</a>
+                            <a class="btn btn-abas" id="btnCopyPrev" href="{{ url_for('timesheet.copy_prev_week') }}" tabindex="-1">Copy Previous Week</a>
                             <button type="submit" class="btn btn-abas" id="btnAddTime">Add to Timesheet</button>
                         </div>
                     </form> 
@@ -322,7 +329,10 @@
                                 </tfoot>
                             </table>
                         </div>
-                        <div class="text-right">
+                        <div class="d-flex justify-content-between">
+                            <span>
+                                <small class="text-muted font-italic">** Changes can take up to 10 minutes to reflect in abas.</small>
+                            </span>
                             <button id="finalizeTimeModalButton" type="submit" class="btn btn-abas">Submit</button>
                         </div>
                     </form>
@@ -402,7 +412,11 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    You are about to submit your attendance time for the week to abas for import.  <br><br> Once your data is imported, you will receive an email with a copy of your timesheet.
+                    You are about to submit your attendance time for the week to abas for import.  
+                    <br><br> 
+                    Once your data is imported, you will receive an email with a copy of your timesheet.
+                    <br><br>
+                    <small class="text-muted font-italic">** Changes can take up to 10 minutes to reflect in abas.</small>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
@@ -1011,7 +1025,7 @@
                     .then(response => response.json())
                     .then(result => {
                         if (result.success) {
-                            showSnackbar('Attendance time data submitted successfully!  A copy of your timesheet will be emailed to you shortly.', 'success');
+                            showSnackbar('Attendance time data submitted successfully!  A copy of your timesheet will be emailed to you shortly (5-10 minutes).', 'success');
                             document.getElementById('finalizeTimeModalButton').disabled = true;
                             setTimeout(() => {
                                 document.getElementById('finalizeTimeModalButton').disabled = false;
