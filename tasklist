@@ -39,5 +39,5 @@ DONE: Not going to implement... Will look into this, but will make things be in 
 DONE: Not going to implement... Will look into this, but will make things be in a weird state between the webapp and abas. - INDIRECT-TRAINING entered by default
 DONE: Sometimes when hitting '+' button, drop downs are pre-populated with last item added, and not blank
 DONE: Add detailed logging for payroll/attendance exports.
-TODO: Add admin page to view logs.
+DONE: Add admin page to view logs.
  

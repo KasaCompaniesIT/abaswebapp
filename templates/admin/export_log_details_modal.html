@@ -1,0 +1,27 @@
+<!-- filepath: c:\Users\astaggenborg\source\repos\abaswebapp\templates\admin\export_log_details_modal.html -->
+<table class="table table-bordered table-sm">
+    <thead>
+        <tr>
+            <th>ExportID</th>
+            <th>EmpID</th>
+            <th>Work Date</th>
+            <th>Time Worked</th>
+            <th>Paychex Code</th>
+            <th>Work Slip</th>
+            <th>Comments</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for detail in details %}
+        <tr>
+            <td>{{ detail.exportID }}</td>
+            <td>{{ detail.empID }}</td>
+            <td>{{ detail.workDate }}</td>
+            <td>{{ detail.timeWorked }}</td>
+            <td>{{ detail.paychexCode }}</td>
+            <td>{{ detail.workSlip }}</td>
+            <td>{{ detail.comments }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

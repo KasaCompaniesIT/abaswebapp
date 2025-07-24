@@ -395,6 +395,111 @@ def manage_operations():
     ).fetchall()
     return render_template('admin/operations.html', operations=operations)
 
+@bp.route('/admin/export_logs', methods=['GET', 'POST'])
+@login_required
+def view_export_logs():
+    if not getattr(g.user, 'isAdmin', False):
+        return abort(403)
+
+    db = get_db()
+    dbc = db.cursor()
+
+    # Fetch distinct values for dropdowns
+    empid_choices = [row[0] for row in dbc.execute("SELECT DISTINCT EmpID FROM ExportLog ORDER BY EmpID").fetchall()]
+    status_choices = [row[0] for row in dbc.execute("SELECT DISTINCT exportStatus FROM ExportLog ORDER BY exportStatus").fetchall()]
+    type_choices = [row[0] for row in dbc.execute("SELECT DISTINCT exportType FROM ExportLog ORDER BY exportType").fetchall()]
+    weekstart_choices = [row[0] for row in dbc.execute("SELECT DISTINCT exportWorkWeek FROM ExportLog ORDER BY exportWorkWeek DESC").fetchall()]
+
+    # Filtering options
+    emp_id = request.args.get('emp_id')
+    status = request.args.get('status')
+    export_type = request.args.get('type')
+    week_start = request.args.get('week_start')
+    date_from = request.args.get('date_from')
+    date_to = request.args.get('date_to')
+
+    # Build WHERE clause dynamically
+    where_clauses = []
+    params = []
+
+    if emp_id:
+        where_clauses.append("EmpID = ?")
+        params.append(emp_id)
+    if status:
+        where_clauses.append("exportStatus = ?")
+        params.append(status)
+    if export_type:
+        where_clauses.append("exportType = ?")
+        params.append(export_type)
+    if week_start:
+        where_clauses.append("exportWorkWeek = ?")
+        params.append(week_start)
+    if date_from:
+        where_clauses.append("exportDate >= ?")
+        params.append(date_from)
+    if date_to:
+        where_clauses.append("exportDate <= ?")
+        params.append(date_to)
+
+    where_sql = "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
+
+    logs = dbc.execute(
+        f"""
+        SELECT exportID, EmpID, exportDate, exportWorkWeek, exportStatus, exportType, exportStatusDetail
+        FROM ExportLog
+        {where_sql}
+        ORDER BY exportDate DESC
+        """,
+        params
+    ).fetchall()
+
+    selected_export_id = request.args.get('export_id')
+    details = []
+    if selected_export_id:
+        details = dbc.execute(
+            """
+            SELECT exportID, empID, workDate, timeWorked, paychexCode, workSlip, comments
+            FROM ExportLogDetail
+            WHERE exportID = ?
+            ORDER BY workDate DESC
+            """,
+            (selected_export_id,)
+        ).fetchall()
+
+    return render_template(
+        'admin/export_logs.html',
+        logs=logs,
+        details=details,
+        filters={
+            "emp_id": emp_id,
+            "status": status,
+            "type": export_type,
+            "date_from": date_from,
+            "date_to": date_to,
+            "week_start": week_start,
+            "selected_export_id": selected_export_id
+        },
+        empid_choices=empid_choices,
+        status_choices=status_choices,
+        type_choices=type_choices,
+        weekstart_choices=weekstart_choices
+    )
+
+@bp.route('/admin/export_log_details/<int:export_id>')
+@login_required
+def export_log_details_modal(export_id):
+    if not getattr(g.user, 'isAdmin', False):
+        return abort(403)
+    db = get_db()
+    dbc = db.cursor()
+    details = dbc.execute("""
+        SELECT exportID, empID, workDate, timeWorked, paychexCode, workSlip, comments
+        FROM ExportLogDetail
+        WHERE exportID = ?
+        ORDER BY workDate
+    """, (export_id,)).fetchall()
+    return render_template('admin/export_log_details_modal.html', details=details)
+
 def existingProject(project):
     db = get_db()
     dbc = db.cursor()
