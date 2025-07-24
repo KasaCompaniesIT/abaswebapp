@@ -487,22 +487,25 @@ def delete_time_entry(time_entry_id):
         # Extract entry details
         abas_id = entry.EmpID
         selected_date = entry.WorkDate
+        work_date = selected_date.strftime('%m/%d/%y')
         work_slip_id = entry.WSNumber
         hours_worked = 0 # entry.TimeWorked
 
         # Define the API endpoint
-        url = "http://abas.kasa.kasacontrols.com:8000/jobtime_entry"
+        # url = "http://abas.kasa.kasacontrols.com:8000/jobtime_entry"
 
-        # Define the payload
-        payload = {
-            "EmpID": abas_id,
-            "WorkDate": selected_date.strftime('%m/%d/%y'),  # Format the date as MM/DD/YY
-            "WSNumber": work_slip_id,
-            "HoursWorked": hours_worked
-        }
+        # # Define the payload
+        # payload = {
+        #     "EmpID": abas_id,
+        #     "WorkDate": selected_date.strftime('%m/%d/%y'),  # Format the date as MM/DD/YY
+        #     "WSNumber": work_slip_id,
+        #     "HoursWorked": hours_worked
+        # }
 
         # Send the POST request
-        response = requests.post(url, json=payload)
+        #response = requests.post(url, json=payload)
+
+        response = send_timeentry_csv_to_abas(abas_id, work_date, work_slip_id, hours_worked)
 
         # Check the response
         if response.status_code == 200:
@@ -743,6 +746,27 @@ def payroll_export():
         # Forward the converted JSON data to the external API
         response = requests.post(external_api_url, json=converted_data)
         print("Response from external API:", response.status_code, response.text)  # Debugging: Log the response
+
+        # add log to ExportLog table and ExportLogDetail tables
+        abas_id = data.get("abas_id")
+        export_date = datetime.now()  # Current date and time
+        export_work_week = datetime.strptime(data.get("start_date"), "%Y-%m-%d").date()  # Assuming start_date is passed in the payload
+        export_status = "Success" if response.status_code == 200 else "Failed"
+        export_status_detail = response.text if response.status_code != 200 else None
+        export_type = "Payroll"
+        # Function to add an export log summary
+        export_id = add_exportlog_summary(abas_id, export_date, export_work_week, export_status, export_status_detail, export_type)
+        # Function to add export log details
+        for entry in combined_time_entries:
+            add_exportlog_entry(
+                export_id=export_id,
+                emp_id=abas_id,
+                work_date=entry["date"],
+                time_worked=float(entry["hours"]) if entry["hours"] is not None else None,
+                paychex_code=entry["paychexCode"],
+                work_slip=None,
+                comments=entry["comments"]
+            )
 
         if response.status_code == 200:
             # If the API call is successful, write an entry to the ExportStatus table
@@ -1233,7 +1257,42 @@ def send_timeentry_csv_to_abas(abas_id, work_date, work_slip_id, hours_worked):
 
     # Send the POST request
     response = requests.post(url, json=payload)
+    try:
+        # create log entry in ExportStatus table and ExportStatusDetail table
+        export_date = datetime.now()
+        if isinstance(work_date, str):
+            try:
+                # Try MM/DD/YY, MM/DD/YYYY, or YYYY-MM-DD formats
+                if '-' in work_date and len(work_date.split('-')[0]) == 4:
+                    work_date_obj = datetime.strptime(work_date, "%Y-%m-%d").date()
+                elif '-' in work_date:
+                    work_date_obj = datetime.strptime(work_date, "%m-%d-%Y").date()
+                else:
+                    try:
+                        work_date_obj = datetime.strptime(work_date, "%m/%d/%Y").date()
+                    except ValueError:
+                        work_date_obj = datetime.strptime(work_date, "%m/%d/%y").date()
+            except Exception:
+                work_date_obj = datetime.now().date()
+        else:
+            work_date_obj = work_date
 
+        export_work_week = get_week_start(work_date_obj, week_start_day=0)
+        export_status = "Success" if response.status_code == 200 else "Failed"
+        export_status_detail = response.text if response.status_code != 200 else None
+        export_type = "JobTimeEntry"
+        export_id = add_exportlog_summary(abas_id, export_date, export_work_week, export_status, export_status_detail, export_type)
+        add_exportlog_entry(
+            export_id=export_id,
+            emp_id=abas_id,
+            work_date=work_date_str,
+            time_worked=hours_worked,
+            paychex_code=None,  # Assuming no Paychex code for job time entries
+            work_slip=work_slip_id
+        )
+    except Exception as e:
+        print("Error logging export:", str(e))
+        
     return response
 
 @bp.route('/timesheet/entry/get_summary_flag')
@@ -1300,6 +1359,25 @@ def save_comments():
         response = requests.post(external_api_url, json=comment_entry)
         print("Response from external API:", response.status_code, response.text)  # Debugging: Log the response
 
+        # add log to ExportLog table and ExportLogDetail tables
+        export_date = datetime.now()  # Current date and time
+        export_work_week = get_week_start(date_obj, week_start_day=0) # Assuming week starts on Monday
+        export_status = "Success" if response.status_code == 200 else "Failed"
+        export_status_detail = response.text if response.status_code != 200 else None
+        export_type = "Comments"
+        # Function to add an export log summary
+        export_id = add_exportlog_summary(abas_id, export_date, export_work_week, export_status, export_status_detail, export_type)
+        # Function to add export log details
+        add_exportlog_entry(
+            export_id=export_id,
+            emp_id=abas_id,
+            work_date=date_str,
+            time_worked=None,  # No time worked for comments
+            paychex_code=None,  # No Paychex code for comments
+            work_slip=None,  # No work slip for comments
+            comments=comments
+        )
+
         if response.status_code == 200:        
             dbc.commit()
     
@@ -1333,3 +1411,73 @@ def get_week_start(date, week_start_day=0):
     """Return the start of the week for a given date and week_start_day (0=Mon, 5=Sat)."""
     days_to_subtract = (date.weekday() - week_start_day) % 7
     return date - timedelta(days=days_to_subtract)
+
+def add_exportlog_summary(abas_id=None, export_date=None, export_work_week=None, export_status=None, export_status_detail=None, export_type=None):
+    db = get_db()
+    dbc = db.cursor()
+    # export log table definition
+    # [exportID] [int] IDENTITY(1,1) NOT NULL,
+    # [EmpID] [int] NOT NULL,
+    # [exportDate] [datetime] NULL,
+    # [exportWorkWeek] [date] NULL,
+    # [exportStatus] [varchar](50) NULL,
+    # [exportStatusDetail] [varchar](max) NULL,
+    # [exportType] [varchar](50) NULL
+    
+    try:           
+        if abas_id is None or export_date is None or export_work_week is None:
+            raise ValueError("abas_id, export_date, and export_work_week must be provided.")                
+
+        # Insert a new record and get the new exportID using OUTPUT
+        export_id = dbc.execute(
+            """
+            INSERT INTO ExportLog (EmpID, exportDate, exportWorkWeek, exportStatus, exportType, exportStatusDetail)
+            OUTPUT INSERTED.exportID
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (abas_id, export_date, export_work_week, export_status, export_type, export_status_detail)
+        ).fetchone()[0]
+        db.commit()
+        print("Export log summary added successfully.")
+        return export_id
+
+    except Exception as e:
+        db.rollback()
+        print("Error adding export log summary:", str(e))
+        return None
+
+def add_exportlog_entry(export_id=None, emp_id=None, work_date=None, time_worked=None, paychex_code=None, work_slip=None, comments=None):
+    db = get_db()
+    dbc = db.cursor()    
+    # export log detail table definition
+    # [logID] [int] IDENTITY(1,1) NOT NULL,
+    # [exportID] [int] NOT NULL,
+    # [empID] [varchar](10) NULL,
+    # [workDate] [date] NULL,
+    # [timeWorked] [numeric](18, 2) NULL,
+    # [paychexCode] [varchar](10) NULL,
+    # [workSlip] [varchar](50) NULL,
+    # [comments] [varchar](max) NULL
+    
+    try:
+        if export_id is None or emp_id is None or work_date is None:
+            raise ValueError("export_id, emp_id, and work_date must be provided.")
+
+        # Insert a new record into the ExportLogDetail table
+        dbc.execute(
+            """
+            INSERT INTO ExportLogDetail (exportID, empID, workDate, timeWorked, paychexCode, workSlip, comments)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (export_id, emp_id, work_date, time_worked, paychex_code, work_slip, comments)
+        )
+        db.commit()
+        
+        print("Export log entry added successfully.")
+        
+    except Exception as e:
+        db.rollback()
+        print("Error adding export log entry:", str(e))
+        
+    
+    
