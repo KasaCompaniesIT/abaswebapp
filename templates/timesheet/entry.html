@@ -91,7 +91,7 @@
                     </div>
                     <div class="d-flex justify-content-between">
                         <span>
-                            <small class="text-muted font-italic">** Changes can take up to 10 minutes to reflect in abas.</small>
+                            <small class="text-muted font-italic px-1">** Changes can take up to 10 minutes to reflect in abas.</small>
                         </span>
                         <button type="submit" class="btn btn-abas my-0 py-1 align-self-end" {% if not can_add_or_finalize %}disabled{% endif %}>Save Comments</button>
                     </div>
@@ -277,19 +277,20 @@
                             <div class="row text-center mt-2">
                                 <div class="col">
                                     <div class="d-flex justify-content-center">
-                                        <div class="input-group input-group-addtime mb-3">
+                                        <div class="input-group input-group-addtime">
                                             <div class="input-group-prepend">
                                                 <span class="input-group-text" id="hoursLabel">Hours Worked</span>
                                             </div>
                                             <input type="text" class="form-control" name="hoursWorked" id="hoursWorked" placeholder="Hours Worked" aria-label="Hours Worked Input" aria-describedby="hoursLabel" required>
                                         </div>
                                     </div>
+                                    <small class="text-muted font-italic mb-2 mt-0 pt-0">** Changes can take up to 10 minutes to reflect in abas.</small>
                                 </div>
                             </div>
                             <p></p>                            
                         </div>
                         <div class="d-flex justify-content-between">
-                            <a class="btn btn-secondary mr-2" id="btnCopyPrev" href="{{ url_for('timesheet.copy_prev_week') }}" tabindex="-1">Copy Previous Week</a>
+                            <a class="btn btn-secondary mr-2" id="btnCopyPrev" href="{{ url_for('timesheet.copy_prev_week') }}" tabindex="-1">Copy Previous Week</a>                            
                             <button type="submit" class="btn btn-abas" id="btnAddTime">Add to Timesheet</button>
                         </div>
                     </form> 
@@ -638,8 +639,8 @@
                 // Refresh the Bootstrap Select dropdown
                 $('.selectpicker').selectpicker('refresh');
             })
-            .catch(error => console.error('Error fetching projects:', error));
-            console.error('Error fetching projects:', error);
+            .catch(error => console.error('Error fetching projects:'));
+            console.error('Error fetching projects:');
     });
 
     function getTimeEntriesFromTimecards() {

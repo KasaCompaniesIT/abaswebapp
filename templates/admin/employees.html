@@ -23,29 +23,29 @@
 
 {% block content %}
 <!-- Search Bar -->
-<div class="mb-3">
+<div class="mb-3" style="max-width: 600px;">
     <input type="text" id="employeeSearch" class="form-control" placeholder="Search employees by name, department, or supervisor...">
 </div>
 
 <!-- Table Layout for Larger Screens -->
 <div class="d-none d-md-block">
     <div class="table-responsive">
-        <table class="table table-striped table-bordered">
+        <table class="table table-striped table-sm table-bordered w-auto">
             <thead>
                 <tr>
-                    <th>EmpID</th>
-                    <th>Emp</th>
-                    <th>Name</th>
-                    <th>Dept</th>
-                    <th>Supervisor</th>
-                    <th>Wage<br>Group</th>  
-                    <th>MX Emp</th>                  
-                    <th>Hourly</th>
-                    <th>PayChex</th>
-                    <th>Salary Plus<br>Start</th>
-                    <th>Admin</th>
-                    <th>Super<br>Admin</th>
-                    <th>Actions</th>
+                    <th class="px-2">EmpID</th>
+                    <th class="px-2">Emp</th>
+                    <th class="px-2">Name</th>
+                    <th class="px-2">Dept</th>
+                    <th class="px-2">Supervisor</th>
+                    <th class="px-2">Wage<br>Group</th>
+                    <th class="px-2">MX Emp</th>
+                    <th class="px-2">Hourly</th>
+                    <th class="px-2">PayChex</th>
+                    <th class="px-2">Salary Plus Start</th>
+                    <th class="px-2">Admin</th>
+                    <th class="px-2">Super<br>Admin</th>
+                    <th class="px-2">Actions</th>
                 </tr>
             </thead>
             <tbody id="employeeTable">
@@ -86,7 +86,7 @@
                         <td>
                             <input type="hidden" name="EmpID" value="{{ employee.EmpID }}">
                             <div class="d-flex justify-content-end">
-                                <button type="submit" class="btn btn-abas">
+                                <button type="submit" class="btn btn-sm btn-abas">
                                     Save
                                 </button>
                             </div>

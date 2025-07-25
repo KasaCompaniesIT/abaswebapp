@@ -24,31 +24,55 @@
 
 {% block content %}
 <form method="get" class="mb-3">
-    <div class="form-row align-items-end">
+    <div class="form-row align-items-center" style="max-width: 1000px; margin: 0 auto;">
+        <!-- EmpID Checklist -->
         <div class="col">
             <label for="emp_id">EmpID</label>
-            <select name="emp_id" id="emp_id" class="form-control">
-                <option value="">All</option>
+            <select name="emp_id" id="emp_id" class="form-control selectpicker"
+                    multiple data-live-search="true"
+                    data-selected-text-format="count > 1"
+                    data-none-selected-text="All"
+        data-width="auto">
                 {% for eid in empid_choices %}
-                <option value="{{ eid }}" {% if filters.emp_id == eid|string %}selected{% endif %}>{{ eid }}</option>
+                <option value="{{ eid }}" {% if filters.emp_id and eid in filters.emp_id %}selected{% endif %}>{{ eid }}</option>
                 {% endfor %}
             </select>
         </div>
+        <!-- Status Checklist -->
         <div class="col">
             <label for="status">Status</label>
-            <select name="status" id="status" class="form-control">
-                <option value="">All</option>
+            <select name="status" id="status" class="form-control selectpicker" 
+                    multiple data-live-search="true"
+                    data-selected-text-format="count > 1"
+                    data-none-selected-text="All"
+        data-width="auto">
                 {% for s in status_choices %}
-                <option value="{{ s }}" {% if filters.status == s %}selected{% endif %}>{{ s }}</option>
+                <option value="{{ s }}" {% if filters.status and s in filters.status %}selected{% endif %}>{{ s }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <!-- Type Checklist -->
+        <div class="col">
+            <label for="type">Type</label>
+            <select name="type" id="type" class="form-control selectpicker" 
+                    multiple data-live-search="true"
+                    data-selected-text-format="count > 1"
+                    data-none-selected-text="All"
+        data-width="auto">
+                {% for t in type_choices %}
+                <option value="{{ t }}" {% if filters.type and t in filters.type %}selected{% endif %}>{{ t }}</option>
                 {% endfor %}
             </select>
         </div>
         <div class="col">
-            <label for="type">Type</label>
-            <select name="type" id="type" class="form-control">
-                <option value="">All</option>
-                {% for t in type_choices %}
-                <option value="{{ t }}" {% if filters.type == t %}selected{% endif %}>{{ t }}</option>
+            <label for="week_start">Week Start</label>
+            <select name="week_start" id="week_start" class="form-control selectpicker"
+                    multiple data-live-search="true"
+                    data-selected-text-format="count > 1"
+                    data-none-selected-text="All"
+        data-width="auto">
+                {% for ws in weekstart_choices %}
+                <option value="{{ ws }}" {% if filters.week_start and ws in filters.week_start %}selected{% endif %}>{{ ws }}</option>
                 {% endfor %}
             </select>
         </div>
@@ -59,45 +83,38 @@
         <div class="col">
             <label for="date_to">Date To</label>
             <input type="date" name="date_to" id="date_to" class="form-control" value="{{ filters.date_to }}">
-        </div>
-        <div class="col">
-            <label for="week_start">Week Start</label>
-            <select name="week_start" id="week_start" class="form-control">
-                <option value="">All</option>
-                {% for ws in weekstart_choices %}
-                <option value="{{ ws }}" {% if filters.week_start == ws|string %}selected{% endif %}>{{ ws }}</option>
-                {% endfor %}
-            </select>
-        </div>
+        </div>        
         <div class="col-auto">
             <label>&nbsp;</label>
             <button type="submit" class="btn btn-abas btn-block">Filter</button>
         </div>
     </div>
 </form>
-<table class="table table-bordered table-sm">
+<table class="table table-bordered table-striped table-sm text-center mx-auto w-auto">
     <thead>
         <tr>
-            <th>ExportID</th>
-            <th>EmpID</th>
-            <th>Export DateTime</th>
-            <th>Week Start</th>
-            <th>Type</th>
-            <th>Status</th>            
-            <th>Status Detail</th>
-            <th>Details</th>
+            <th class="px-2">ExportID</th>
+            <th class="px-2">EmpID</th>
+            <th class="px-2">Export DateTime</th>
+            <th class="px-2">Week Start</th>
+            <th class="px-2">Type</th>
+            <th class="px-2">Status</th>            
+            <th style="max-width: 300px; " class="px-2">Status Detail</th>
+            <th class="px-2">Details</th>
         </tr>
     </thead>
     <tbody>
         {% for log in logs %}
         <tr>
             <td>{{ log.exportID }}</td>
-            <td>{{ log.EmpID }}</td>
-            <td>{{ log.exportDate }}</td>
-            <td>{{ log.exportWorkWeek }}</td>
-            <td>{{ log.exportType }}</td>
-            <td>{{ log.exportStatus }}</td>            
-            <td>{{ log.exportStatusDetail }}</td>
+            <td class="px-4">{{ log.EmpID }}</td>
+            <td class="px-4">{{ log.exportDate }}</td>
+            <td class="px-4">{{ log.exportWorkWeek }}</td>
+            <td class="px-4">{{ log.exportType }}</td>
+            <td class="px-4">{{ log.exportStatus }}</td>            
+            <td style="max-width: 300px; overflow-x: auto; white-space: normal; word-break: break-word;">
+                {{ log.exportStatusDetail }}
+            </td>
             <td>
                 <button class="btn btn-sm btn-abas view-details-btn" data-exportid="{{ log.exportID }}">View</button>
             </td>
@@ -139,7 +156,7 @@
 <div class="modal fade" id="exportDetailsModal" tabindex="-1" role="dialog" aria-labelledby="exportDetailsModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-xl" role="document">
     <div class="modal-content">
-      <div class="modal-header">
+      <div class="modal-header bg-dark-custom">
         <h5 class="modal-title" id="exportDetailsModalLabel">Export Log Details</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
@@ -173,6 +190,7 @@
                     });
             });
         });
+        $('.selectpicker').selectpicker();
     });
 </script>
 {% endblock %}

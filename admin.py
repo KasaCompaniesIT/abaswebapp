@@ -411,10 +411,10 @@ def view_export_logs():
     weekstart_choices = [row[0] for row in dbc.execute("SELECT DISTINCT exportWorkWeek FROM ExportLog ORDER BY exportWorkWeek DESC").fetchall()]
 
     # Filtering options
-    emp_id = request.args.get('emp_id')
-    status = request.args.get('status')
-    export_type = request.args.get('type')
-    week_start = request.args.get('week_start')
+    emp_id = request.args.getlist('emp_id')
+    status = request.args.getlist('status')
+    export_type = request.args.getlist('type')
+    week_start = request.args.getlist('week_start')
     date_from = request.args.get('date_from')
     date_to = request.args.get('date_to')
 
@@ -423,17 +423,17 @@ def view_export_logs():
     params = []
 
     if emp_id:
-        where_clauses.append("EmpID = ?")
-        params.append(emp_id)
+        where_clauses.append(f"EmpID IN ({','.join(['?']*len(emp_id))})")
+        params.extend(emp_id)
     if status:
-        where_clauses.append("exportStatus = ?")
-        params.append(status)
+        where_clauses.append(f"exportStatus IN ({','.join(['?']*len(status))})")
+        params.extend(status)
     if export_type:
-        where_clauses.append("exportType = ?")
-        params.append(export_type)
+        where_clauses.append(f"exportType IN ({','.join(['?']*len(export_type))})")
+        params.extend(export_type)
     if week_start:
-        where_clauses.append("exportWorkWeek = ?")
-        params.append(week_start)
+        where_clauses.append(f"exportWorkWeek IN ({','.join(['?']*len(week_start))})")
+        params.extend(week_start)
     if date_from:
         where_clauses.append("exportDate >= ?")
         params.append(date_from)

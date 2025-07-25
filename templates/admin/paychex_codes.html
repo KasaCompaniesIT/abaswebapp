@@ -22,12 +22,12 @@
 {% endblock %}
 
 {% block content %}
-<table class="table table-bordered">
+<table class="table table-bordered table-striped table-sm mx-auto w-auto">
     <thead>
         <tr>
             <th>ID</th>
-            <th>PayChex</th>
-            <th>Description</th>
+            <th style="width: 90px;">PayChex</th>
+            <th style="min-width: 250px;">Description</th>
             <th>In Use</th>
             <th>Actions</th>
         </tr>
@@ -37,10 +37,10 @@
         <tr>
             <form method="post">
                 <td>{{ code.PayID }}<input type="hidden" name="payid" value="{{ code.PayID }}"></td>
-                <td><input type="text" name="paychex" value="{{ code.PayChex }}" class="form-control"></td>
-                <td><input type="text" name="description" value="{{ code.PayDescription }}" class="form-control"></td>
+                <td style="width: 90px;"><input type="text" name="paychex" value="{{ code.PayChex }}" class="form-control form-control-sm"></td>
+                <td style="min-width: 250px;"><input type="text" name="description" value="{{ code.PayDescription }}" class="form-control form-control-sm"></td>
                 <td>
-                    <select name="in_use" class="form-control">
+                    <select name="in_use" class="form-control form-control-sm">
                         <option value="1" {% if code.inUse %}selected{% endif %}>Yes</option>
                         <option value="0" {% if not code.inUse %}selected{% endif %}>No</option>
                     </select>
@@ -55,10 +55,10 @@
         <tr>
             <form method="post">
                 <td>New</td>
-                <td><input type="text" name="paychex" class="form-control"></td>
-                <td><input type="text" name="description" class="form-control"></td>
+                <td style="width: 90px;"><input type="text" name="paychex" class="form-control form-control-sm"></td>
+                <td style="min-width: 250px;"><input type="text" name="description" class="form-control form-control-sm"></td>
                 <td>
-                    <select name="in_use" class="form-control">
+                    <select name="in_use" class="form-control form-control-sm">
                         <option value="1" selected>Yes</option>
                         <option value="0">No</option>
                     </select>
