@@ -448,7 +448,7 @@ def save_entry():
             raise ValueError("Failed to fetch the newly added time entry.")
 
         # new_entry is already a dict!
-        response = send_timeentry_csv_to_abas(abas_id, selected_date, work_slip_id, hours_worked)
+        response = send_timeentry_csv_to_abas(abas_id, selected_date, work_slip_id, hours_worked, "save_entry")
 
         if response.status_code == 200:
             print("CSV file sent successfully!")
@@ -505,7 +505,7 @@ def delete_time_entry(time_entry_id):
         # Send the POST request
         #response = requests.post(url, json=payload)
 
-        response = send_timeentry_csv_to_abas(abas_id, work_date, work_slip_id, hours_worked)
+        response = send_timeentry_csv_to_abas(abas_id, work_date, work_slip_id, hours_worked, "delete_time_entry")
 
         # Check the response
         if response.status_code == 200:
@@ -749,13 +749,14 @@ def payroll_export():
 
         # add log to ExportLog table and ExportLogDetail tables
         abas_id = data.get("abas_id")
+        export_source = "payroll_export"
         export_date = datetime.now()  # Current date and time
         export_work_week = datetime.strptime(data.get("start_date"), "%Y-%m-%d").date()  # Assuming start_date is passed in the payload
         export_status = "Success" if response.status_code == 200 else "Failed"
         export_status_detail = response.text if response.status_code != 200 else None
         export_type = "Payroll"
         # Function to add an export log summary
-        export_id = add_exportlog_summary(abas_id, export_date, export_work_week, export_status, export_status_detail, export_type)
+        export_id = add_exportlog_summary(abas_id, export_date, export_work_week, export_status, export_status_detail, export_type, export_source)
         # Function to add export log details
         for entry in combined_time_entries:
             add_exportlog_entry(
@@ -833,7 +834,8 @@ def copy_prev_week():
                         abas_id, 
                         entry.WorkDate, 
                         entry.WSNumber, 
-                        0.0  # Negate the hours
+                        0.0,  # Negate the hours
+                        "copy_prev_week"
                     )
                     if response.status_code != 200:
                         raise ValueError(f"Failed to send negated data for {entry.WorkDate}.")
@@ -1021,7 +1023,7 @@ def update_hours(entry_id):
         entry_date = time_entry[2]
         work_slip_id = time_entry[3]
         time_worked = float(time_entry[4])
-        response = send_timeentry_csv_to_abas(abas_id, entry_date, work_slip_id, time_worked)
+        response = send_timeentry_csv_to_abas(abas_id, entry_date, work_slip_id, time_worked, "copy_day")
         if response.status_code != 200:
             raise ValueError(f"Failed to send data for {time_entry.WorkDate}.")
                 
@@ -1064,7 +1066,7 @@ def delete_day_entries(date_str):
         for entry in entries:
             ws_number = entry.WSNumber
             # Send negated entry (hours = 0)
-            response = send_timeentry_csv_to_abas(abas_id, work_date, ws_number, 0.0)
+            response = send_timeentry_csv_to_abas(abas_id, work_date, ws_number, 0.0, "delete_day_entries")
             if response.status_code != 200:
                 raise ValueError(f"Failed to send negated data for {work_date} WS {ws_number}.")
 
@@ -1237,7 +1239,7 @@ def get_time_entry(abas_id=None, work_date=None, ws_number=None, entry_id=None, 
 
     return time_entry
 
-def send_timeentry_csv_to_abas(abas_id, work_date, work_slip_id, hours_worked):
+def send_timeentry_csv_to_abas(abas_id, work_date, work_slip_id, hours_worked, export_source=None):
     # Define the API endpoint
     url = "http://abas.kasa.kasacontrols.com:8000/jobtime_entry"
 
@@ -1281,7 +1283,7 @@ def send_timeentry_csv_to_abas(abas_id, work_date, work_slip_id, hours_worked):
         export_status = "Success" if response.status_code == 200 else "Failed"
         export_status_detail = response.text if response.status_code != 200 else None
         export_type = "JobTimeEntry"
-        export_id = add_exportlog_summary(abas_id, export_date, export_work_week, export_status, export_status_detail, export_type)
+        export_id = add_exportlog_summary(abas_id, export_date, export_work_week, export_status, export_status_detail, export_type, export_source)
         add_exportlog_entry(
             export_id=export_id,
             emp_id=abas_id,
@@ -1360,13 +1362,14 @@ def save_comments():
         print("Response from external API:", response.status_code, response.text)  # Debugging: Log the response
 
         # add log to ExportLog table and ExportLogDetail tables
+        export_source = "save_comments"
         export_date = datetime.now()  # Current date and time
         export_work_week = get_week_start(date_obj, week_start_day=0) # Assuming week starts on Monday
         export_status = "Success" if response.status_code == 200 else "Failed"
         export_status_detail = response.text if response.status_code != 200 else None
         export_type = "Comments"
         # Function to add an export log summary
-        export_id = add_exportlog_summary(abas_id, export_date, export_work_week, export_status, export_status_detail, export_type)
+        export_id = add_exportlog_summary(abas_id, export_date, export_work_week, export_status, export_status_detail, export_type, export_source)
         # Function to add export log details
         add_exportlog_entry(
             export_id=export_id,
@@ -1412,7 +1415,7 @@ def get_week_start(date, week_start_day=0):
     days_to_subtract = (date.weekday() - week_start_day) % 7
     return date - timedelta(days=days_to_subtract)
 
-def add_exportlog_summary(abas_id=None, export_date=None, export_work_week=None, export_status=None, export_status_detail=None, export_type=None):
+def add_exportlog_summary(abas_id=None, export_date=None, export_work_week=None, export_status=None, export_status_detail=None, export_type=None, export_source=None):
     db = get_db()
     dbc = db.cursor()
     # export log table definition
@@ -1431,11 +1434,11 @@ def add_exportlog_summary(abas_id=None, export_date=None, export_work_week=None,
         # Insert a new record and get the new exportID using OUTPUT
         export_id = dbc.execute(
             """
-            INSERT INTO ExportLog (EmpID, exportDate, exportWorkWeek, exportStatus, exportType, exportStatusDetail)
+            INSERT INTO ExportLog (EmpID, exportDate, exportWorkWeek, exportStatus, exportType, exportStatusDetail, exportSource)
             OUTPUT INSERTED.exportID
-            VALUES (?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
-            (abas_id, export_date, export_work_week, export_status, export_type, export_status_detail)
+            (abas_id, export_date, export_work_week, export_status, export_type, export_status_detail, export_source)
         ).fetchone()[0]
         db.commit()
         print("Export log summary added successfully.")

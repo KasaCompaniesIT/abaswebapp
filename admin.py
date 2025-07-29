@@ -445,7 +445,7 @@ def view_export_logs():
 
     logs = dbc.execute(
         f"""
-        SELECT exportID, EmpID, exportDate, exportWorkWeek, exportStatus, exportType, exportStatusDetail
+        SELECT exportID, EmpID, exportDate, exportWorkWeek, exportStatus, exportType, exportStatusDetail, exportSource
         FROM ExportLog
         {where_sql}
         ORDER BY exportDate DESC
