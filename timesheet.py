@@ -144,7 +144,7 @@ def entry():
                     ).fetchone() is not None,
                     "is_locked": (
                         # Lock if not in current month (existing rule)
-                        (startOfPrevWeek + timedelta(days=i)).month != current_month
+                        (startOfPrevWeek + timedelta(days=i)).month != current_month and (startOfPrevWeek + timedelta(days=i)).month < current_month
                         # For MX: Lock Sat/Sun if after 12pm on Monday
                         # or (
                         #     isMxEmp and
@@ -227,8 +227,8 @@ def entry():
                             "TimeEntryID": entry.EntryID  # Include TimeEntryID for deletion
                         })
 
-                # Sort the combined entries by EmpID, WorkDate, and WSNumber
-                combined_entries.sort(key=lambda x: (x["EmpID"], x["WorkDate"], x["WSNumber"]))
+                # Sort the combined entries by EmpID, WorkDate, and WODescription
+                combined_entries.sort(key=lambda x: (x["EmpID"], x["WorkDate"], x["WODescription"]))
 
                 timecard_data[day["date"]] = combined_entries
 
