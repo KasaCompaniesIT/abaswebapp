@@ -159,8 +159,8 @@
                         {% for t in timecard_data[day.date] %}
                         <div class="d-flex justify-content-between align-items-center time-entry">
                             <p>
-                                {{ t.WSNumber }} - {{ t.OpName }}
-                                <small class="card-desc">({{ t.WODescription }})</small>
+                                {{ t.WODescription }}                                
+                                <small class="card-desc">{{ t.OpName }} ({{ t.WSNumber }}) </small>
                                 <span id="OpCode" hidden>{{ t.OpCode }}</span>
                             </p>
                             <h5>
@@ -213,6 +213,11 @@
         {% if not can_add_or_finalize %}disabled{% endif %}>
         <i class="fas fa-plus"></i>
     </button>
+
+    {# <button id="addTimeButton2" class="btn btn-primary btn-floating3" title="Add Job Time"
+        {% if not can_add_or_finalize %}disabled{% endif %}>
+        <i class="fas fa-plus"></i>
+    </button> #}
 
     <button id="finalizeTimeButton" class="btn btn-abas btn-floating2" title="Submit Attendance Time"
         {% if not can_add_or_finalize or abasUser.isMxEmp %}disabled{% endif %}>
@@ -292,6 +297,86 @@
                         <div class="d-flex justify-content-between">
                             <a class="btn btn-secondary mr-2" id="btnCopyPrev" href="{{ url_for('timesheet.copy_prev_week') }}" tabindex="-1">Copy Previous Week</a>                            
                             <button type="submit" class="btn btn-abas" id="btnAddTime">Add to Timesheet</button>
+                        </div>
+                    </form> 
+                </div>                           
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Time Modal 2-->
+    <div class="modal fade" id="addTimeModal2" data-backdrop="static" data-keyboard="false" tabindex="-1" aria-labelledby="addTimeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-dark-custom">
+                    <h5 class="modal-title" id="addTimeModalLabel2">Time Entry 2</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="dateForm2" method="post" action="{{ url_for('timesheet.save_entry') }}">
+                        <input type="hidden" id="selectedDateInput2" name="selectedDate">
+                        <input type="hidden" id="abasIDInput2" name="abasID" value="{{ abasUser.EmpID }}">
+                        <input type="hidden" id="workSlipIDInput2" name="workSlipID">
+                        <!-- Grid of Dates -->
+                        <div class="container">
+                            <div class="row text-center">
+                                {% for day in dateRangePrevWeek %}
+                                <div class="col date-card-col">
+                                    <div class="date-card p-2 border rounded select-date-card
+                                        {% if day.date == today %} bg-success text-white
+                                        {% elif day.date | dateformat('%A') in ['Saturday', 'Sunday'] %} bg-light-grey
+                                        {% endif %}
+                                        {% if day.is_locked %} disabled-date-card{% endif %}"
+                                        data-date="{{ day.date }}"
+                                        data-selected="{% if day.date == today %}true{% else %}false{% endif %}"
+                                        {% if day.is_locked %}data-locked="true"{% endif %}>
+                                        <div class="day-of-week font-weight-bold">{{ day.date | dateformat('%a') }}</div>
+                                        <div class="date-value">{{ day.date | dateformat('%d') }}</div> <!-- Display only the day number -->
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <div class="row text-center mt-2" id="selProject">
+                                <div class="col">
+                                    <select id="projectDropdown2" class="form-control selectpicker" data-live-search="true" title="Select a Project" required>
+                                        <!-- Options will be dynamically populated -->
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row text-center mt-2" id="selWorkOrder">
+                                <div class="col">
+                                    <select id="workOrderDropdown2" class="form-control selectpicker" data-live-search="true" title="Select a Work Order" style="display: none;" required>
+                                        <!-- Options will be dynamically populated -->
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row text-center mt-2" id="selWorkSlip">
+                                <div class="col">
+                                    <select id="workSlipDropdown2" class="form-control selectpicker" data-live-search="true" title="Select an Operation" style="display: none;" required>
+                                        <!-- Options will be dynamically populated -->
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row text-center mt-2">
+                                <div class="col">
+                                    <div class="d-flex justify-content-center">
+                                        <div class="input-group input-group-addtime">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text" id="hoursLabel2">Hours Worked</span>
+                                            </div>
+                                            <input type="text" class="form-control" name="hoursWorked" id="hoursWorked2" placeholder="Hours Worked" aria-label="Hours Worked Input" aria-describedby="hoursLabel" required>
+                                        </div>
+                                    </div>
+                                    <small class="text-muted font-italic mb-2 mt-0 pt-0">** Changes can take up to 10 minutes to reflect in abas.</small>
+                                </div>
+                            </div>
+                            <p></p>                            
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <a class="btn btn-secondary mr-2" id="btnCopyPrev2" href="{{ url_for('timesheet.copy_prev_week') }}" tabindex="-1">Copy Previous Week</a>                            
+                            <button type="submit" class="btn btn-abas" id="btnAddTime2">Add to Timesheet</button>
                         </div>
                     </form> 
                 </div>                           
@@ -438,6 +523,10 @@
         handle: ".modal-header"
     });
 
+    $('#addTimeModal2').draggable({
+        handle: ".modal-header"
+    });
+
     $('#finalizeTimeModal').draggable({
         handle: ".modal-header"
     });
@@ -457,6 +546,13 @@
         $('#workOrderDropdown').val('').empty().selectpicker('refresh');
         $('#workSlipDropdown').val('').empty().selectpicker('refresh');
         $('#hoursWorked').val('');
+    });
+
+    $('#addTimeModal2').on('show.bs.modal', function () {
+        $('#projectDropdown2').val('').empty().selectpicker('refresh');
+        $('#workOrderDropdown2').val('').empty().selectpicker('refresh');
+        $('#workSlipDropdown2').val('').empty().selectpicker('refresh');
+        $('#hoursWorked2').val('');
     });
 
     const lockedDays = {{ locked_days | tojson }};
@@ -640,7 +736,44 @@
                 $('.selectpicker').selectpicker('refresh');
             })
             .catch(error => console.error('Error fetching projects:'));
-            console.error('Error fetching projects:');
+            //console.error('Error fetching projects:');
+    });
+
+    // Show the add time modal when the button is clicked
+    document.getElementById('addTimeButton2').addEventListener('click', function () {
+        var addTimeModal = new bootstrap.Modal(document.getElementById('addTimeModal2'));
+        addTimeModal.show();
+
+        // Fetch data from the server
+        fetch('/timesheet/entry/getProjects')
+            .then(response => response.json())
+            .then(data => {
+                const projectDropdown = document.getElementById('projectDropdown2');
+                const workOrderDropdown = document.getElementById('workOrderDropdown2');
+                const workSlipDropdown = document.getElementById('workSlipDropdown2');
+                
+                // Clear options
+                projectDropdown.innerHTML = '';
+                workOrderDropdown.innerHTML = '';
+                workSlipDropdown.innerHTML = '';
+
+                // Explicitly reset value
+                projectDropdown.value = '';
+                workOrderDropdown.value = '';
+                workSlipDropdown.value = '';
+
+                data.projects.forEach(project => {
+                    const option = document.createElement('option');
+                    option.value = project.id;
+                    option.textContent = project.number + " - " + project.desc;
+                    projectDropdown.appendChild(option);
+                });
+
+                // Refresh the Bootstrap Select dropdown
+                $('.selectpicker').selectpicker('refresh');
+            })
+            .catch(error => console.error('Error fetching projects:'));
+            //console.error('Error fetching projects:');
     });
 
     function getTimeEntriesFromTimecards() {
@@ -1078,7 +1211,7 @@
             }
         })
         .catch(() => showSnackbar('Error saving comments.', 'error'));
-        console.error('Error saving comments:', error);
+        //console.error('Error saving comments:', error);
     });
 
     // Event listener for project selection
@@ -1127,7 +1260,7 @@
                     }
                 })
                 .catch(error => console.error('Error fetching work orders:', error));
-                console.error('Error fetching work orders:', error);
+                //console.error('Error fetching work orders:', error);
         }
     });
 
@@ -1167,7 +1300,7 @@
                     }
                 })
                 .catch(error => console.error('Error fetching workslips:', error));
-                console.error('Error fetching workslips:', error);
+                //console.error('Error fetching workslips:', error);
         }
     });
 
@@ -1536,7 +1669,7 @@
                 }
             })
             .catch(error => console.error('Error adding time entry:', error));
-            console.error('Error adding time entry:', error);
+            //console.error('Error adding time entry:', error);
     });
 
     // Attach event handler for the delete button in each day card header
@@ -1575,7 +1708,7 @@
                     }
                 })
                 .catch(() => showSnackbar('Error deleting entries for this day.', 'error'));
-                console.error('Error deleting entries for this day:', error);
+                //console.error('Error deleting entries for this day:', error);
             });
         });
     });
