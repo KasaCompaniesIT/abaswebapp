@@ -405,7 +405,9 @@ def view_export_logs():
     dbc = db.cursor()
 
     # Fetch distinct values for dropdowns
-    empid_choices = [row[0] for row in dbc.execute("SELECT DISTINCT EmpID FROM ExportLog ORDER BY EmpID").fetchall()]
+    empid_choices = dbc.execute(
+            "SELECT DISTINCT ExportLog.EmpID, Employee.EmpName FROM ExportLog LEFT JOIN Employee ON ExportLog.EmpID = Employee.EmpID ORDER BY ExportLog.EmpID"
+        ).fetchall()
     status_choices = [row[0] for row in dbc.execute("SELECT DISTINCT exportStatus FROM ExportLog ORDER BY exportStatus").fetchall()]
     type_choices = [row[0] for row in dbc.execute("SELECT DISTINCT exportType FROM ExportLog ORDER BY exportType").fetchall()]
     weekstart_choices = [row[0] for row in dbc.execute("SELECT DISTINCT exportWorkWeek FROM ExportLog ORDER BY exportWorkWeek DESC").fetchall()]
@@ -423,7 +425,7 @@ def view_export_logs():
     params = []
 
     if emp_id:
-        where_clauses.append(f"EmpID IN ({','.join(['?']*len(emp_id))})")
+        where_clauses.append(f"ExportLog.EmpID IN ({','.join(['?']*len(emp_id))})")
         params.extend(emp_id)
     if status:
         where_clauses.append(f"exportStatus IN ({','.join(['?']*len(status))})")
@@ -444,14 +446,16 @@ def view_export_logs():
     where_sql = "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
 
     logs = dbc.execute(
-        f"""
-        SELECT exportID, EmpID, exportDate, exportWorkWeek, exportStatus, exportType, exportStatusDetail, exportSource
-        FROM ExportLog
-        {where_sql}
-        ORDER BY exportDate DESC
-        """,
-        params
-    ).fetchall()
+    f"""
+    SELECT ExportLog.exportID, ExportLog.EmpID, Employee.EmpName, ExportLog.exportDate, ExportLog.exportWorkWeek,
+           ExportLog.exportStatus, ExportLog.exportType, ExportLog.exportStatusDetail, ExportLog.exportSource
+    FROM ExportLog
+    LEFT JOIN Employee ON ExportLog.EmpID = Employee.EmpID
+    {where_sql}
+    ORDER BY exportDate DESC
+    """,
+    params
+).fetchall()
 
     selected_export_id = request.args.get('export_id')
     details = []

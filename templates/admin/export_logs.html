@@ -23,7 +23,7 @@
 {% endblock %}
 
 {% block content %}
-<form method="get" class="mb-3">
+<form method="get" class="mb-3" id="exportLogFilterForm">
     <div class="form-row align-items-center" style="max-width: 1000px; margin: 0 auto;">
         <!-- EmpID Checklist -->
         <div class="col">
@@ -32,9 +32,11 @@
                     multiple data-live-search="true"
                     data-selected-text-format="count > 1"
                     data-none-selected-text="All"
-        data-width="auto">
-                {% for eid in empid_choices %}
-                <option value="{{ eid }}" {% if filters.emp_id and eid in filters.emp_id %}selected{% endif %}>{{ eid }}</option>
+                    data-width="200px">
+                {% for eid, name in empid_choices %}
+                <option value="{{ eid }}" {% if filters.emp_id and eid|string in filters.emp_id %}selected{% endif %}>
+                    {{ eid }}{% if name %} - {{ name }}{% endif %}
+                </option>
                 {% endfor %}
             </select>
         </div>
@@ -45,9 +47,9 @@
                     multiple data-live-search="true"
                     data-selected-text-format="count > 1"
                     data-none-selected-text="All"
-        data-width="auto">
+                    data-width="auto">
                 {% for s in status_choices %}
-                <option value="{{ s }}" {% if filters.status and s in filters.status %}selected{% endif %}>{{ s }}</option>
+                <option value="{{ s }}" {% if filters.status and s|string in filters.status %}selected{% endif %}>{{ s }}</option>
                 {% endfor %}
             </select>
         </div>
@@ -58,9 +60,9 @@
                     multiple data-live-search="true"
                     data-selected-text-format="count > 1"
                     data-none-selected-text="All"
-        data-width="auto">
+                    data-width="auto">
                 {% for t in type_choices %}
-                <option value="{{ t }}" {% if filters.type and t in filters.type %}selected{% endif %}>{{ t }}</option>
+                <option value="{{ t }}" {% if filters.type and t|string in filters.type %}selected{% endif %}>{{ t }}</option>
                 {% endfor %}
             </select>
         </div>
@@ -70,13 +72,13 @@
                     multiple data-live-search="true"
                     data-selected-text-format="count > 1"
                     data-none-selected-text="All"
-        data-width="auto">
+                    data-width="auto">
                 {% for ws in weekstart_choices %}
-                <option value="{{ ws }}" {% if filters.week_start and ws in filters.week_start %}selected{% endif %}>{{ ws }}</option>
+                <option value="{{ ws }}" {% if filters.week_start and ws|string in filters.week_start %}selected{% endif %}>{{ ws }}</option>
                 {% endfor %}
             </select>
         </div>
-        <div class="col">
+        <!-- <div class="col">
             <label for="date_from">Date From</label>
             <input type="date" name="date_from" id="date_from" class="form-control" value="{{ filters.date_from }}">
         </div>
@@ -87,7 +89,7 @@
         <div class="col-auto">
             <label>&nbsp;</label>
             <button type="submit" class="btn btn-abas btn-block">Filter</button>
-        </div>
+        </div> -->
     </div>
 </form>
 <table class="table table-bordered table-striped table-sm text-center mx-auto w-auto">
@@ -108,8 +110,10 @@
         {% for log in logs %}
         <tr>
             <td>{{ log.exportID }}</td>
-            <td class="px-4">{{ log.EmpID }}</td>
-            <td class="px-4">{{ log.exportDate }}</td>
+            <td class="px-4 text-left" title="{{ log.EmpName }}">
+                {{ log.EmpID }}
+            </td>
+            <td class="px-4 text-left">{{ log.exportDate }}</td>
             <td class="px-4">{{ log.exportWorkWeek }}</td>
             <td class="px-4">{{ log.exportType }}</td>
             <td class="px-4">{{ log.exportSource }}</td>
@@ -176,6 +180,35 @@
 <script>
     // Attach click event to view details buttons
     document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.view-details-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const exportID = btn.getAttribute('data-exportid');
+                const modalBody = document.getElementById('exportDetailsModalBody');
+                modalBody.innerHTML = '<div class="text-center"><span class="spinner-border"></span> Loading...</div>';
+                $('#exportDetailsModal').modal('show');
+                fetch(`/admin/export_log_details/${exportID}`)
+                    .then(response => response.text())
+                    .then(html => {
+                        modalBody.innerHTML = html;
+                    })
+                    .catch(() => {
+                        modalBody.innerHTML = '<div class="text-danger">Failed to load details.</div>';
+                    });
+            });
+        });
+        $('.selectpicker').selectpicker();
+    });
+
+    // Auto-submit on any filter change
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-submit on any filter change
+        document.querySelectorAll('#exportLogFilterForm select, #exportLogFilterForm input').forEach(function(el) {
+            el.addEventListener('change', function() {
+                document.getElementById('exportLogFilterForm').submit();
+            });
+        });
+
+        // Existing code for details modal and selectpicker
         document.querySelectorAll('.view-details-btn').forEach(function(btn) {
             btn.addEventListener('click', function() {
                 const exportID = btn.getAttribute('data-exportid');
