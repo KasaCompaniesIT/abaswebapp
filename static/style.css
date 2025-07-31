@@ -1,71 +1,104 @@
-html { 
-    font-family: sans-serif; 
-    background: whitesmoke; 
+html {
+    font-family: sans-serif;
+    background: whitesmoke;
     padding: 0;
     height: 100%;
 }
-body { 
-    margin: 0 0; 
+
+body {
+    margin: 0 0;
     background: whitesmoke;
     display: flex;
     flex-direction: column;
     min-height: 100vh;
     margin: 0;
 }
+
 #bodyContainer {
     flex: 1;
 }
 
 /* a { color: #377ba8; } */
-a { color: #009FAA; }
-.navbar-nav { font-size: larger;}
+a {
+    color: #009FAA;
+}
+
+.navbar-nav {
+    font-size: larger;
+}
+
 .bg-dark {
     background-color: #212529 !important;
 }
+
 .navbar-dark .navbar-nav .nav-link {
     color: #009FAA;
 }
 
 /* .flash { margin: 1em 0; padding: 1em; background: #cae6f6; border: 1px solid #377ba8; } */
-.container-fluid { padding: 0 .5rem; }
-.content form { margin: 0.25em 0; }
+.container-fluid {
+    padding: 0 .5rem;
+}
+
+.content form {
+    margin: 0.25em 0;
+}
 
 .list-group-item.padding-custom {
     padding-top: 1rem;
     padding-bottom: 1rem;
 }
+
 .list-group.bg-dark-custom {
-    background-color: #212529; /* This color matches Bootstrap's default dark navbar */
+    background-color: #212529;
+    /* This color matches Bootstrap's default dark navbar */
 }
+
 .list-group.bg-dark-custom .list-group-item {
-    background-color: transparent; /* Make list items transparent to show the list group's background */
-    color: #fff; /* Text color for contrast */
+    background-color: transparent;
+    /* Make list items transparent to show the list group's background */
+    color: #fff;
+    /* Text color for contrast */
 }
+
 .list-group.bg-dark-custom .list-group-item:hover {
-    background-color: rgba(255, 255, 255, 0.1); /* subtle highlight on hover */
+    background-color: rgba(255, 255, 255, 0.1);
+    /* subtle highlight on hover */
 }
+
 .list-group {
-    border-color: #212529; /* This color matches Bootstrap's default dark navbar */
+    border-color: #212529;
+    /* This color matches Bootstrap's default dark navbar */
 }
+
 .list-group-item {
-    border-color: #212529; /* This color matches Bootstrap's default dark navbar */
+    border-color: #212529;
+    /* This color matches Bootstrap's default dark navbar */
 }
+
 .modal-header.bg-dark-custom {
-    background-color: #212529; /* This color matches Bootstrap's default dark navbar */
+    background-color: #212529;
+    /* This color matches Bootstrap's default dark navbar */
 }
+
 .modal-header.bg-dark-custom .modal-title {
-    background-color: transparent; /* Make list items transparent to show the list group's background */
-    color: #fff; /* Text color for contrast */
+    background-color: transparent;
+    /* Make list items transparent to show the list group's background */
+    color: #fff;
+    /* Text color for contrast */
 }
+
 .modal-footer.bg-dark-custom {
-    background-color: #212529; /* This color matches Bootstrap's default dark navbar */
+    background-color: #212529;
+    /* This color matches Bootstrap's default dark navbar */
 }
+
 .list-group-item-light {
     color: #212529;
     background-color: #fdfdfe;
 }
 
-.list-group .list-group-item:hover{
+.list-group .list-group-item:hover {
     background-color: #009FAA;
     color: #212529;
 }
@@ -93,15 +126,18 @@ a { color: #009FAA; }
     .breadcrumb {
         padding-left: 0.5rem;
     }
+
     .breadcrumb-item {
-        padding: 0; /* Reduce left/right padding for tighter spacing */
+        padding: 0;
+        /* Reduce left/right padding for tighter spacing */
     }
 
-    .breadcrumb-item + .breadcrumb-item {
-        padding-left: 0.2rem; /* Adjust spacing between items */
+    .breadcrumb-item+.breadcrumb-item {
+        padding-left: 0.2rem;
+        /* Adjust spacing between items */
     }
 
-    .breadcrumb-item + .breadcrumb-item::before {
+    .breadcrumb-item+.breadcrumb-item::before {
         margin-right: 0;
         margin-left: 0;
         padding-right: 0.2rem;
@@ -141,12 +177,12 @@ a { color: #009FAA; }
 }
 
 .btn-abas:focus {
-    box-shadow: 0 0 0 0.2rem rgba(0, 117, 126, 0.5); 
+    box-shadow: 0 0 0 0.2rem rgba(0, 117, 126, 0.5);
 }
 
 .btn-abas:active,
 .btn-abas.active {
-    background-color: #00757e; 
+    background-color: #00757e;
     border-color: #212529;
     color: #fff;
 }
@@ -155,15 +191,20 @@ a { color: #009FAA; }
 .btn-abas.disabled {
     background-color: #00757e;
     border-color: #212529;
-    opacity: 0.80; /* Mimics Bootstrap’s disabled opacity */
+    opacity: 0.80;
+    /* Mimics Bootstrap’s disabled opacity */
 }
 
 .btn-abas:disabled:hover,
 .btn-abas.disabled:hover {
-    background-color: #00757e; /* Keep the disabled background color */
-    border-color: #212529; /* Keep the disabled border color */
-    color: #212529; /* Keep the disabled text color */
-    cursor: not-allowed; /* Show a "not-allowed" cursor */
+    background-color: #00757e;
+    /* Keep the disabled background color */
+    border-color: #212529;
+    /* Keep the disabled border color */
+    color: #212529;
+    /* Keep the disabled text color */
+    cursor: not-allowed;
+    /* Show a "not-allowed" cursor */
 }
 
 .btn-abas2 {
@@ -180,12 +221,12 @@ a { color: #009FAA; }
 }
 
 .btn-abas2:focus {
-    box-shadow: 0 0 0 0.2rem rgba(0, 117, 126, 0.5); 
+    box-shadow: 0 0 0 0.2rem rgba(0, 117, 126, 0.5);
 }
 
 .btn-abas2:active,
 .btn-abas2.active {
-    background-color: #00757e; 
+    background-color: #00757e;
     border-color: #00757e;
     color: #fff;
 }
@@ -194,25 +235,32 @@ a { color: #009FAA; }
 .btn-abas2.disabled {
     background-color: #00757e;
     border-color: #00757e;
-    opacity: 0.80; /* Mimics Bootstrap’s disabled opacity */
+    opacity: 0.80;
+    /* Mimics Bootstrap’s disabled opacity */
 }
 
 .btn-abas2:disabled:hover,
 .btn-abas2.disabled:hover {
-    background-color: #00757e; /* Keep the disabled background color */
-    border-color: #00757e; /* Keep the disabled border color */
-    color: #fff; /* Keep the disabled text color */
-    cursor: not-allowed; /* Show a "not-allowed" cursor */
+    background-color: #00757e;
+    /* Keep the disabled background color */
+    border-color: #00757e;
+    /* Keep the disabled border color */
+    color: #fff;
+    /* Keep the disabled text color */
+    cursor: not-allowed;
+    /* Show a "not-allowed" cursor */
 }
 
-  /* Change the default text color */
+/* Change the default text color */
 .bootstrap-select .dropdown-toggle .filter-option {
-    color: #000; /* Replace with your desired color, e.g., black */
+    color: #000;
+    /* Replace with your desired color, e.g., black */
 }
 
 /* Optional: Ensure it applies even when a placeholder is shown */
 .bootstrap-select .dropdown-toggle[title] .filter-option {
-    color: #000; /* Same color for consistency */
+    color: #000;
+    /* Same color for consistency */
 }
 
 /* Optional: Hover state (if you want it to stay the same) */
@@ -221,8 +269,8 @@ a { color: #009FAA; }
 }
 
 .bootstrap-select .dropdown {
-    max-width: 600px;    
-  }
+    max-width: 600px;
+}
 
 .bootstrap-select.form-control {
     max-width: 600px;
@@ -233,32 +281,42 @@ a { color: #009FAA; }
 }
 
 .centered-list {
-    margin:auto;
+    margin: auto;
 }
 
 .btn-max-width-400 {
-    max-width: 400px; /* Set your desired max width */
-    margin: 0 auto; /* Center the button horizontally */
-  }
+    max-width: 400px;
+    /* Set your desired max width */
+    margin: 0 auto;
+    /* Center the button horizontally */
+}
 
 .login-container {
-    max-width: 400px; /* Set the maximum width */
-    margin: 0 auto; /* Center the container horizontally */
-    padding: 15px; /* Optional: Add some padding for better spacing */
-  }
+    max-width: 400px;
+    /* Set the maximum width */
+    margin: 0 auto;
+    /* Center the container horizontally */
+    padding: 15px;
+    /* Optional: Add some padding for better spacing */
+}
 
 .abasid-lookup {
-    max-width: 500px; /* Set the maximum width */
-    width: 100%; /* Ensure it fills the available width */
-  }
+    max-width: 500px;
+    /* Set the maximum width */
+    width: 100%;
+    /* Ensure it fills the available width */
+}
 
 .abasid-lookup-form {
-    width: 100%; /* Ensure it fills the available width */
-    margin: 0 auto; /* Center it horizontally (optional) */
-  }
+    width: 100%;
+    /* Ensure it fills the available width */
+    margin: 0 auto;
+    /* Center it horizontally (optional) */
+}
 
 .bg-abas-info {
-    background-color: #343a40; /* Example dark color */
+    background-color: #343a40;
+    /* Example dark color */
     color: white;
 }
 
@@ -272,18 +330,23 @@ a { color: #009FAA; }
 .comments-panel {
     border-radius: 5px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    max-width: 1200px; /* Remove any max-width restriction */
-    width: 100%;     /* Ensure it fills the column */
+    max-width: 1200px;
+    /* Remove any max-width restriction */
+    width: 100%;
+    /* Ensure it fills the column */
     min-width: 0;
-    margin: 0.25rem 0; /* Add some margin for spacing */
+    margin: 0.25rem 0;
+    /* Add some margin for spacing */
 }
 
 .compact-info-panel p {
-    margin-bottom: 0.5rem; /* Reduce the bottom margin of paragraphs */
+    margin-bottom: 0.5rem;
+    /* Reduce the bottom margin of paragraphs */
 }
 
 .compact-info-panel {
-    padding: 0.75rem; /* Reduce the padding inside the card body */
+    padding: 0.75rem;
+    /* Reduce the padding inside the card body */
 }
 
 .card-shadow {
@@ -291,60 +354,89 @@ a { color: #009FAA; }
 }
 
 .compact-card p {
-    margin-bottom: 0.5rem; /* Reduce the bottom margin of paragraphs */
+    margin-bottom: 0.5rem;
+    /* Reduce the bottom margin of paragraphs */
 }
 
 .compact-card {
-    padding: 0.75rem; /* Reduce the padding inside the card body */
+    padding: 0.75rem;
+    /* Reduce the padding inside the card body */
 }
 
 .compact-card-footer {
-    padding-top: 0.25rem; /* Reduce the padding inside the card footer */
-    padding-bottom: 0.25rem; /* Reduce the padding inside the card footer */
+    padding-top: 0.25rem;
+    /* Reduce the padding inside the card footer */
+    padding-bottom: 0.25rem;
+    /* Reduce the padding inside the card footer */
 }
 
 .badge-abas {
-    background-color: #009FAA; /* Keep the existing background color */
-    color: #343a40; /* Keep the existing text color */
-    font-size: 1rem; /* Optional: Adjust font size */
-    padding: 0.3em 0.5em; /* Optional: Adjust padding */
-    border-radius: 0.25rem; /* Optional: Adjust border radius */
-    border: 1px solid #212529; /* Add a border similar to btn-abas */
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Optional: Add a subtle shadow */
+    background-color: #009FAA;
+    /* Keep the existing background color */
+    color: #343a40;
+    /* Keep the existing text color */
+    font-size: 1rem;
+    /* Optional: Adjust font size */
+    padding: 0.3em 0.5em;
+    /* Optional: Adjust padding */
+    border-radius: 0.25rem;
+    /* Optional: Adjust border radius */
+    border: 1px solid #212529;
+    /* Add a border similar to btn-abas */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    /* Optional: Add a subtle shadow */
 }
 
 .badge-dark2 {
-    background-color: #343a40; /* Replace with your desired color */
-    color: whitesmoke; /* Text color */
-    font-size: 1rem; /* Optional: Adjust font size */
-    padding: 0.3em 0.5em; /* Optional: Adjust padding */
-    border-radius: 0.25rem; /* Optional: Adjust border radius */
+    background-color: #343a40;
+    /* Replace with your desired color */
+    color: whitesmoke;
+    /* Text color */
+    font-size: 1rem;
+    /* Optional: Adjust font size */
+    padding: 0.3em 0.5em;
+    /* Optional: Adjust padding */
+    border-radius: 0.25rem;
+    /* Optional: Adjust border radius */
 }
 
 .date-group {
-    max-width: 600px; /* Set the maximum width */
-    width: 100%; /* Ensure it fills the available width */
-    margin: 0 auto; /* Center it horizontally (optional) */
+    max-width: 600px;
+    /* Set the maximum width */
+    width: 100%;
+    /* Ensure it fills the available width */
+    margin: 0 auto;
+    /* Center it horizontally (optional) */
 }
 
 #btnToday {
-    flex-grow: 1; /* Allow the button to grow and fill the available space */
+    flex-grow: 1;
+    /* Allow the button to grow and fill the available space */
 }
 
 .text-titlecase {
-    text-transform: lowercase; /* Convert all text to lowercase first */
+    text-transform: lowercase;
+    /* Convert all text to lowercase first */
 }
+
 .text-titlecase::first-letter {
-    text-transform: capitalize; /* Capitalize the first letter of each word */
+    text-transform: capitalize;
+    /* Capitalize the first letter of each word */
 }
 
 .feedback-icon {
-    position: absolute; /* Ensure the icon is positioned relative to the input field */
-    top: 72%; /* Vertically center the icon */
-    right: 10px; /* Position the icon 10px from the right edge of the input field */
-    transform: translateY(-50%); /* Adjust for vertical centering */
-    pointer-events: none; /* Prevent the icon from blocking input clicks */
-    font-size: 1.25rem; /* Optional: Adjust the icon size */
+    position: absolute;
+    /* Ensure the icon is positioned relative to the input field */
+    top: 72%;
+    /* Vertically center the icon */
+    right: 10px;
+    /* Position the icon 10px from the right edge of the input field */
+    transform: translateY(-50%);
+    /* Adjust for vertical centering */
+    pointer-events: none;
+    /* Prevent the icon from blocking input clicks */
+    font-size: 1.25rem;
+    /* Optional: Adjust the icon size */
 }
 
 .flash {
@@ -378,183 +470,257 @@ a { color: #009FAA; }
 
 .btn-floating {
     position: fixed;
-    bottom: 20px; /* Distance from the bottom of the page */
-    right: 20px; /* Distance from the right side of the page */
-    z-index: 1000; /* Ensure it stays on top of other elements */
-    background-color: #009FAA; /* Customize button color */
-    color: #212529; /* Text/icon color */
-    border-radius: 50%; /* Make it circular */
-    width: 60px; /* Button width */
-    height: 60px; /* Button height */
+    bottom: 20px;
+    /* Distance from the bottom of the page */
+    right: 20px;
+    /* Distance from the right side of the page */
+    z-index: 1000;
+    /* Ensure it stays on top of other elements */
+    background-color: #009FAA;
+    /* Customize button color */
+    color: #212529;
+    /* Text/icon color */
+    border-radius: 50%;
+    /* Make it circular */
+    width: 60px;
+    /* Button width */
+    height: 60px;
+    /* Button height */
     display: flex;
     justify-content: center;
     align-items: center;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Add a shadow */
-    border: 1px solid #212529; /* Add a border similar to btn-abas */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    /* Add a shadow */
+    border: 1px solid #212529;
+    /* Add a border similar to btn-abas */
     cursor: pointer;
 }
 
 .btn-floating:hover {
-    background-color: #007B8A; /* Darken the button on hover */
+    background-color: #007B8A;
+    /* Darken the button on hover */
 }
 
 .btn-floating i {
-    font-size: 1.5rem; /* Adjust icon size */
+    font-size: 1.5rem;
+    /* Adjust icon size */
 }
 
 .btn-floating2 {
     position: fixed;
-    bottom: 20px; /* Distance from the bottom of the page */
-    right: 86px; /* Distance from the right side of the page */
-    z-index: 1000; /* Ensure it stays on top of other elements */
-    background-color: #009FAA; /* Customize button color */
-    color: #212529; /* Text/icon color */
-    border-radius: 50%; /* Make it circular */
-    width: 60px; /* Button width */
-    height: 60px; /* Button height */
+    bottom: 20px;
+    /* Distance from the bottom of the page */
+    right: 86px;
+    /* Distance from the right side of the page */
+    z-index: 1000;
+    /* Ensure it stays on top of other elements */
+    background-color: #009FAA;
+    /* Customize button color */
+    color: #212529;
+    /* Text/icon color */
+    border-radius: 50%;
+    /* Make it circular */
+    width: 60px;
+    /* Button width */
+    height: 60px;
+    /* Button height */
     display: flex;
     justify-content: center;
     align-items: center;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Add a shadow */
-    border: 1px solid #212529; /* Add a border similar to btn-abas */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    /* Add a shadow */
+    border: 1px solid #212529;
+    /* Add a border similar to btn-abas */
     cursor: pointer;
 }
 
 .btn-floating2:hover {
-    background-color: #007B8A; /* Darken the button on hover */
+    background-color: #007B8A;
+    /* Darken the button on hover */
 }
 
 .btn-floating2 i {
-    font-size: 1.5rem; /* Adjust icon size */
+    font-size: 1.5rem;
+    /* Adjust icon size */
 }
 
 .btn-floating3 {
     position: fixed;
-    bottom: 20px; /* Distance from the bottom of the page */
-    right: 150px; /* Distance from the right side of the page */
-    z-index: 1000; /* Ensure it stays on top of other elements */
-    background-color: #ff7300; /* Customize button color */
-    color: #212529; /* Text/icon color */
-    border-radius: 50%; /* Make it circular */
-    width: 60px; /* Button width */
-    height: 60px; /* Button height */
+    bottom: 20px;
+    /* Distance from the bottom of the page */
+    right: 150px;
+    /* Distance from the right side of the page */
+    z-index: 1000;
+    /* Ensure it stays on top of other elements */
+    background-color: #ff7300;
+    /* Customize button color */
+    color: #212529;
+    /* Text/icon color */
+    border-radius: 50%;
+    /* Make it circular */
+    width: 60px;
+    /* Button width */
+    height: 60px;
+    /* Button height */
     display: flex;
     justify-content: center;
     align-items: center;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Add a shadow */
-    border: 1px solid #212529; /* Add a border similar to btn-abas */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    /* Add a shadow */
+    border: 1px solid #212529;
+    /* Add a border similar to btn-abas */
     cursor: pointer;
 }
 
 .btn-floating3:hover {
-    background-color: #007B8A; /* Darken the button on hover */
+    background-color: #007B8A;
+    /* Darken the button on hover */
 }
 
 .btn-floating3 i {
-    font-size: 1.5rem; /* Adjust icon size */
+    font-size: 1.5rem;
+    /* Adjust icon size */
 }
 
 .btn-floating-help {
     position: fixed;
-    bottom: 20px; /* Distance from the bottom of the page */
-    left: 20px; /* Distance from the right side of the page */
-    z-index: 1000; /* Ensure it stays on top of other elements */
-    background-color: #009FAA; /* Customize button color */
-    color: #212529; /* Text/icon color */
-    border-radius: 50%; /* Make it circular */
-    width: 60px; /* Button width */
-    height: 60px; /* Button height */
+    bottom: 20px;
+    /* Distance from the bottom of the page */
+    left: 20px;
+    /* Distance from the right side of the page */
+    z-index: 1000;
+    /* Ensure it stays on top of other elements */
+    background-color: #009FAA;
+    /* Customize button color */
+    color: #212529;
+    /* Text/icon color */
+    border-radius: 50%;
+    /* Make it circular */
+    width: 60px;
+    /* Button width */
+    height: 60px;
+    /* Button height */
     display: flex;
     justify-content: center;
     align-items: center;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Add a shadow */
-    border: 1px solid #212529; /* Add a border similar to btn-abas */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    /* Add a shadow */
+    border: 1px solid #212529;
+    /* Add a border similar to btn-abas */
     cursor: pointer;
 }
 
 .btn-floating-help:hover {
-    background-color: #007B8A; /* Darken the button on hover */
+    background-color: #007B8A;
+    /* Darken the button on hover */
 }
 
 .btn-floating-help i {
-    font-size: 1.5rem; /* Adjust icon size */
+    font-size: 1.5rem;
+    /* Adjust icon size */
 }
 
 .info-panel {
-    position: relative; /* Make the box a positioning context */
+    position: relative;
+    /* Make the box a positioning context */
 }
 
 #floatingBadge {
-    position: absolute; /* Position the badge relative to the user info box */
-    bottom: -4px; /* Distance from the bottom of the box */
-    right: 4px; /* Distance from the right of the box */
-    z-index: 1050; /* Ensure it appears above other elements */
+    position: absolute;
+    /* Position the badge relative to the user info box */
+    bottom: -4px;
+    /* Distance from the bottom of the box */
+    right: 4px;
+    /* Distance from the right of the box */
+    z-index: 1050;
+    /* Ensure it appears above other elements */
 }
 
 #floatingBadge .badge {
-    font-size: 1.2rem; /* Adjust font size if needed */
-    padding: 0.5rem 1rem; /* Adjust padding for better appearance */
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); /* Add a subtle shadow */
+    font-size: 1.2rem;
+    /* Adjust font size if needed */
+    padding: 0.5rem 1rem;
+    /* Adjust padding for better appearance */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    /* Add a subtle shadow */
 }
 
 .modal-header .close {
-    color: white; /* Change the color of the close button to white */
-    opacity: 1; /* Ensure the button is fully visible */
+    color: white;
+    /* Change the color of the close button to white */
+    opacity: 1;
+    /* Ensure the button is fully visible */
 }
 
 .modal-header .close:hover {
-    color: #f8f9fa; /* Optional: Slightly lighter white on hover */
+    color: #f8f9fa;
+    /* Optional: Slightly lighter white on hover */
 }
 
 .modal-body {
-    background-color: whitesmoke; /* Light background for the modal body */
-    color: #212529; /* Dark text for contrast */
+    background-color: whitesmoke;
+    /* Light background for the modal body */
+    color: #212529;
+    /* Dark text for contrast */
 }
 
 .select-date-card {
-    cursor: pointer; /* Make the grid item clickable */
-    transition: background-color 0.3s, color 0.3s; /* Smooth transition for hover and selection */
+    cursor: pointer;
+    /* Make the grid item clickable */
+    transition: background-color 0.3s, color 0.3s;
+    /* Smooth transition for hover and selection */
 }
 
 .select-date-card:hover {
-    background-color: #e9ecef; /* Light gray on hover */
+    background-color: #e9ecef;
+    /* Light gray on hover */
 }
 
 .select-date-card.bg-success {
-    background-color: #009FAA !important; /* Green background for selected item */
-    color: white !important; /* White text for selected item */
+    background-color: #009FAA !important;
+    /* Green background for selected item */
+    color: white !important;
+    /* White text for selected item */
 }
 
 .date-card {
-    cursor: pointer; /* Make the grid item clickable */
-    transition: background-color 0.3s, color 0.3s; /* Smooth transition for hover and selection */
+    cursor: pointer;
+    /* Make the grid item clickable */
+    transition: background-color 0.3s, color 0.3s;
+    /* Smooth transition for hover and selection */
     text-align: center;
     background-color: white;
 }
 
 .date-card .day-of-week {
     font-size: .7rem;
-    color: #009FAA; /* Blue text for the day of the week */
+    color: #009FAA;
+    /* Blue text for the day of the week */
 }
 
 .date-card.bg-success .day-of-week {
     font-size: .7rem;
-    color:#eeeeee; /* Blue text for the day of the week */
+    color: #eeeeee;
+    /* Blue text for the day of the week */
 }
 
 .date-card .date-value {
     font-size: 1.2rem;
     font-weight: bold;
-    color: #212529; /* Gray text for the day number */
+    color: #212529;
+    /* Gray text for the day number */
 }
 
 .date-card:hover {
-    background-color: #e9ecef; /* Light gray on hover */
+    background-color: #e9ecef;
+    /* Light gray on hover */
 }
 
 .date-card.bg-success {
-    background-color: #009FAA !important; /* Green background for selected item */
-    color: white !important; /* White text for selected item */
+    background-color: #009FAA !important;
+    /* Green background for selected item */
+    color: white !important;
+    /* White text for selected item */
     border-color: #212529 !important;
 }
 
@@ -564,19 +730,24 @@ a { color: #009FAA; }
 }
 
 .bg-light-grey {
-    color: #212529; /* Default text color */
+    color: #212529;
+    /* Default text color */
 }
 
 .bg-light-grey .day-of-week {
-    color: #6c757d; /* Muted grey for the day of the week */
+    color: #6c757d;
+    /* Muted grey for the day of the week */
 }
 
 .bg-light-grey .date-value {
-    color: #495057; /* Slightly darker grey for the day number */
+    color: #495057;
+    /* Slightly darker grey for the day number */
 }
 
 /* Adjust the grid for smaller screens */
-@media (max-width: 576px) { /* Target screens smaller than 576px (Bootstrap's xs breakpoint) */
+@media (max-width: 576px) {
+
+    /* Target screens smaller than 576px (Bootstrap's xs breakpoint) */
     .date-card-col {
         padding-left: 2px;
         padding-right: 2px;
@@ -595,145 +766,194 @@ a { color: #009FAA; }
 
 /* Ensure the dropdown fills the width of the modal */
 .bootstrap-select {
-    width: 100% !important; /* Force the dropdown to take the full width */
+    width: 100% !important;
+    /* Force the dropdown to take the full width */
 }
 
 .bootstrap-select .dropdown-menu {
-    width: 100% !important; /* Ensure the dropdown menu matches the width of the button */
-    max-width: none; /* Remove any max-width restrictions */
+    width: 100% !important;
+    /* Ensure the dropdown menu matches the width of the button */
+    max-width: none;
+    /* Remove any max-width restrictions */
 }
 
 .bootstrap-select .bs-searchbox input {
-    width: 100%; /* Ensure the search box fills the dropdown width */
+    width: 100%;
+    /* Ensure the search box fills the dropdown width */
 }
 
 /* Style the dropdown container */
 .bootstrap-select {
-    width: 100% !important; /* Ensure it takes the full width of the parent container */
-    font-family: inherit; /* Match the font with the rest of the project */
-    font-size: 1rem; /* Adjust font size */
+    width: 100% !important;
+    /* Ensure it takes the full width of the parent container */
+    font-family: inherit;
+    /* Match the font with the rest of the project */
+    font-size: 1rem;
+    /* Adjust font size */
 }
 
 /* Style the dropdown button */
 .bootstrap-select .dropdown-toggle {
-    background-color: white; /* Match your project's primary color */
-    color: #212529; /* White text */
-    border: 1px solid #ddd; /* Border color to match the theme */
-    border-radius: 0.25rem; /* Rounded corners */
-    padding: 0.5rem 1rem; /* Adjust padding */
-    transition: background-color 0.3s ease, color 0.3s ease; /* Smooth transitions */
+    background-color: white;
+    /* Match your project's primary color */
+    color: #212529;
+    /* White text */
+    border: 1px solid #ddd;
+    /* Border color to match the theme */
+    border-radius: 0.25rem;
+    /* Rounded corners */
+    padding: 0.5rem 1rem;
+    /* Adjust padding */
+    transition: background-color 0.3s ease, color 0.3s ease;
+    /* Smooth transitions */
 }
 
 /* Hover and focus styles for the dropdown button */
 .bootstrap-select .dropdown-toggle:hover,
 .bootstrap-select .dropdown-toggle:focus {
-    background-color: #009FAA; /* Darker shade for hover */
-    color: white !important; /* Keep text white */
-    border-color: #005f66; /* Darker border on hover */
+    background-color: #009FAA;
+    /* Darker shade for hover */
+    color: white !important;
+    /* Keep text white */
+    border-color: #005f66;
+    /* Darker border on hover */
 }
 
 /* Style the dropdown menu */
 .bootstrap-select .dropdown-menu {
-    background-color: #f8f9fa; /* Light background for the dropdown */
-    border: 1px solid #ddd; /* Subtle border */
-    border-radius: 0.25rem; /* Rounded corners */
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Add a subtle shadow */
+    background-color: #f8f9fa;
+    /* Light background for the dropdown */
+    border: 1px solid #ddd;
+    /* Subtle border */
+    border-radius: 0.25rem;
+    /* Rounded corners */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    /* Add a subtle shadow */
 }
 
 /* Style the dropdown items */
 .bootstrap-select .dropdown-menu .dropdown-item {
-    color: #212529; /* Dark text for items */
-    padding: 0.5rem 1rem; /* Adjust padding */
-    transition: background-color 0.3s ease, color 0.3s ease; /* Smooth transitions */
+    color: #212529;
+    /* Dark text for items */
+    padding: 0.5rem 1rem;
+    /* Adjust padding */
+    transition: background-color 0.3s ease, color 0.3s ease;
+    /* Smooth transitions */
 }
 
 /* Hover and active styles for dropdown items */
 .bootstrap-select .dropdown-menu .dropdown-item:hover,
 .bootstrap-select .dropdown-menu .dropdown-item:focus {
-    background-color: #009FAA; /* Match the primary color */
-    color: #212529; /* White text on hover */
+    background-color: #009FAA;
+    /* Match the primary color */
+    color: #212529;
+    /* White text on hover */
 }
 
 /* Style the search box (if live search is enabled) */
 .bootstrap-select .bs-searchbox input {
-    width: 100%; /* Full width */
-    padding: 0.5rem; /* Adjust padding */
-    border: 1px solid #ddd; /* Subtle border */
-    border-radius: 0.25rem; /* Rounded corners */
-    font-size: 1rem; /* Match font size */
+    width: 100%;
+    /* Full width */
+    padding: 0.5rem;
+    /* Adjust padding */
+    border: 1px solid #ddd;
+    /* Subtle border */
+    border-radius: 0.25rem;
+    /* Rounded corners */
+    font-size: 1rem;
+    /* Match font size */
 }
 
 /* Focus style for the search box */
 .bootstrap-select .bs-searchbox input:focus {
-    border-color: #009FAA; /* Highlight border on focus */
-    box-shadow: 0 0 0 0.2rem rgba(0, 159, 170, 0.25); /* Add a subtle shadow */
+    border-color: #009FAA;
+    /* Highlight border on focus */
+    box-shadow: 0 0 0 0.2rem rgba(0, 159, 170, 0.25);
+    /* Add a subtle shadow */
 }
 
 /* Change the background and text color of the selected item when the dropdown is open */
 .bootstrap-select .dropdown-menu .dropdown-item.active {
-    background-color: #009FAA; /* Darker shade for the selected item */
-    color: #212529; /* White text for contrast */
+    background-color: #009FAA;
+    /* Darker shade for the selected item */
+    color: #212529;
+    /* White text for contrast */
 }
 
 /* Optional: Add a hover effect for the selected item */
 .bootstrap-select .dropdown-menu .dropdown-item.active:hover {
-    background-color: #005f66; /* Even darker shade on hover */
-    color: white; /* Keep text white */
+    background-color: #005f66;
+    /* Even darker shade on hover */
+    color: white;
+    /* Keep text white */
 }
 
 /* Ensure the input group matches the width of the select dropdown */
 .input-group {
-    width: 100%; /* Set the input group to take the full width of its container */
+    width: 100%;
+    /* Set the input group to take the full width of its container */
     max-width: 500px;
 }
 
 .input-group .form-control {
-    border-radius: 0.25rem; /* Match the border radius of the dropdown */
-    font-size: 1rem; /* Match the font size of the dropdown */
+    border-radius: 0.25rem;
+    /* Match the border radius of the dropdown */
+    font-size: 1rem;
+    /* Match the font size of the dropdown */
 }
 
 .input-group .form-control:focus {
-    border-color: #005f66; /* Match the focus border color of the dropdown */
-    box-shadow: 0 0 0 0.2rem rgba(0, 159, 170, 0.25); /* Add a subtle focus shadow */
+    border-color: #005f66;
+    /* Match the focus border color of the dropdown */
+    box-shadow: 0 0 0 0.2rem rgba(0, 159, 170, 0.25);
+    /* Add a subtle focus shadow */
 }
 
 .input-group-addtime {
-    max-width: 600px !important; /* Set the maximum width */
+    max-width: 600px !important;
+    /* Set the maximum width */
 }
 
-@media (max-width: 576px) {  
-  #startDate, #endDate {
-    min-width: 0;
-    font-size: 0.95em;
-    padding-left: 0.2em;
-    padding-right: 0.2em;
-  }
-  
+@media (max-width: 576px) {
+
+    #startDate,
+    #endDate {
+        min-width: 0;
+        font-size: 0.95em;
+        padding-left: 0.2em;
+        padding-right: 0.2em;
+    }
+
 }
 
 /* Ensure the time entry container has a relative position */
 .time-entry {
     position: relative;
-    overflow: visible; /* Ensure the button is not clipped */
+    overflow: visible;
+    /* Ensure the button is not clipped */
 }
 
 /* Hide the delete button by default */
 .delete-entry-btn {
     display: none;
     position: absolute;
-    right: 72px; /* Adjust as needed */
+    right: 72px;
+    /* Adjust as needed */
     top: 45%;
     transform: translateY(-50%);
-    z-index: 9999; /* Ensure it appears above other elements */
+    z-index: 9999;
+    /* Ensure it appears above other elements */
 }
 
 .copy-entry-btn {
     display: none;
     position: absolute;
-    right: 100px; /* Adjust as needed */
+    right: 100px;
+    /* Adjust as needed */
     top: 45%;
     transform: translateY(-50%);
-    z-index: 9999; /* Ensure it appears above other elements */
+    z-index: 9999;
+    /* Ensure it appears above other elements */
 }
 
 /* Show the delete button on hover */
@@ -746,8 +966,10 @@ a { color: #009FAA; }
 }
 
 .form-check-inline {
-    margin-right: 1rem; /* Add spacing between checkboxes */
-    margin-bottom: 1rem;;
+    margin-right: 1rem;
+    /* Add spacing between checkboxes */
+    margin-bottom: 1rem;
+    ;
 }
 
 .fab-container {
@@ -765,7 +987,8 @@ a { color: #009FAA; }
 }
 
 .fab-menu {
-    display: none; /* Initially hidden */
+    display: none;
+    /* Initially hidden */
     flex-direction: column;
     position: absolute;
     bottom: 70px;
@@ -783,7 +1006,8 @@ a { color: #009FAA; }
 #snackbar {
     visibility: hidden;
     min-width: 250px;
-    max-width: 90vw; /* Set a maximum width */
+    max-width: 90vw;
+    /* Set a maximum width */
     margin: 0 auto;
     left: 50%;
     transform: translateX(-50%);
@@ -791,10 +1015,13 @@ a { color: #009FAA; }
     border-radius: 2px;
     padding: 16px;
     position: fixed;
-    z-index: 1100; /* Higher than Bootstrap modal (1050) */
-    top: 16px; /* Position it above the modal */
+    z-index: 1100;
+    /* Higher than Bootstrap modal (1050) */
+    top: 16px;
+    /* Position it above the modal */
     font-size: 18px;
-    color: #fff; /* Default text color */
+    color: #fff;
+    /* Default text color */
 }
 
 #snackbar.show {
@@ -805,75 +1032,106 @@ a { color: #009FAA; }
 /* Success notification */
 #snackbar.success {
     /* background-color: #28a745; Green for success */
-    background-color: #009FAA; /* Darker shade for the selected item */
+    background-color: #009FAA;
+    /* Darker shade for the selected item */
     color: #212529;
 }
 
 /* Error notification */
 #snackbar.error {
-    background-color: #dc3545; /* Red for error */
+    background-color: #dc3545;
+    /* Red for error */
 }
 
 /* Warning notification */
 #snackbar.warning {
-    background-color: #ffc107; /* Yellow for warning */
+    background-color: #ffc107;
+    /* Yellow for warning */
 }
 
 /* Info notification */
 #snackbar.info {
-    background-color: #17a2b8; /* Blue for info */
+    background-color: #17a2b8;
+    /* Blue for info */
 }
 
 @keyframes fadein {
-    from {top: 0; opacity: 0;}
-    to {top: 16px; opacity: 1;}
+    from {
+        top: 0;
+        opacity: 0;
+    }
+
+    to {
+        top: 16px;
+        opacity: 1;
+    }
 }
 
 @keyframes fadeout {
-    from {top: 16px; opacity: 1;}
-    to {top: 0; opacity: 0;}
+    from {
+        top: 16px;
+        opacity: 1;
+    }
+
+    to {
+        top: 0;
+        opacity: 0;
+    }
 }
 
 /* Remove block display from tbody */
 .modal-body .table-responsive tbody {
-    max-height: none; /* Remove height restriction from tbody */
-    overflow-y: visible; /* Allow natural table layout */
+    max-height: none;
+    /* Remove height restriction from tbody */
+    overflow-y: visible;
+    /* Allow natural table layout */
 }
 
 /* Make the entire table scrollable */
 .modal-body .table-responsive {
-    max-height: 600px; /* Restrict the height of the table container */
-    overflow-y: auto; /* Enable vertical scrolling */
+    max-height: 600px;
+    /* Restrict the height of the table container */
+    overflow-y: auto;
+    /* Enable vertical scrolling */
 }
 
 /* Ensure the table columns auto-adjust their width */
 #finalizeTimeModal .table {
-    font-size: 0.85rem; /* Adjust font size */
-    table-layout: auto; /* Allow columns to adjust width based on content */
-    width: 100%; /* Ensure the table spans the full width */
+    font-size: 0.85rem;
+    /* Adjust font size */
+    table-layout: auto;
+    /* Allow columns to adjust width based on content */
+    width: 100%;
+    /* Ensure the table spans the full width */
 }
 
 #finalizeTimeModal .table td,
 #finalizeTimeModal .table th {
-    padding: 0.2rem; /* Adjust padding for better spacing */
-    vertical-align: middle; /* Align content vertically */
+    padding: 0.2rem;
+    /* Adjust padding for better spacing */
+    vertical-align: middle;
+    /* Align content vertically */
 }
 
 #finalizeTimeModal .table thead th {
-    font-weight: bold; /* Keep header bold for readability */
+    font-weight: bold;
+    /* Keep header bold for readability */
 }
 
 /* Add space between the table and the finalize button */
 #finalizeTimeModal .modal-body .text-right {
-    margin-top: .5rem; /* Adjust the value as needed */
+    margin-top: .5rem;
+    /* Adjust the value as needed */
 }
 
 .text-abas {
-    color: #009FAA; /* Your primary color */
+    color: #009FAA;
+    /* Your primary color */
 }
 
 .text-dark {
-    color: #343a40; /* Darker color for contrast */
+    color: #343a40;
+    /* Darker color for contrast */
 }
 
 .disabled-badge {
@@ -888,190 +1146,213 @@ a { color: #009FAA; }
     display: block;
     line-height: 1;
     font-size: 0.8rem;
-    color: #474c52; /* Muted grey for the description */
+    color: #474c52;
+    /* Muted grey for the description */
 }
+
 .time-entry p {
     margin-bottom: 0.5rem;
 }
 
 /* Stacked table rows for finalize time modal on mobile */
 @media (max-width: 576px) {
-  /* Stack all table elements for mobile */
-  #finalizeTimeModal #finalizeTimeTable,
-  #finalizeTimeModal #finalizeTimeTable thead,
-  #finalizeTimeModal #finalizeTimeTable tbody,
-  #finalizeTimeModal #finalizeTimeTable tr,
-  #finalizeTimeModal #finalizeTimeTable th,
-  #finalizeTimeModal #finalizeTimeTable td {
-    display: block !important;
-    width: 100% !important;
-    box-sizing: border-box;
-  }
-  #finalizeTimeModal #finalizeTimeTable thead {
-    display: none !important;
-  }
-  /* Card effect for each day */
-  #finalizeTimeModal #finalizeTimeTable tr.day-header-row,
-  #finalizeTimeModal #finalizeTimeTable tr.day-summary-row,
-  #finalizeTimeModal #finalizeTimeTable tr:not(.day-header-row):not(.day-summary-row) {
-    border-left: 1px solid #dee2e6;
-    border-right: 1px solid #dee2e6;
-    background: #fff;
-  }
-  #finalizeTimeModal #finalizeTimeTable tr.day-header-row {
-    border-top: 1.5px solid #009FAA;
-    border-radius: 0.5rem 0.5rem 0 0;
-    background: #f8f9fa !important;
-    margin-top: 1.2rem !important;
-    margin-bottom: 0 !important;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.04);
-  }
-  #finalizeTimeModal #finalizeTimeTable tr.day-header-row:first-child {
-    margin-top: 0 !important;
-  }
-  #finalizeTimeModal #finalizeTimeTable tr.day-summary-row {
-    border-bottom: 1.5px solid #009FAA;
-    border-radius: 0 0 0.5rem 0.5rem;
-    background: #f8f9fa !important;
-    margin-bottom: 0.8rem !important;
-    margin-top: 0 !important;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.04);
-  }
-  #finalizeTimeModal #finalizeTimeTable tr:not(.day-header-row):not(.day-summary-row) {
-    border-top: none;
-    border-bottom: 1px solid #ccc;
-    border-radius: 0;
-    margin-bottom: 0;
-    background: #fff;
-    box-shadow: none;
-    padding: 0.5rem 0;
-  }
-  #finalizeTimeModal #finalizeTimeTable td {
-    position: relative;
-    padding-left: 24%;
-    min-height: 2.2em;
-    border: none;
-    border-bottom: 1px solid #eee;
-    box-sizing: border-box;
-    word-break: break-word;
-    vertical-align: top;
-    font-size: 1em;
-    background: inherit;
-  }
-  #finalizeTimeModal #finalizeTimeTable td:last-child {
-    border-bottom: none;
-  }
-  #finalizeTimeModal #finalizeTimeTable td:before {
-    position: absolute;
-    left: 0.75rem;
-    top: 0.5rem;
-    width: 20%;
-    min-width: 40px;
-    max-width: 95%;
-    white-space: normal;
-    font-weight: bold;
-    color: #666;
-    content: attr(data-label);
-    box-sizing: border-box;
-    pointer-events: none;
-    line-height: 1.2;
-    overflow-wrap: break-word;
-  }
-  #finalizeTimeModal #finalizeTimeTable tr.day-header-row th,
-  #finalizeTimeModal #finalizeTimeTable tr.day-summary-row th {
-    display: table-cell !important;
-    width: auto !important;
-    text-align: inherit !important;
-    position: static !important;
-    padding-left: 8px !important;
-    padding-right: 8px !important;
-    font-size: 16px !important;
-    white-space: nowrap !important;
-    background: transparent !important;
-    border: none !important;
-  }
-  /* Remove :before labels from header/footer cells */
-  #finalizeTimeModal #finalizeTimeTable tr.day-header-row th:before,
-  #finalizeTimeModal #finalizeTimeTable tr.day-summary-row th:before {
-    display: none !important;
-    content: none !important;
-  }
-  /* Weekly total row (tfoot) always on a single line */
-  #finalizeTimeModal #finalizeTimeTable tfoot tr,
-  #finalizeTimeModal #finalizeTimeTable tfoot td {
-    display: table-row !important;
-    width: auto !important;
-    text-align: right !important;
-    white-space: nowrap !important;
-    vertical-align: middle !important;
-    background: transparent !important;
-    font-size: 1.1em !important;
-    position: static !important;
-    padding-left: 8px !important;
-    padding-right: 8px !important;
-    border: none !important;
-  }
-  #finalizeTimeModal #finalizeTimeTable tfoot td:before {
-    display: none !important;
-    content: none !important;
-  }
-  /* --- Force tfoot to always be a single row --- */
-  #finalizeTimeModal #finalizeTimeTable tfoot,
-  #finalizeTimeModal #finalizeTimeTable tfoot tr {
-    display: table-row-group !important;
-  }
-  #finalizeTimeModal #finalizeTimeTable tfoot td,
-  #finalizeTimeModal #finalizeTimeTable tfoot th {
-    display: table-cell !important;
-    width: auto !important;
-    white-space: nowrap !important;
-    text-align: right !important;
-    vertical-align: middle !important;
-    background: transparent !important;
-    font-size: 1.1em !important;
-    padding-left: 8px !important;
-    padding-right: 8px !important;
-    border: none !important;
-  }
-  #finalizeTimeModal #finalizeTimeTable tfoot td:before,
-  #finalizeTimeModal #finalizeTimeTable tfoot th:before {
-    display: none !important;
-    content: none !important;
-  }
 
-  /* --- FLEX Hours & Actions on the same line, Pay Code stays above --- */
+    /* Stack all table elements for mobile */
+    #finalizeTimeModal #finalizeTimeTable,
+    #finalizeTimeModal #finalizeTimeTable thead,
+    #finalizeTimeModal #finalizeTimeTable tbody,
+    #finalizeTimeModal #finalizeTimeTable tr,
+    #finalizeTimeModal #finalizeTimeTable th,
+    #finalizeTimeModal #finalizeTimeTable td {
+        display: block !important;
+        width: 100% !important;
+        box-sizing: border-box;
+    }
 
-  #finalizeTimeModal #finalizeTimeTable td[data-label="Hours"],
-  #finalizeTimeModal #finalizeTimeTable td[data-label="Actions"] {
-    display: inline-flex !important;
-    align-items: center;
-    border: none;
-    padding: 0.25rem 0.5rem 0.25rem 0.75rem;
-    min-height: 2.2em;
-    background: inherit;
-    position: relative;
-    width: auto !important;
-    vertical-align: middle;
-  }
-  #finalizeTimeModal #finalizeTimeTable td[data-label="Hours"] {
-    width: 60%;
-    padding-right: 0.5rem;
-    padding-left: 24%;
-  }
-  #finalizeTimeModal #finalizeTimeTable td[data-label="Actions"] {
-    width: 40%;
-    justify-content: flex-end;
-    padding-left: 30%;
-  }
-  #finalizeTimeModal #finalizeTimeTable td[data-label="Actions"]:before {
-    display: none !important;
-  }
-  #finalizeTimeModal #finalizeTimeTable .hours-input {
-    width: 100%;
-    min-width: 60px;
-    max-width: 100px;
-    margin-right: 0.5rem;
-  }
+    #finalizeTimeModal #finalizeTimeTable thead {
+        display: none !important;
+    }
+
+    /* Card effect for each day */
+    #finalizeTimeModal #finalizeTimeTable tr.day-header-row,
+    #finalizeTimeModal #finalizeTimeTable tr.day-summary-row,
+    #finalizeTimeModal #finalizeTimeTable tr:not(.day-header-row):not(.day-summary-row) {
+        border-left: 1px solid #dee2e6;
+        border-right: 1px solid #dee2e6;
+        background: #fff;
+    }
+
+    #finalizeTimeModal #finalizeTimeTable tr.day-header-row {
+        border-top: 1.5px solid #009FAA;
+        border-radius: 0.5rem 0.5rem 0 0;
+        background: #f8f9fa !important;
+        margin-top: 1.2rem !important;
+        margin-bottom: 0 !important;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+    }
+
+    #finalizeTimeModal #finalizeTimeTable tr.day-header-row:first-child {
+        margin-top: 0 !important;
+    }
+
+    #finalizeTimeModal #finalizeTimeTable tr.day-summary-row {
+        border-bottom: 1.5px solid #009FAA;
+        border-radius: 0 0 0.5rem 0.5rem;
+        background: #f8f9fa !important;
+        margin-bottom: 0.8rem !important;
+        margin-top: 0 !important;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+    }
+
+    #finalizeTimeModal #finalizeTimeTable tr:not(.day-header-row):not(.day-summary-row) {
+        border-top: none;
+        border-bottom: 1px solid #ccc;
+        border-radius: 0;
+        margin-bottom: 0;
+        background: #fff;
+        box-shadow: none;
+        padding: 0.5rem 0;
+    }
+
+    #finalizeTimeModal #finalizeTimeTable td {
+        position: relative;
+        padding-left: 24%;
+        min-height: 2.2em;
+        border: none;
+        border-bottom: 1px solid #eee;
+        box-sizing: border-box;
+        word-break: break-word;
+        vertical-align: top;
+        font-size: 1em;
+        background: inherit;
+    }
+
+    #finalizeTimeModal #finalizeTimeTable td:last-child {
+        border-bottom: none;
+    }
+
+    #finalizeTimeModal #finalizeTimeTable td:before {
+        position: absolute;
+        left: 0.75rem;
+        top: 0.5rem;
+        width: 20%;
+        min-width: 40px;
+        max-width: 95%;
+        white-space: normal;
+        font-weight: bold;
+        color: #666;
+        content: attr(data-label);
+        box-sizing: border-box;
+        pointer-events: none;
+        line-height: 1.2;
+        overflow-wrap: break-word;
+    }
+
+    #finalizeTimeModal #finalizeTimeTable tr.day-header-row th,
+    #finalizeTimeModal #finalizeTimeTable tr.day-summary-row th {
+        display: table-cell !important;
+        width: auto !important;
+        text-align: inherit !important;
+        position: static !important;
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+        font-size: 16px !important;
+        white-space: nowrap !important;
+        background: transparent !important;
+        border: none !important;
+    }
+
+    /* Remove :before labels from header/footer cells */
+    #finalizeTimeModal #finalizeTimeTable tr.day-header-row th:before,
+    #finalizeTimeModal #finalizeTimeTable tr.day-summary-row th:before {
+        display: none !important;
+        content: none !important;
+    }
+
+    /* Weekly total row (tfoot) always on a single line */
+    #finalizeTimeModal #finalizeTimeTable tfoot tr,
+    #finalizeTimeModal #finalizeTimeTable tfoot td {
+        display: table-row !important;
+        width: auto !important;
+        text-align: right !important;
+        white-space: nowrap !important;
+        vertical-align: middle !important;
+        background: transparent !important;
+        font-size: 1.1em !important;
+        position: static !important;
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+        border: none !important;
+    }
+
+    #finalizeTimeModal #finalizeTimeTable tfoot td:before {
+        display: none !important;
+        content: none !important;
+    }
+
+    /* --- Force tfoot to always be a single row --- */
+    #finalizeTimeModal #finalizeTimeTable tfoot,
+    #finalizeTimeModal #finalizeTimeTable tfoot tr {
+        display: table-row-group !important;
+    }
+
+    #finalizeTimeModal #finalizeTimeTable tfoot td,
+    #finalizeTimeModal #finalizeTimeTable tfoot th {
+        display: table-cell !important;
+        width: auto !important;
+        white-space: nowrap !important;
+        text-align: right !important;
+        vertical-align: middle !important;
+        background: transparent !important;
+        font-size: 1.1em !important;
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+        border: none !important;
+    }
+
+    #finalizeTimeModal #finalizeTimeTable tfoot td:before,
+    #finalizeTimeModal #finalizeTimeTable tfoot th:before {
+        display: none !important;
+        content: none !important;
+    }
+
+    /* --- FLEX Hours & Actions on the same line, Pay Code stays above --- */
+
+    #finalizeTimeModal #finalizeTimeTable td[data-label="Hours"],
+    #finalizeTimeModal #finalizeTimeTable td[data-label="Actions"] {
+        display: inline-flex !important;
+        align-items: center;
+        border: none;
+        padding: 0.25rem 0.5rem 0.25rem 0.75rem;
+        min-height: 2.2em;
+        background: inherit;
+        position: relative;
+        width: auto !important;
+        vertical-align: middle;
+    }
+
+    #finalizeTimeModal #finalizeTimeTable td[data-label="Hours"] {
+        width: 60%;
+        padding-right: 0.5rem;
+        padding-left: 24%;
+    }
+
+    #finalizeTimeModal #finalizeTimeTable td[data-label="Actions"] {
+        width: 40%;
+        justify-content: flex-end;
+        padding-left: 30%;
+    }
+
+    #finalizeTimeModal #finalizeTimeTable td[data-label="Actions"]:before {
+        display: none !important;
+    }
+
+    #finalizeTimeModal #finalizeTimeTable .hours-input {
+        width: 100%;
+        min-width: 60px;
+        max-width: 100px;
+        margin-right: 0.5rem;
+    }
 }
 
 /* Make the modal dialog only as wide as its content */
@@ -1104,11 +1385,13 @@ a { color: #009FAA; }
     padding: 0 !important;
     margin: 0;
     margin-top: 0.15rem;
-    color: inherit; /* Inherit text color from parent */
+    color: inherit;
+    /* Inherit text color from parent */
     box-shadow: none !important;
     cursor: pointer;
     outline: none;
-    font-size: 1em; /* Adjust as needed for icon size */
+    font-size: 1em;
+    /* Adjust as needed for icon size */
     line-height: 1;
     transition: color 0.2s;
 }
@@ -1122,7 +1405,8 @@ a { color: #009FAA; }
 
 .delete-day-btn:hover:not(:disabled):not([aria-disabled="true"]),
 .delete-day-btn:focus:not(:disabled):not([aria-disabled="true"]) {
-    color: #c82333 !important; /* Or your preferred hover color */
+    color: #c82333 !important;
+    /* Or your preferred hover color */
     text-decoration: none;
 }
 
@@ -1133,13 +1417,16 @@ a { color: #009FAA; }
     padding: 0 !important;
     padding-right: 10px !important;
     margin: 0;
-    margin-right: 0; /* Add some space between buttons */
+    margin-right: 0;
+    /* Add some space between buttons */
     margin-top: 0.15rem;
-    color: inherit; /* Inherit text color from parent */
+    color: inherit;
+    /* Inherit text color from parent */
     box-shadow: none !important;
     cursor: pointer;
     outline: none;
-    font-size: 1em; /* Adjust as needed for icon size */
+    font-size: 1em;
+    /* Adjust as needed for icon size */
     line-height: 1;
     transition: color 0.2s;
 }
@@ -1153,16 +1440,71 @@ a { color: #009FAA; }
 
 .copy-day-btn:hover:not(:disabled):not([aria-disabled="true"]),
 .copy-day-btn:focus:not(:disabled):not([aria-disabled="true"]) {
-    color: #009FAA !important; /* Or your preferred hover color */
+    color: #009FAA !important;
+    /* Or your preferred hover color */
     text-decoration: none;
 }
 
 .bg-abas .copy-day-btn:hover:not(:disabled):not([aria-disabled="true"]),
 .bg-abas .copy-day-btn:focus:not(:disabled):not([aria-disabled="true"]) {
-    color: #eee !important; /* Or your preferred hover color */
+    color: #eee !important;
+    /* Or your preferred hover color */
     text-decoration: none;
 }
 
 .card-header {
     padding: .75rem .75rem;
+}
+
+/* Add this to your style.css for Bootstrap 4 custom XXL breakpoint */
+@media (min-width: 1600px) {
+  .row-cols-xxl-1 > * { flex: 0 0 100%; max-width: 100%; }
+  .row-cols-xxl-2 > * { flex: 0 0 50%; max-width: 50%; }
+  .row-cols-xxl-3 > * { flex: 0 0 33.333333%; max-width: 33.333333%; }
+  .row-cols-xxl-4 > * { flex: 0 0 25%; max-width: 25%; }
+  .row-cols-xxl-5 > * { flex: 0 0 20%; max-width: 20%; }
+  .row-cols-xxl-6 > * { flex: 0 0 16.666667%; max-width: 16.666667%; }
+}
+
+/* Example for col-xxl-* utility */
+@media (min-width: 1600px) {
+  .col-xxl-1 { flex: 0 0 8.333333%; max-width: 8.333333%; }
+  .col-xxl-2 { flex: 0 0 16.666667%; max-width: 16.666667%; }
+  .col-xxl-3 { flex: 0 0 25%; max-width: 25%; }
+  .col-xxl-4 { flex: 0 0 33.333333%; max-width: 33.333333%; }
+  .col-xxl-5 { flex: 0 0 41.666667%; max-width: 41.666667%; }
+  .col-xxl-6 { flex: 0 0 50%; max-width: 50%; }
+  .col-xxl-7 { flex: 0 0 58.333333%; max-width: 58.333333%; }
+  .col-xxl-8 { flex: 0 0 66.666667%; max-width: 66.666667%; }
+  .col-xxl-9 { flex: 0 0 75%; max-width: 75%; }
+  .col-xxl-10 { flex: 0 0 83.333333%; max-width: 83.333333%; }
+  .col-xxl-11 { flex: 0 0 91.666667%; max-width: 91.666667%; }
+  .col-xxl-12 { flex: 0 0 100%; max-width: 100%; }
+}
+
+/* Custom XXXL breakpoint for Bootstrap 4 (min-width: 1800px) */
+@media (min-width: 1800px) {
+  .row-cols-xxxl-1 > * { flex: 0 0 100%; max-width: 100%; }
+  .row-cols-xxxl-2 > * { flex: 0 0 50%; max-width: 50%; }
+  .row-cols-xxxl-3 > * { flex: 0 0 33.333333%; max-width: 33.333333%; }
+  .row-cols-xxxl-4 > * { flex: 0 0 25%; max-width: 25%; }
+  .row-cols-xxxl-5 > * { flex: 0 0 20%; max-width: 20%; }
+  .row-cols-xxxl-6 > * { flex: 0 0 16.666667%; max-width: 16.666667%; }
+  .row-cols-xxxl-7 > * { flex: 0 0 14.285714%; max-width: 14.285714%; }
+}
+
+/* Example for col-xxxl-* utility */
+@media (min-width: 1800px) {
+  .col-xxxl-1 { flex: 0 0 8.333333%; max-width: 8.333333%; }
+  .col-xxxl-2 { flex: 0 0 16.666667%; max-width: 16.666667%; }
+  .col-xxxl-3 { flex: 0 0 25%; max-width: 25%; }
+  .col-xxxl-4 { flex: 0 0 33.333333%; max-width: 33.333333%; }
+  .col-xxxl-5 { flex: 0 0 41.666667%; max-width: 41.666667%; }
+  .col-xxxl-6 { flex: 0 0 50%; max-width: 50%; }
+  .col-xxxl-7 { flex: 0 0 58.333333%; max-width: 58.333333%; }
+  .col-xxxl-8 { flex: 0 0 66.666667%; max-width: 66.666667%; }
+  .col-xxxl-9 { flex: 0 0 75%; max-width: 75%; }
+  .col-xxxl-10 { flex: 0 0 83.333333%; max-width: 83.333333%; }
+  .col-xxxl-11 { flex: 0 0 91.666667%; max-width: 91.666667%; }
+  .col-xxxl-12 { flex: 0 0 100%; max-width: 100%; }
 }
