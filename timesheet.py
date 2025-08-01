@@ -145,6 +145,14 @@ def entry():
                     "is_locked": (
                         # Lock if not in current month (existing rule)
                         (startOfPrevWeek + timedelta(days=i)).month != current_month and (startOfPrevWeek + timedelta(days=i)).month < current_month
+                        # Allow entry if it's the first day of the month and before 10am
+                        and not (
+                            (startOfPrevWeek + timedelta(days=i)).day == 1 and
+                            now.hour < 10
+                        )
+                        #old logic                        
+                        # Lock if not in current month (existing rule)
+                        #(startOfPrevWeek + timedelta(days=i)).month != current_month and (startOfPrevWeek + timedelta(days=i)).month < current_month
                         # For MX: Lock Sat/Sun if after 12pm on Monday
                         # or (
                         #     isMxEmp and
