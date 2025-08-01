@@ -1023,7 +1023,7 @@ def update_hours(entry_id):
         entry_date = time_entry[2]
         work_slip_id = time_entry[3]
         time_worked = float(time_entry[4])
-        response = send_timeentry_csv_to_abas(abas_id, entry_date, work_slip_id, time_worked, "copy_day")
+        response = send_timeentry_csv_to_abas(abas_id, entry_date, work_slip_id, time_worked, "update_hours")
         if response.status_code != 200:
             raise ValueError(f"Failed to send data for {time_entry.WorkDate}.")
                 
