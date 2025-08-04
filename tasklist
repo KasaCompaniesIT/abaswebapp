@@ -40,8 +40,8 @@ DONE: Not going to implement... Will look into this, but will make things be in 
 DONE: Sometimes when hitting '+' button, drop downs are pre-populated with last item added, and not blank
 DONE: Add detailed logging for payroll/attendance exports.
 DONE: Add admin page to view logs.
-BUG: Copy day is showing on Locked days.
-BUG: When day of week changes month, the days in the next month are lock.  Should only be previous months days that get locked after switching months.
+DONE: Non-issue. These days can still be copied. Copy day is showing on Locked days.
+DONE: When day of week changes month, the days in the next month are lock.  Should only be previous months days that get locked after switching months.
 TODO: Add frequently used list to pick from on the add time entry screen.
 BUG: Scroll bug on mobile when adding time
 TODO: Add option to filter workslips by job title
