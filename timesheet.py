@@ -602,6 +602,41 @@ def copy_time_entry():
     except Exception as e:
         db.rollback()
         return jsonify(success=False, error=str(e)), 500
+
+@bp.route('/timesheet/entry/add_to_timesheet', methods=['POST'])
+@login_required
+def add_to_timesheet():
+    """
+    Add the selected operation (WSNumber) to every day of the week for the current user,
+    with TimeWorked = 0. Does NOT submit to the API.
+    Expects JSON: { "ws_number": "...", "week_start": "MM/DD/YY" }
+    Returns: { success: True, entries: [ ... ] }
+    """
+    try:
+        data = request.get_json()
+        abas_id = g.user.EmpID
+        ws_number = data.get('ws_number')
+        week_start_str = data.get('week_start')
+
+        # Parse week_start to date
+        try:
+            week_start = datetime.strptime(week_start_str, "%m/%d/%y").date()
+        except ValueError:
+            week_start = datetime.strptime(week_start_str, "%Y-%m-%d").date()
+
+        new_entries = []
+        for i in range(7):
+            day_date = week_start + timedelta(days=i)
+            existing_entry = get_time_entry(abas_id, day_date, ws_number)
+            if not existing_entry:
+                entry = create_time_entry(abas_id, day_date, ws_number, 0)
+                if entry:
+                    new_entries.append(entry)
+
+        return jsonify({'success': True, 'entries': new_entries})
+    except Exception as e:
+        print("Error in add_to_timesheet:", str(e))
+        return jsonify({'success': False, 'error': str(e)}), 500
     
 @bp.route('/timesheet/finalize_time', methods=['POST'])
 @login_required
