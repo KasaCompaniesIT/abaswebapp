@@ -1456,6 +1456,13 @@ a {
     padding: .75rem .75rem;
 }
 
+#selWorkSlip .d-flex.w-100 {
+    max-width: 600px;
+}
+#workSlipDropdown {
+    min-width: 0;
+}
+
 /* Add this to your style.css for Bootstrap 4 custom XXL breakpoint */
 @media (min-width: 1600px) {
   .row-cols-xxl-1 > * { flex: 0 0 100%; max-width: 100%; }

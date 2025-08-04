@@ -134,12 +134,12 @@
                             {% if day.is_locked or not can_add_or_finalize %}disabled aria-disabled="true"{% endif %}>
                             {% if day.is_locked or not can_add_or_finalize %}
                                 <i class="fas fa-lock"></i>
-                            {% else %}
-                                <i class="fas fa-trash"></i>
+                            {# {% else %}
+                                <i class="fas fa-trash"></i> #}
                             {% endif %}
                         </button>
 
-                        {% if can_add_or_finalize %}
+                        {# {% if can_add_or_finalize %}
                             <button type="button"
                                 class="float-right btn btn-sm copy-day-btn
                                     {% if day.date == today or day.isHoliday %}
@@ -150,7 +150,7 @@
                                 title="Copy all job time entries for this day to another day of the week">
                                 <i class="fas fa-copy"></i>                            
                             </button>
-                        {% endif %}           
+                        {% endif %}            #}
                     </div>  
                 </div>
                 <div class="card-body compact-card">
@@ -171,7 +171,7 @@
                                     {{ t.tHoursWorked }}
                                 </span>
                             </h5>
-                            {% if t.TimeEntryID and can_add_or_finalize %}
+                            {# {% if t.TimeEntryID and can_add_or_finalize %}
                             <button class="btn btn-abas2 btn-sm copy-entry-btn" data-timeentryid="{{ t.TimeEntryID }}" title="Copy Entry">
                                 <i class="fas fa-copy"></i>
                             </button>
@@ -181,7 +181,7 @@
                                     {% if day.is_locked %}disabled aria-disabled="true"{% endif %}>
                                 <i class="fas fa-trash"></i>
                             </button>
-                            {% endif %}
+                            {% endif %} #}
                         </div>
                         {% set ns.total_hours = ns.total_hours + t.tHoursWorked %} <!-- Accumulate the total -->
                         {% endfor %}
@@ -229,7 +229,7 @@
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
                 <div class="modal-header bg-dark-custom">
-                    <h5 class="modal-title" id="addTimeModalLabel">Time Entry</h5>
+                    <h5 class="modal-title" id="addTimeModalLabel">Select Operation to Add to Timesheet</h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
@@ -241,7 +241,7 @@
                         <input type="hidden" id="workSlipIDInput" name="workSlipID">
                         <!-- Grid of Dates -->
                         <div class="container">
-                            <div class="row text-center">
+                            {# <div class="row text-center">
                                 {% for day in dateRangePrevWeek %}
                                 <div class="col date-card-col">
                                     <div class="date-card p-2 border rounded select-date-card
@@ -257,7 +257,7 @@
                                     </div>
                                 </div>
                                 {% endfor %}
-                            </div>
+                            </div> #}
                             <div class="row text-center mt-2" id="selProject">
                                 <div class="col">
                                     <select id="projectDropdown" class="form-control selectpicker" data-live-search="true" title="Select a Project" required>
@@ -273,13 +273,24 @@
                                 </div>
                             </div>
                             <div class="row text-center mt-2" id="selWorkSlip">
-                                <div class="col">
-                                    <select id="workSlipDropdown" class="form-control selectpicker" data-live-search="true" title="Select an Operation" style="display: none;" required>
-                                        <!-- Options will be dynamically populated -->
-                                    </select>
-                                </div>
+                                <div class="col d-flex align-items-center justify-content-center">
+                                    <div class="d-flex w-100">
+                                        <select id="workSlipDropdown" class="form-control selectpicker" data-live-search="true" title="Select an Operation" style="display: none; flex: 1 1 auto;" required>
+                                            <!-- Options will be dynamically populated -->
+                                        </select>
+                                        <div class="form-check ml-2" style="flex: 0 0 auto;">
+                                            <input class="form-check-input" type="checkbox" id="filterWorkSlipCheckbox">
+                                            <label class="form-check-label" for="filterWorkSlipCheckbox">Show All</label>
+                                        </div>
+                                    </div>
+                                </div>                                
                             </div>
                             <div class="row text-center mt-2">
+                                <div class="col">
+                                    <small class="text-muted font-italic mb-2 mt-0 pt-0">** Changes can take up to 10 minutes to reflect in abas.</small>
+                                </div>
+                            </div>
+                            {# <div class="row text-center mt-2">
                                 <div class="col">
                                     <div class="d-flex justify-content-center">
                                         <div class="input-group input-group-addtime">
@@ -291,7 +302,7 @@
                                     </div>
                                     <small class="text-muted font-italic mb-2 mt-0 pt-0">** Changes can take up to 10 minutes to reflect in abas.</small>
                                 </div>
-                            </div>
+                            </div> #}
                             <p></p>                            
                         </div>
                         <div class="d-flex justify-content-between">
@@ -1160,12 +1171,26 @@
                             const option = document.createElement('option');
                             option.value = workSlip.id;
                             option.textContent = workSlip.id + " - " + workSlip.nameExtended + " (" + workSlip.name + ")";
+                            option.dataset.wageGroup = workSlip.wageGroup; // Set wage group
                             workSlipDropdown.appendChild(option);
                         });
 
                         // Show the dropdown and refresh Bootstrap Select
                         workSlipDropdown.style.display = 'block';
                         $('.selectpicker').selectpicker('refresh');
+
+                        // After populating workSlipDropdown options
+                        const filterCheckbox = document.getElementById('filterWorkSlipCheckbox');
+                        if (!filterCheckbox.checked) {
+                            const workSlipDropdown = document.getElementById('workSlipDropdown');
+                            const empWageGroup = '{{ abasUser.Dept }}';
+                            Array.from(workSlipDropdown.options).forEach(option => {
+                                const isAlwaysShow = option.dataset.wageGroup === '99';
+                                const matchesWage = option.dataset.wageGroup === empWageGroup;
+                                option.style.display = (matchesWage || isAlwaysShow) ? '' : 'none';
+                            });
+                            $('.selectpicker').selectpicker('refresh');
+                        }
                     } else {
                         // Hide the dropdown if no workslips are available
                         workSlipDropdown.style.display = 'none';
@@ -1583,6 +1608,23 @@
                 //console.error('Error deleting entries for this day:', error);
             });
         });
+    });
+
+    document.getElementById('filterWorkSlipCheckbox').addEventListener('change', function () {
+        const checked = this.checked;
+        const workSlipDropdown = document.getElementById('workSlipDropdown');
+        const empWageGroup = '{{ abasUser.Dept }}';
+
+        Array.from(workSlipDropdown.options).forEach(option => {
+            const isAlwaysShow = option.dataset.wageGroup === '99';
+            if (checked) {
+                option.style.display = '';
+            } else {
+                const matchesWage = option.dataset.wageGroup === empWageGroup;
+                option.style.display = (matchesWage || isAlwaysShow) ? '' : 'none';
+            }
+        });
+        $('.selectpicker').selectpicker('refresh');
     });
 
 </script>

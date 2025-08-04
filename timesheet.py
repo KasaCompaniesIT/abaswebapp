@@ -428,9 +428,9 @@ def getWorkSlips():
     db = get_db()
     dbc = db.cursor()
 
-    workslips = dbc.execute("select WSNumber, WSDescription, Operations.OpID, OpCode, OpName, OpNameExtended from workslips inner join operations on WorkSlips.OpID = operations.OpID where wonumber = ? and Operations.isEnabled = 1 order by wsnumber", work_order_id).fetchall()
+    workslips = dbc.execute("select WSNumber, WSDescription, Operations.OpID, OpCode, OpName, OpNameExtended, OpWageGroup from workslips inner join operations on WorkSlips.OpID = operations.OpID where wonumber = ? and Operations.isEnabled = 1 order by wsnumber", work_order_id).fetchall()
     # print(workslips)
-    return jsonify({'workSlips': [{'id': row.WSNumber, 'name': row.OpName, 'nameExtended': row.OpNameExtended} for row in workslips]})
+    return jsonify({'workSlips': [{'id': row.WSNumber, 'name': row.OpName, 'nameExtended': row.OpNameExtended, 'wageGroup': row.OpWageGroup} for row in workslips]})
 
 
 @bp.route('/timesheet/save_entry', methods=['POST'])
