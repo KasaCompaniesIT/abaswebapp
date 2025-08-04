@@ -143,13 +143,15 @@ def entry():
                         ((startOfPrevWeek + timedelta(days=i)).strftime("%Y-%m-%d"),)
                     ).fetchone() is not None,
                     "is_locked": (
-                        # Lock if not in current month (existing rule)
-                        (startOfPrevWeek + timedelta(days=i)).month != current_month and (startOfPrevWeek + timedelta(days=i)).month < current_month
-                        # Allow entry if it's the first day of the month and before 10am
-                        and not (
-                            (startOfPrevWeek + timedelta(days=i)).day == 1 and
-                            now.hour < 10
+                        # If today is the 1st and before 10am, unlock all previous month days for this week
+                        not (
+                            now.day == 1 and now.hour < 10 and
+                            (startOfPrevWeek + timedelta(days=i)).month < current_month
                         )
+                        and
+                        # Otherwise, lock previous month days as usual
+                        (startOfPrevWeek + timedelta(days=i)).month != current_month and (startOfPrevWeek + timedelta(days=i)).month < current_month
+                        
                         #old logic                        
                         # Lock if not in current month (existing rule)
                         #(startOfPrevWeek + timedelta(days=i)).month != current_month and (startOfPrevWeek + timedelta(days=i)).month < current_month
