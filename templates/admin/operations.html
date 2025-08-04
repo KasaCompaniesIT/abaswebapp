@@ -31,6 +31,7 @@
         <th>Name</th>
         <th>Extended Name</th>
         <th>Op Code</th>
+        <th>Op WageGroup</th>
         <th>Enabled</th>
       </tr>
     </thead>
@@ -42,6 +43,9 @@
         <td>{{ op.OpNameExtended }}</td>
         <td>
           <input type="text" name="OpCode_{{ op.OpID }}" value="{{ op.OpCode or '' }}" class="form-control" />
+        </td>
+        <td>
+          <input type="text" name="OpWageGroup_{{ op.OpID }}" value="{{ op.OpWageGroup or '' }}" class="form-control" />
         </td>
         <td>
           <input type="checkbox" name="isEnabled_{{ op.OpID }}" {% if op.isEnabled %}checked{% endif %} />

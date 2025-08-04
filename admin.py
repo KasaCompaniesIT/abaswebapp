@@ -382,16 +382,17 @@ def manage_operations():
                 op_id = key.split('_')[1]
                 op_code = value
                 is_enabled = 1 if request.form.get(f'isEnabled_{op_id}') == 'on' else 0
+                op_wage_group = request.form.get(f'OpWageGroup_{op_id}', '')
                 dbc.execute(
-                    "UPDATE Operations SET OpCode=?, isEnabled=? WHERE OpID=?",
-                    (op_code, is_enabled, op_id)
+                    "UPDATE Operations SET OpCode=?, OpWageGroup=?, isEnabled=? WHERE OpID=?",
+                    (op_code, op_wage_group, is_enabled, op_id)
                 )
         db.commit()
         flash('Operations updated successfully.', 'success')
         return redirect(url_for('admin.manage_operations'))
 
     operations = dbc.execute(
-        "SELECT OpID, OpName, OpNameExtended, OpCode, isEnabled FROM Operations ORDER BY OpID"
+        "SELECT OpID, OpName, OpNameExtended, OpCode, OpWageGroup, isEnabled FROM Operations ORDER BY OpID"
     ).fetchall()
     return render_template('admin/operations.html', operations=operations)
 
