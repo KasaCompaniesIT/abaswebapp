@@ -937,7 +937,7 @@ a {
 .delete-entry-btn {
     display: none;
     position: absolute;
-    right: 72px;
+    left: 0;
     /* Adjust as needed */
     top: 45%;
     transform: translateY(-50%);
@@ -948,7 +948,7 @@ a {
 .copy-entry-btn {
     display: none;
     position: absolute;
-    right: 100px;
+    left: 30px;
     /* Adjust as needed */
     top: 45%;
     transform: translateY(-50%);

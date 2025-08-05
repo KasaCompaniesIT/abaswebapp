@@ -135,11 +135,11 @@
                             {% if day.is_locked or not can_add_or_finalize %}
                                 <i class="fas fa-lock"></i>
                             {% else %}
-                                <i class="fas fa-trash"></i>
+                                {# <i class="fas fa-trash"></i> #}
                             {% endif %}
                         </button>
 
-                        {% if can_add_or_finalize %}
+                        {# {% if can_add_or_finalize %}
                             <button type="button"
                                 class="float-right btn btn-sm copy-day-btn
                                     {% if day.date == today or day.isHoliday %}
@@ -150,7 +150,7 @@
                                 title="Copy all job time entries for this day to another day of the week">
                                 <i class="fas fa-copy"></i>                            
                             </button>
-                        {% endif %}           
+                        {% endif %}            #}
                     </div>  
                 </div>
                 <div class="card-body compact-card">
@@ -172,9 +172,9 @@
                                 </span>
                             </h5>
                             {% if t.TimeEntryID and can_add_or_finalize %}
-                            <button class="btn btn-abas2 btn-sm copy-entry-btn" data-timeentryid="{{ t.TimeEntryID }}" title="Copy Entry">
+                            {# <button class="btn btn-abas2 btn-sm copy-entry-btn" data-timeentryid="{{ t.TimeEntryID }}" title="Copy Entry">
                                 <i class="fas fa-copy"></i>
-                            </button>
+                            </button> #}
                             <button class="btn btn-danger btn-sm delete-entry-btn me-2{% if day.is_locked %} disabled{% endif %}"
                                     data-timeentryid="{{ t.TimeEntryID }}"
                                     title="Delete Entry"
@@ -226,7 +226,7 @@
 
     <!-- Add Time Modal -->
     <div class="modal fade" id="addTimeModal" data-backdrop="static" data-keyboard="false" tabindex="-1" aria-labelledby="addTimeModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-dialog modal-dialog-centered modal">
             <div class="modal-content">
                 <div class="modal-header bg-dark-custom">
                     <h5 class="modal-title" id="addTimeModalLabel">Select Operation to Add to Timesheet</h5>
@@ -235,14 +235,14 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <form id="dateForm" method="post" action="{{ url_for('timesheet.save_entry') }}">
+                    <form id="dateForm" method="post" action="{{ url_for('timesheet.add_to_timesheet') }}">
                         <input type="hidden" id="selectedDateInput" name="selectedDate">
                         <input type="hidden" id="abasIDInput" name="abasID" value="{{ abasUser.EmpID }}">
                         <input type="hidden" id="workSlipIDInput" name="workSlipID">
                         <!-- Grid of Dates -->
                         <div class="container">
                             <div class="row text-center">
-                                {% for day in dateRangePrevWeek %}
+                                {# {% for day in dateRangePrevWeek %}
                                 <div class="col date-card-col">
                                     <div class="date-card p-2 border rounded select-date-card
                                         {% if day.date == today %} bg-success text-white
@@ -256,7 +256,7 @@
                                         <div class="date-value">{{ day.date | dateformat('%d') }}</div> <!-- Display only the day number -->
                                     </div>
                                 </div>
-                                {% endfor %}
+                                {% endfor %} #}
                             </div>
                             <div class="row text-center mt-2" id="selProject">
                                 <div class="col">
@@ -285,12 +285,13 @@
                                     </div>
                                 </div>                                
                             </div>
-                            {# <div class="row text-center mt-2">
+                            <div class="row text-center mt-2">
                                 <div class="col">
                                     <small class="text-muted font-italic mb-2 mt-0 pt-0">** Changes can take up to 10 minutes to reflect in abas.</small>
                                 </div>
-                            </div> #}
-                            <div class="row text-center mt-2">
+                            </div>
+                            <input type="hidden" name="week_start" id="weekStartInput" value="{{ startOfPrevWeek }}">
+                            {# <div class="row text-center mt-2">
                                 <div class="col">
                                     <div class="d-flex justify-content-center">
                                         <div class="input-group input-group-addtime">
@@ -302,7 +303,7 @@
                                     </div>
                                     <small class="text-muted font-italic mb-2 mt-0 pt-0">** Changes can take up to 10 minutes to reflect in abas.</small>
                                 </div>
-                            </div>
+                            </div> #}
                             <p></p>                            
                         </div>
                         <div class="d-flex justify-content-between">
@@ -369,7 +370,7 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    Are you sure you want to delete this time entry?
+                    Are you sure you want to delete ALL time entries for this operation for this week?
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
@@ -1412,7 +1413,7 @@
         .then(response => {
             if (response.ok) {
                 // Remove the time entry from the UI (same as before)
-                const timeEntryElement = deleteButton.closest('.time-entry');
+                /* const timeEntryElement = deleteButton.closest('.time-entry');
                 const cardBody = timeEntryElement.closest('.card-body');
                 const cardFooter = cardBody.nextElementSibling;
                 const totalHoursElement = cardFooter.querySelector('.font-weight-bold');
@@ -1423,22 +1424,14 @@
                 totalHoursElement.textContent = newTotal.toFixed(2);
                 updateTotalHours();
                 
-                // After adding or deleting an entry, fetch the updated summary flag
-                abasID = document.getElementById('abasIDInput').value;
-                startDate = document.getElementById('startDateInput').value;
-                endDate = document.getElementById('endDateInput').value;
-                fetch(`/timesheet/entry/get_summary_flag?abas_id=${abasID}&start_date=${startDate}&end_date=${endDate}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        // data.can_use_summary_view is the new value
-                        canUseSummaryView = data.can_use_summary_view;                        
-                    });
                 if (cardBody.querySelectorAll('.time-entry').length === 0) {
                     const noDataMessage = document.createElement('p');
                     noDataMessage.textContent = 'No data available for this date.';
                     cardBody.appendChild(noDataMessage);
-                }
+                } */
                 showSnackbar('Time entry deleted successfully!', 'success');
+                //reload page
+                location.reload();
             } else {
                 showSnackbar('Failed to delete time entry.', 'error');
                 console.error('Error deleting time entry:', response.statusText);
@@ -1482,6 +1475,7 @@
         event.preventDefault(); // Prevent the default form submission
 
         // Gather form data
+        document.getElementById('weekStartInput').value = document.getElementById('startDateInput').value;
         const formData = new FormData(this);
         const data = Object.fromEntries(formData.entries());
 
@@ -1493,11 +1487,11 @@
             },
             body: JSON.stringify(data),
         })
-            .then(response => response.json())
-            .then(result => {
-                if (result.success) {
-                    // Update the UI with the new time entry
-                    const cardBody = document.querySelector(`#card_${data.selectedDate.replace(/\//g, '_')} .card-body`);
+        .then(response => response.json())
+        .then(result => {
+            if (result.success && Array.isArray(result.entries)) {
+                result.entries.forEach(entry => {
+                    const cardBody = document.querySelector(`#card_${entry.WorkDate.replace(/\//g, '_')} .card-body`);
 
                     // Remove "No data available" message if it exists
                     const noDataMessage = cardBody.querySelector('p');
@@ -1510,21 +1504,18 @@
                     timeEntryDiv.classList.add('d-flex', 'justify-content-between', 'align-items-center', 'time-entry');
                     timeEntryDiv.innerHTML = `
                         <p>
-                            ${result.data.WSNumber} ${result.data.OpNameExtended}
-                            <small class="card-desc">(${result.data.WODescription})</small>
-                            <span id="OpCode" hidden>${result.data.OpCode}</span>
-                        </p>
+                                ${entry.WODescription}                              
+                                <small class="card-desc">${entry.OpName} (${entry.WSNumber}) </small>
+                                <span id="OpCode" hidden>${entry.OpCode}</span>
+                            </p>
                         <h5>
                             <span class="badge badge-secondary editable-hours"
-                                data-timeentryid="${result.data.TimeEntryID}"
+                                data-timeentryid="${entry.TimeEntryID}"
                                 style="cursor:pointer;">
-                                ${result.data.tHoursWorked}
+                                ${entry.tHoursWorked}
                             </span>
                         </h5>
-                        <button class="btn btn-abas2 btn-sm copy-entry-btn" data-timeentryid="${result.data.TimeEntryID}" title="Copy Entry">
-                            <i class="fas fa-copy"></i>
-                        </button>
-                        <button class="btn btn-danger btn-sm delete-entry-btn" data-timeentryid="${result.data.TimeEntryID}" title="Delete Entry">
+                        <button class="btn btn-danger btn-sm delete-entry-btn" data-timeentryid="${entry.TimeEntryID}" title="Delete Entry">
                             <i class="fas fa-trash"></i>
                         </button>
                     `;
@@ -1534,39 +1525,27 @@
                     const cardFooter = cardBody.nextElementSibling; // Assuming footer is the next sibling
                     const totalHoursElement = cardFooter.querySelector('.font-weight-bold');
                     const currentTotal = parseFloat(totalHoursElement.textContent) || 0;
-                    const newTotal = currentTotal + parseFloat(result.data.tHoursWorked);
+                    const newTotal = currentTotal + parseFloat(entry.tHoursWorked);
                     totalHoursElement.textContent = newTotal.toFixed(2);
 
-                    // Recalculate the total hours for the floating badge
-                    updateTotalHours();
-                    abasID = document.getElementById('abasIDInput').value;
-                    startDate = document.getElementById('startDateInput').value;
-                    endDate = document.getElementById('endDateInput').value;
-                    fetch(`/timesheet/entry/get_summary_flag?abas_id=${abasID}&start_date=${startDate}&end_date=${endDate}`)
-                        .then(response => response.json())
-                        .then(data => {
-                            // data.can_use_summary_view is the new value
-                            canUseSummaryView = data.can_use_summary_view;                        
-                        });
-
-                    // Reattach the delete button event listener
+                    // Reattach event listeners for the new buttons
                     attachDeleteEvent(timeEntryDiv.querySelector('.delete-entry-btn'));
                     attachCopyJobEvent(timeEntryDiv.querySelector('.copy-entry-btn'));
+                });
 
-                    // Close the modal
-                    // const addTimeModal = bootstrap.Modal.getInstance(document.getElementById('addTimeModal'));
-                    // addTimeModal.hide();
+                // Recalculate the total hours for the floating badge
+                updateTotalHours();
 
-                    // alert('Time entry added successfully.');
-                    showSnackbar('Time entry added successfully!', 'success');
-                } else {
-                    //alert('Failed to add time entry: ' + result.error);
-                    showSnackbar(result.error, 'error');
-                    console.error('Error adding time entry:', result.error);
-                }
-            })
-            .catch(error => console.error('Error adding time entry:', error));
-            //console.error('Error adding time entry:', error);
+                showSnackbar('Time entry added successfully!', 'success');
+            } else {
+                showSnackbar(result.error || 'Failed to add time entry.', 'error');
+                console.error('Error adding time entry:', result.error);
+            }
+        })
+        .catch(error => {
+            showSnackbar('Error adding time entry.', 'error');
+            console.error('Error adding time entry:', error);
+        });
     });
 
     // Attach event handler for the delete button in each day card header

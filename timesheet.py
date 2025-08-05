@@ -490,62 +490,55 @@ def delete_time_entry(time_entry_id):
             """,
             (time_entry_id,)
         ).fetchone()
+        if entry:
+            entry_date = entry.WorkDate
+            abas_id = entry.EmpID
+            work_slip_id = entry.WSNumber
+    
+            # get all entries for the selected entry for the week to delete also
+            week_start = entry_date - timedelta(days=entry_date.weekday())
+            week_end = week_start + timedelta(days=6)
 
-        if not entry:
+            entries_to_delete = dbc.execute(
+                """
+                SELECT EntryID, EmpID, WorkDate, WSNumber, TimeWorked
+                FROM TimeEntry
+                WHERE EmpID = ? AND WorkDate BETWEEN ? AND ? AND WSNumber = ?
+                """,
+                (abas_id, week_start, week_end, work_slip_id)
+            ).fetchall()
+
+            if entries_to_delete:
+                # If there are entries to delete, process them
+                for entry in entries_to_delete:
+                    dbc.execute("DELETE FROM TimeEntry WHERE EntryID = ?", (entry.EntryID,))
+                    if entry.TimeWorked > 0:
+                        abas_id = entry.EmpID
+                        selected_date = entry.WorkDate
+                        work_date = selected_date.strftime('%m/%d/%y')
+                        work_slip_id = entry.WSNumber
+                        hours_worked = 0 # entry.TimeWorked
+                    
+                        response = send_timeentry_csv_to_abas(abas_id, work_date, work_slip_id, hours_worked, "delete_time_entry")
+                        if response.status_code == 200:
+                            db.commit()
+                            print("CSV file sent successfully!")                            
+                        else:
+                            print(f"Failed to create CSV. Status code: {response.status_code}, Response: {response.text}")
+                    else:
+                        db.commit()
+                        print("No hours worked, entry deleted without sending to Abas.")
+                            
+        else:            
             raise ValueError("Time entry not found.")
 
-        # Extract entry details
-        abas_id = entry.EmpID
-        selected_date = entry.WorkDate
-        work_date = selected_date.strftime('%m/%d/%y')
-        work_slip_id = entry.WSNumber
-        hours_worked = 0 # entry.TimeWorked
-
-        # Define the API endpoint
-        # url = "http://abas.kasa.kasacontrols.com:8000/jobtime_entry"
-
-        # # Define the payload
-        # payload = {
-        #     "EmpID": abas_id,
-        #     "WorkDate": selected_date.strftime('%m/%d/%y'),  # Format the date as MM/DD/YY
-        #     "WSNumber": work_slip_id,
-        #     "HoursWorked": hours_worked
-        # }
-
-        # Send the POST request
-        #response = requests.post(url, json=payload)
-
-        response = send_timeentry_csv_to_abas(abas_id, work_date, work_slip_id, hours_worked, "delete_time_entry")
-
-        # Check the response
-        if response.status_code == 200:
-            # Delete the entry from the database
-            dbc.execute("DELETE FROM TimeEntry WHERE EntryID = ?", (time_entry_id,))
-            db.commit()
-            print("CSV file sent successfully!")
-        else:
-            print(f"Failed to create CSV. Status code: {response.status_code}, Response: {response.text}")
-
-        # # Generate a unique file name using a timestamp
-        # timestamp = datetime.now().strftime('%Y%m%d%H%M%S')  # Format: YYYYMMDDHHMMSS
-        # unique_file_name = f"jobtime_{abas_id}_{timestamp}.csv"
-
-        # # Define the network location for the CSV file        
-        # network_path = os.path.join(ABAS_SERVER, unique_file_name)  # Replace with your actual network path
-
-        # # Write the negated entry to the CSV file
-        # with open(network_path, mode='w', newline='', encoding='utf-8') as csvfile:
-        #     csv_writer = csv.writer(csvfile)
-        #     # Write the header
-        #     csv_writer.writerow(['AbasID', 'Date', 'WorkSlipID', 'HoursWorked'])
-        #     # Write the negated entry
-        #     csv_writer.writerow([abas_id, selected_date, work_slip_id, hours_worked])  # Negate the hours
-
-
-
         return jsonify({'success': True}), 200
+        # flash('Time entry deleted successfully.', 'success')
+        # return render_template('timesheet/entry.html')
+    
     except Exception as e:
         db.rollback()
+        print("Error:", str(e))
         return jsonify({'error': str(e)}), 500
 
 
@@ -615,7 +608,7 @@ def add_to_timesheet():
     try:
         data = request.get_json()
         abas_id = g.user.EmpID
-        ws_number = data.get('ws_number')
+        ws_number = data.get('workSlipID')
         week_start_str = data.get('week_start')
 
         # Parse week_start to date
@@ -1200,7 +1193,7 @@ def create_time_entry(abas_id, work_date, ws_number, time_worked=None):
         # Fetch the newly added entry for the response
         new_entry = dbc.execute(
             """
-            SELECT t.EntryID AS TimeEntryID, t.WSNumber, ws.WSDescription, o.OpName, o.OpNameExtended, t.TimeWorked AS tHoursWorked, WODescription, OpCode
+            SELECT t.EntryID AS TimeEntryID, t.WSNumber, t.WorkDate AS WorkDate, ws.WSDescription, o.OpName, o.OpNameExtended, t.TimeWorked AS tHoursWorked, WODescription, OpCode
             FROM TimeEntry t
             INNER JOIN WorkSlips ws ON t.WSNumber = ws.WSNumber
             INNER JOIN Operations o ON ws.OpID = o.OpID
@@ -1216,10 +1209,15 @@ def create_time_entry(abas_id, work_date, ws_number, time_worked=None):
         # Build a dictionary directly using column names
         columns = [column[0] for column in dbc.description]
         entry_dict = dict(zip(columns, new_entry))
+        # After building entry_dict in create_time_entry
+        if "WorkDate" in entry_dict and isinstance(entry_dict["WorkDate"], (datetime, date)):
+            entry_dict["WorkDate"] = entry_dict["WorkDate"].strftime("%m/%d/%y")
+            
         # Convert Decimal to float if needed
         for k, v in entry_dict.items():
             if isinstance(v, decimal.Decimal):
                 entry_dict[k] = f"{float(v):.2f}"
+                
         return entry_dict
 
     except Exception as e:
