@@ -158,6 +158,17 @@ a {
     background-color: #343a40;
 }
 
+.bg-wktotals {
+    background-color: #eeeeee;
+    color: #212529;
+}
+
+.bg-weekend {
+    /* slightly lighter color than .bg-dark2 */
+    background-color: #4f555b;
+    color: #212529;
+}
+
 .btn-secondary {
     border-color: #212529;
 }
@@ -1498,6 +1509,7 @@ a {
   .row-cols-xxxl-5 > * { flex: 0 0 20%; max-width: 20%; }
   .row-cols-xxxl-6 > * { flex: 0 0 16.666667%; max-width: 16.666667%; }
   .row-cols-xxxl-7 > * { flex: 0 0 14.285714%; max-width: 14.285714%; }
+  .row-cols-xxxl-8 > * { flex: 0 0 12.5%; max-width: 12.5%; }
 }
 
 /* Example for col-xxxl-* utility */

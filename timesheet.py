@@ -244,6 +244,9 @@ def entry():
 
                 # print(f"Date: {date}, Rows: {rows}")
 
+            # Calculate weekly totals for each operation
+            weekly_totals = get_weekly_operation_totals(timecard_data)
+
             # Check if any time entry has an OpCode specified
             has_opcode = False
             for entries in timecard_data.values():
@@ -299,6 +302,7 @@ def entry():
                                     can_use_summary_view=can_use_summary_view,
                                     comments=comments,
                                     locked_days=locked_days,
+                                    weekly_totals=weekly_totals,
                                     weekday_start=weekday_start
             )
 
@@ -391,7 +395,7 @@ def getWS():
         woDesc = project_wo.WODescription
         print(projectDesc)
 
-    workslips = dbc.execute("select WSNumber, WONumber, WSDescription, Operations.OpID, OpCode, OpName, OpNameExtended from workslips inner join operations on WorkSlips.OpID = operations.OpID where wonumber = ? and operations.isEnabled = 1 order by wsnumber", selected_wo)
+    workslips = dbc.execute("select WSNumber, WONumber, WSDescription, Operations.OpID, OpCode, OpName, OpNameExtended from workslips inner join operations on WorkSlips.OpID = operations.OpID where wonumber = ? and operations.isEnabled = 1 order by WSDescription", selected_wo)
     # print(workslips)
     return render_template('timesheet/_ws.html', workslips=workslips, project=project, projectDesc=projectDesc, wo=wo, woDesc=woDesc)
 
@@ -428,7 +432,7 @@ def getWorkSlips():
     db = get_db()
     dbc = db.cursor()
 
-    workslips = dbc.execute("select WSNumber, WSDescription, Operations.OpID, OpCode, OpName, OpNameExtended, OpWageGroup from workslips inner join operations on WorkSlips.OpID = operations.OpID where wonumber = ? and Operations.isEnabled = 1 order by wsnumber", work_order_id).fetchall()
+    workslips = dbc.execute("select WSNumber, WSDescription, Operations.OpID, OpCode, OpName, OpNameExtended, OpWageGroup from workslips inner join operations on WorkSlips.OpID = operations.OpID where wonumber = ? and Operations.isEnabled = 1 order by WSDescription", work_order_id).fetchall()
     # print(workslips)
     return jsonify({'workSlips': [{'id': row.WSNumber, 'name': row.OpName, 'nameExtended': row.OpNameExtended, 'wageGroup': row.OpWageGroup} for row in workslips]})
 
@@ -850,13 +854,13 @@ def copy_prev_week():
         prev_end = prev_start + timedelta(days=6)
 
         # 1. Fetch previous week's entries
-        prev_entries = get_time_entries_for_week(abas_id, prev_start, prev_end)
+        prev_entries = get_time_entries_for_day(abas_id, prev_start)
         
         if not prev_entries:
             # Calculate the start and end of the week for 2 weeks ago
             prev_start = curr_start - timedelta(days=14)
             prev_end = prev_start + timedelta(days=6)
-            prev_entries = get_time_entries_for_week(abas_id, prev_start, prev_end)
+            prev_entries = get_time_entries_for_day(abas_id, prev_start)
         
         if prev_entries:
             # delete existing entries for the current week, but only for days in the current month
@@ -866,28 +870,30 @@ def copy_prev_week():
                 if entry_date.month == curr_month:
                     dbc = get_db().cursor()
                     dbc.execute("DELETE FROM TimeEntry WHERE EntryID = ?", (entry.EntryID,))
-                    dbc.connection.commit()
+                    dbc.commit()
                     # Send negated entry to Abas
-                    response = send_timeentry_csv_to_abas(
-                        abas_id, 
-                        entry.WorkDate, 
-                        entry.WSNumber, 
-                        0.0,  # Negate the hours
-                        "copy_prev_week"
-                    )
-                    if response.status_code != 200:
-                        raise ValueError(f"Failed to send negated data for {entry.WorkDate}.")
+                    if entry.TimeWorked > 0:
+                        response = send_timeentry_csv_to_abas(
+                            abas_id, 
+                            entry.WorkDate, 
+                            entry.WSNumber, 
+                            0.0,  # Negate the hours
+                            "copy_prev_week"
+                        )
+                        if response.status_code != 200:
+                            raise ValueError(f"Failed to send negated data for {entry.WorkDate}.")
 
             # 2. Copy entries to current week (adjust dates), but only for days in the current month
             for entry in prev_entries:
-                prev_date = entry.WorkDate if isinstance(entry.WorkDate, date) else datetime.strptime(entry.WorkDate, "%Y-%m-%d").date()
-                days_offset = (prev_date - prev_start).days
-                new_date = curr_start + timedelta(days=days_offset)
-                if new_date.month != curr_month:
-                    continue  # Skip copying to locked days (previous month)
-                eTimeWorked = 0 #entry.TimeWorked
-                new_entry = create_time_entry(abas_id, new_date, entry.WSNumber, eTimeWorked)
-                print("new_entry: ", new_entry)
+                for i in range(7):
+                    day_date = curr_start + timedelta(days=i)
+                    if day_date.month != curr_month:
+                        continue  # Skip copying to locked days (previous month)
+                    existing_entry = get_time_entry(abas_id, day_date, entry.WSNumber)
+                    if not existing_entry:
+                        entry = create_time_entry(abas_id, day_date, entry.WSNumber, 0)
+                    print("new_entry: ", entry)
+                    
             flash("Previous week's entries copied successfully.", "success")
             return jsonify({'success': True})
         else:
@@ -895,6 +901,65 @@ def copy_prev_week():
     except Exception as e:
         print("Error copying previous week:", str(e))
         return jsonify({'success': False, 'error': str(e)})
+# def copy_prev_week():
+#     try:
+#         data = request.get_json()
+#         abas_id = data.get('abas_id')
+#         curr_start = data.get('curr_start')
+        
+#         curr_start = datetime.strptime(curr_start, "%Y-%m-%d").date()
+#         curr_month = datetime.now().month  # The month of the current week
+
+#         # Calculate the start and end of the week
+#         prev_start = curr_start - timedelta(days=7)
+#         prev_end = prev_start + timedelta(days=6)
+
+#         # 1. Fetch previous week's entries
+#         prev_entries = get_time_entries_for_week(abas_id, prev_start, prev_end)
+        
+#         if not prev_entries:
+#             # Calculate the start and end of the week for 2 weeks ago
+#             prev_start = curr_start - timedelta(days=14)
+#             prev_end = prev_start + timedelta(days=6)
+#             prev_entries = get_time_entries_for_week(abas_id, prev_start, prev_end)
+        
+#         if prev_entries:
+#             # delete existing entries for the current week, but only for days in the current month
+#             curr_week_entries = get_time_entries_for_week(abas_id, curr_start, curr_start + timedelta(days=6))
+#             for entry in curr_week_entries:
+#                 entry_date = entry.WorkDate if isinstance(entry.WorkDate, date) else datetime.strptime(entry.WorkDate, "%Y-%m-%d").date()
+#                 if entry_date.month == curr_month:
+#                     dbc = get_db().cursor()
+#                     dbc.execute("DELETE FROM TimeEntry WHERE EntryID = ?", (entry.EntryID,))
+#                     dbc.connection.commit()
+#                     # Send negated entry to Abas
+#                     response = send_timeentry_csv_to_abas(
+#                         abas_id, 
+#                         entry.WorkDate, 
+#                         entry.WSNumber, 
+#                         0.0,  # Negate the hours
+#                         "copy_prev_week"
+#                     )
+#                     if response.status_code != 200:
+#                         raise ValueError(f"Failed to send negated data for {entry.WorkDate}.")
+
+#             # 2. Copy entries to current week (adjust dates), but only for days in the current month
+#             for entry in prev_entries:
+#                 prev_date = entry.WorkDate if isinstance(entry.WorkDate, date) else datetime.strptime(entry.WorkDate, "%Y-%m-%d").date()
+#                 days_offset = (prev_date - prev_start).days
+#                 new_date = curr_start + timedelta(days=days_offset)
+#                 if new_date.month != curr_month:
+#                     continue  # Skip copying to locked days (previous month)
+#                 eTimeWorked = 0 #entry.TimeWorked
+#                 new_entry = create_time_entry(abas_id, new_date, entry.WSNumber, eTimeWorked)
+#                 print("new_entry: ", new_entry)
+#             flash("Previous week's entries copied successfully.", "success")
+#             return jsonify({'success': True})
+#         else:
+#             return jsonify({'success': False, 'error': 'No entries found for the previous week.'})
+#     except Exception as e:
+#         print("Error copying previous week:", str(e))
+#         return jsonify({'success': False, 'error': str(e)})
 # def copy_prev_week():
 #     try:
 #         data = request.get_json()
@@ -1146,6 +1211,36 @@ def get_time_entries_for_week(abas_id, start_date, end_date):
             (abas_id, start_date, end_date)
         ).fetchall()       
         
+    return time_entries
+
+def get_time_entries_for_day(abas_id, work_date):
+    db = get_db()
+    dbc = db.cursor()
+
+    # Fetch time entries for the given date
+    time_entries = dbc.execute(
+        """
+        SELECT EntryID, WorkDate, WSNumber, TimeWorked
+        FROM TimeEntry 
+        WHERE EmpID = ? AND WorkDate = ?
+        ORDER BY WorkDate
+        """,
+        (abas_id, work_date)
+    ).fetchall()
+    
+    # get time entries from TimeEntryAbas if no entries found in TimeEntry
+    # This is a fallback to ensure we get some data
+    if not time_entries:
+        time_entries = dbc.execute(
+            """
+            SELECT AbasEntryID as EntryID, WorkDate, WSNumber, TimeWorked
+            FROM TimeEntryAbas 
+            WHERE EmpID = ? AND WorkDate = ?
+            ORDER BY WorkDate
+            """,
+            (abas_id, work_date)
+        ).fetchall()
+
     return time_entries
 
 def get_paychex_codes():
@@ -1525,5 +1620,20 @@ def add_exportlog_entry(export_id=None, emp_id=None, work_date=None, time_worked
         db.rollback()
         print("Error adding export log entry:", str(e))
         
-    
+def get_weekly_operation_totals(timecard_data):
+    # timecard_data: dict of {date: [entry, ...]}
+    totals = {}
+    for entries in timecard_data.values():
+        for entry in entries:
+            key = (entry['WSNumber'], entry['OpName'], entry.get('WODescription', ''), entry.get('OpCode', ''))
+            if key not in totals:
+                totals[key] = {
+                    'WSNumber': entry['WSNumber'],
+                    'OpName': entry['OpName'],
+                    'WODescription': entry.get('WODescription', ''),
+                    'OpCode': entry.get('OpCode', ''),
+                    'total_hours': 0.0
+                }
+            totals[key]['total_hours'] += float(entry['tHoursWorked'])
+    return list(totals.values())
     

@@ -102,7 +102,7 @@
 </div>
 
     <!-- Timecard Section -->
-    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 row-cols-xxl-6 row-cols-xxxl-7 g-4 px-2" id="timecard">
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 row-cols-xxl-6 row-cols-xxxl-7 row-cols-xxxl-8 g-4 px-2" id="timecard">
         <!-- Card 1 -->
         {% set nswk = namespace(total_hours=0) %} <!-- Create a mutable namespace object -->
         {% for day in dateRangePrevWeek %}
@@ -114,7 +114,7 @@
                     {% elif day.isHoliday %}
                         bg-warning
                     {% elif day.date | dateformat('%A') in ['Saturday', 'Sunday'] %}
-                        bg-secondary text-light                    
+                        bg-weekend text-light                    
                     {% else %}
                         bg-dark2 text-light
                     {% endif %}
@@ -203,7 +203,39 @@
             </div>
         </div>
         {% set nswk.total_hours = nswk.total_hours|float + ns.total_hours|float %}
-        {% endfor %}        
+        {% endfor %}   
+
+        <!-- Weekly Totals Card -->
+        <div class="col my-2 px-2" id="card_weekly_totals">
+            <div class="card bg-light border-dark card-shadow">
+                <div class="card-header text-center bg-abas-dark text-light">
+                    Week Totals by Operation
+                </div>
+                <div class="card-body compact-card bg-wktotals">
+                    {% if weekly_totals %}
+                        {% for op in weekly_totals %}
+                        <div class="d-flex justify-content-between align-items-center time-entry">
+                            <p>
+                                {{ op.WODescription if op.WODescription else '' }}
+                                <small class="card-desc">{{ op.OpName }} ({{ op.WSNumber }})</small>
+                                <span id="OpCode" hidden>{{ op.OpCode if op.OpCode else '' }}</span>
+                            </p>
+                            <h5>
+                                <span class="badge badge-dark">
+                                    {{ "%.2f"|format(op.total_hours) }}
+                                </span>
+                            </h5>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p>No operation totals available for this week.</p>
+                    {% endif %}
+                </div>
+                <div class="card-footer compact-card-footer text-right bg-dark2 text-light">
+                    <small>Week Total Hours: <span class="font-weight-bold">{{ weekly_totals | sum(attribute='total_hours') | round(2) }}</span></small>
+                </div>
+            </div>
+        </div>     
     </div>
     <span>
         <small class="text-muted font-italic">** Changes can take up to 10 minutes to reflect in abas.</small>
@@ -280,7 +312,7 @@
                                         </select>
                                         <div class="form-check ml-2 d-flex align-items-center">
                                             <input class="form-check-input" type="checkbox" id="filterWorkSlipCheckbox">
-                                            <label class="form-check-label mb-0" for="filterWorkSlipCheckbox">Show All</label>
+                                            <label class="form-check-label" for="filterWorkSlipCheckbox">All</label>
                                         </div>
                                     </div>
                                 </div>                                
@@ -483,8 +515,8 @@
     function updateTotalHours() {
         let totalHours = 0;
 
-        // Loop through all cards and sum up the total hours
-        document.querySelectorAll('.card-body').forEach(cardBody => {
+        // Only sum time entries from day cards, not weekly totals
+        document.querySelectorAll('.col:not(#card_weekly_totals) .card-body').forEach(cardBody => {
             cardBody.querySelectorAll('.time-entry .badge').forEach(badge => {
                 const hours = parseFloat(badge.textContent);
                 if (!isNaN(hours)) {
@@ -498,8 +530,11 @@
         if (totalHoursBadge) {
             totalHoursBadge.textContent = totalHours.toFixed(2);
         }
-    }
 
+        // Update weekly totals card
+        updateWeeklyTotalsCard();
+    }
+    
     // update card footer total hours
     function updateCardFooterTotal(cardBody) {
         let cardTotal = 0;
@@ -518,6 +553,66 @@
                     //console.log('Updating card footer:', cardFooter, 'with total:', cardTotal);
                     totalHoursElement.textContent = cardTotal.toFixed(2);
                 }
+            }
+        }
+    }
+
+    function updateWeeklyTotalsCard() {
+        // Gather all time entries from all day cards
+        const opTotals = {};
+        document.querySelectorAll('.card-body:not(#card_weekly_totals .card-body) .time-entry').forEach(entryDiv => {
+            const wsNumber = entryDiv.querySelector('.card-desc')?.textContent.match(/\(([^)]+)\)/)?.[1] || '';
+            const opName = entryDiv.querySelector('.card-desc')?.textContent.split('(')[0].trim() || '';
+            const woDesc = entryDiv.querySelector('p')?.childNodes[0]?.textContent.trim() || '';
+            const opCode = entryDiv.querySelector('#OpCode')?.textContent || '';
+            const hours = parseFloat(entryDiv.querySelector('.badge')?.textContent) || 0;
+
+            const key = `${wsNumber}|${opName}|${woDesc}|${opCode}`;
+            if (!opTotals[key]) {
+                opTotals[key] = {
+                    WSNumber: wsNumber,
+                    OpName: opName,
+                    WODescription: woDesc,
+                    OpCode: opCode,
+                    total_hours: 0
+                };
+            }
+            opTotals[key].total_hours += hours;
+        });
+
+        // Update the weekly totals card
+        const weeklyTotalsBody = document.querySelector('#card_weekly_totals .card-body');
+        if (weeklyTotalsBody) {
+            let html = '';
+            let grandTotal = 0;
+            const totalsArr = Object.values(opTotals);
+            if (totalsArr.length > 0) {
+                totalsArr.forEach(op => {
+                    html += `
+                    <div class="d-flex justify-content-between align-items-center time-entry">
+                        <p>
+                            ${op.WODescription}
+                            <small class="card-desc">${op.OpName} (${op.WSNumber})</small>
+                            <span id="OpCode" hidden>${op.OpCode}</span>
+                        </p>
+                        <h5>
+                            <span class="badge badge-dark">
+                                ${op.total_hours.toFixed(2)}
+                            </span>
+                        </h5>
+                    </div>
+                    `;
+                    grandTotal += op.total_hours;
+                });
+            } else {
+                html = '<p>No operation totals available for this week.</p>';
+            }
+            weeklyTotalsBody.innerHTML = html;
+
+            // Update the card footer total
+            const weeklyTotalsFooter = document.querySelector('#card_weekly_totals .card-footer .font-weight-bold');
+            if (weeklyTotalsFooter) {
+                weeklyTotalsFooter.textContent = grandTotal.toFixed(2);
             }
         }
     }
@@ -1171,7 +1266,7 @@
                         data.workSlips.forEach(workSlip => {
                             const option = document.createElement('option');
                             option.value = workSlip.id;
-                            option.textContent = workSlip.id + " - " + workSlip.nameExtended + " (" + workSlip.name + ")";
+                            option.textContent = workSlip.nameExtended + " (" + workSlip.name + ") - " + workSlip.id;
                             option.dataset.wageGroup = workSlip.wageGroup; // Set wage group
                             workSlipDropdown.appendChild(option);
                         });
@@ -1530,7 +1625,7 @@
 
                     // Reattach event listeners for the new buttons
                     attachDeleteEvent(timeEntryDiv.querySelector('.delete-entry-btn'));
-                    attachCopyJobEvent(timeEntryDiv.querySelector('.copy-entry-btn'));
+                    //attachCopyJobEvent(timeEntryDiv.querySelector('.copy-entry-btn'));
                 });
 
                 // Recalculate the total hours for the floating badge
