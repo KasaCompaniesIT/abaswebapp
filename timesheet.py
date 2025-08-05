@@ -477,6 +477,49 @@ def save_entry():
         print("Error:", str(e))  # Debugging: Log the error
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@bp.route('/timesheet/entry/get_recent_workslips', methods=['GET'])
+@login_required
+def get_recent_workslips():
+    """
+    Returns all workslips that the current user has added in the last month,
+    ordered by most used (highest count first).
+    """
+    try:
+        abas_id = g.user.EmpID
+        db = get_db()
+        dbc = db.cursor()
+
+        today = datetime.now().date()
+        last_month = today - timedelta(days=30)
+
+        workslips = dbc.execute("""
+            SELECT ws.WSNumber, ws.WSDescription, o.OpName, o.OpNameExtended, wo.WODescription, o.OpCode, COUNT(*) as usage_count
+            FROM TimeEntry t
+            INNER JOIN WorkSlips ws ON t.WSNumber = ws.WSNumber
+            INNER JOIN Operations o ON ws.OpID = o.OpID
+            INNER JOIN WorkOrders wo ON ws.WONumber = wo.WONumber
+            WHERE t.EmpID = ? AND t.WorkDate >= ?
+            GROUP BY ws.WSNumber, ws.WSDescription, o.OpName, o.OpNameExtended, wo.WODescription
+            ORDER BY usage_count DESC
+        """, abas_id, last_month).fetchall()
+
+        result = [
+            {
+                "WSNumber": row.WSNumber,
+                "WSDescription": row.WSDescription,
+                "OpCode": row.OpCode,
+                "OpName": row.OpName,
+                "OpNameExtended": row.OpNameExtended,
+                "WODescription": row.WODescription,
+                "usage_count": row.usage_count
+            }
+            for row in workslips
+        ]
+
+        return jsonify({"success": True, "workslips": result}), 200
+    except Exception as e:
+        print("Error fetching recent workslips:", str(e))
+        return jsonify({"success": False, "error": str(e)}), 500
 
 @bp.route('/timesheet/entry/delete/<int:time_entry_id>', methods=['POST'])
 @login_required
@@ -865,9 +908,11 @@ def copy_prev_week():
         if prev_entries:
             # delete existing entries for the current week, but only for days in the current month
             curr_week_entries = get_time_entries_for_week(abas_id, curr_start, curr_start + timedelta(days=6))
+            
+            # Delete entries for the current week
             for entry in curr_week_entries:
                 entry_date = entry.WorkDate if isinstance(entry.WorkDate, date) else datetime.strptime(entry.WorkDate, "%Y-%m-%d").date()
-                if entry_date.month == curr_month:
+                if entry_date.month >= curr_month: 
                     dbc = get_db().cursor()
                     dbc.execute("DELETE FROM TimeEntry WHERE EntryID = ?", (entry.EntryID,))
                     dbc.commit()
@@ -883,17 +928,17 @@ def copy_prev_week():
                         if response.status_code != 200:
                             raise ValueError(f"Failed to send negated data for {entry.WorkDate}.")
 
-            # 2. Copy entries to current week (adjust dates), but only for days in the current month
+            # create new copied entries
             for entry in prev_entries:
                 for i in range(7):
                     day_date = curr_start + timedelta(days=i)
-                    if day_date.month != curr_month:
+                    if day_date.month < curr_month:
                         continue  # Skip copying to locked days (previous month)
                     existing_entry = get_time_entry(abas_id, day_date, entry.WSNumber)
                     if not existing_entry:
-                        entry = create_time_entry(abas_id, day_date, entry.WSNumber, 0)
-                    print("new_entry: ", entry)
-                    
+                        entry_obj = create_time_entry(abas_id, day_date, entry.WSNumber, 0)
+                    print("new_entry: ", entry_obj)                  
+                      
             flash("Previous week's entries copied successfully.", "success")
             return jsonify({'success': True})
         else:
