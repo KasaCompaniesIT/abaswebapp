@@ -20,8 +20,9 @@ from db import get_db
 bp = Blueprint('timesheet', __name__)
 
 @bp.route("/timesheet")
+@login_required
 def index():
-    return render_template('timesheet/index.html')
+    return render_template("timesheet/index.html")
 
 @bp.route("/timesheet/entry", methods=('GET', 'POST'))
 @login_required
