@@ -1280,8 +1280,9 @@
                         if (!filterCheckbox.checked) {
                             const workSlipDropdown = document.getElementById('workSlipDropdown');
                             const empWageGroup = '{{ abasUser.Dept }}';
+                            const alwaysShowGroups = ['99', '100']; // Add more as needed
                             Array.from(workSlipDropdown.options).forEach(option => {
-                                const isAlwaysShow = option.dataset.wageGroup === '99';
+                                const isAlwaysShow = alwaysShowGroups.includes(option.dataset.wageGroup);
                                 const matchesWage = option.dataset.wageGroup === empWageGroup;
                                 option.style.display = (matchesWage || isAlwaysShow) ? '' : 'none';
                             });
@@ -1689,12 +1690,15 @@
         const workSlipDropdown = document.getElementById('workSlipDropdown');
         const empWageGroup = '{{ abasUser.Dept }}';
 
+        const alwaysShowGroups = ['99', '100']; // Add more as needed
+
         Array.from(workSlipDropdown.options).forEach(option => {
-            const isAlwaysShow = option.dataset.wageGroup === '99';
+            const wageGroup = (option.dataset.wageGroup || '').toString().trim();
+            const isAlwaysShow = alwaysShowGroups.includes(wageGroup);
             if (checked) {
                 option.style.display = '';
             } else {
-                const matchesWage = option.dataset.wageGroup === empWageGroup;
+                const matchesWage = wageGroup === empWageGroup;
                 option.style.display = (matchesWage || isAlwaysShow) ? '' : 'none';
             }
         });
