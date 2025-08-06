@@ -258,91 +258,111 @@
 
     <!-- Add Time Modal -->
     <div class="modal fade" id="addTimeModal" data-backdrop="static" data-keyboard="false" tabindex="-1" aria-labelledby="addTimeModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal">
+        <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header bg-dark-custom">
-                    <h5 class="modal-title" id="addTimeModalLabel">Select Operation to Add to Timesheet</h5>
+                    <h5 class="modal-title" id="addTimeModalLabel">Select Operation</h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
-                <div class="modal-body">
-                    <form id="dateForm" method="post" action="{{ url_for('timesheet.add_to_timesheet') }}">
-                        <input type="hidden" id="selectedDateInput" name="selectedDate">
-                        <input type="hidden" id="abasIDInput" name="abasID" value="{{ abasUser.EmpID }}">
-                        <input type="hidden" id="workSlipIDInput" name="workSlipID">
-                        <!-- Grid of Dates -->
-                        <div class="container">
-                            <div class="row text-center">
-                                {# {% for day in dateRangePrevWeek %}
-                                <div class="col date-card-col">
-                                    <div class="date-card p-2 border rounded select-date-card
-                                        {% if day.date == today %} bg-success text-white
-                                        {% elif day.date | dateformat('%A') in ['Saturday', 'Sunday'] %} bg-light-grey
-                                        {% endif %}
-                                        {% if day.is_locked %} disabled-date-card{% endif %}"
-                                        data-date="{{ day.date }}"
-                                        data-selected="{% if day.date == today %}true{% else %}false{% endif %}"
-                                        {% if day.is_locked %}data-locked="true"{% endif %}>
-                                        <div class="day-of-week font-weight-bold">{{ day.date | dateformat('%a') }}</div>
-                                        <div class="date-value">{{ day.date | dateformat('%d') }}</div> <!-- Display only the day number -->
-                                    </div>
-                                </div>
-                                {% endfor %} #}
-                            </div>
-                            <div class="row text-center mt-2" id="selProject">
-                                <div class="col">
-                                    <select id="projectDropdown" class="form-control selectpicker" data-live-search="true" title="Select a Project" required>
-                                        <!-- Options will be dynamically populated -->
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="row text-center mt-2" id="selWorkOrder">
-                                <div class="col">
-                                    <select id="workOrderDropdown" class="form-control selectpicker" data-live-search="true" title="Select a Work Order" style="display: none;" required>
-                                        <!-- Options will be dynamically populated -->
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="row text-center mt-2" id="selWorkSlip">
-                                <div class="col d-flex align-items-center justify-content-center">
-                                    <div class="d-flex w-100 align-items-center">
-                                        <select id="workSlipDropdown" class="form-control selectpicker" data-live-search="true" title="Select an Operation" style="display: none; flex: 1 1 auto;" required>
-                                            <!-- Options will be dynamically populated -->
-                                        </select>
-                                        <div class="form-check ml-2 d-flex align-items-center">
-                                            <input class="form-check-input" type="checkbox" id="filterWorkSlipCheckbox">
-                                            <label class="form-check-label" for="filterWorkSlipCheckbox">All</label>
-                                        </div>
-                                    </div>
-                                </div>                                
-                            </div>
-                            <div class="row text-center mt-2">
-                                <div class="col">
-                                    <small class="text-muted font-italic mb-2 mt-0 pt-0">** Changes can take up to 10 minutes to reflect in abas.</small>
-                                </div>
-                            </div>
-                            <input type="hidden" name="week_start" id="weekStartInput" value="{{ startOfPrevWeek }}">
-                            {# <div class="row text-center mt-2">
-                                <div class="col">
-                                    <div class="d-flex justify-content-center">
-                                        <div class="input-group input-group-addtime">
-                                            <div class="input-group-prepend">
-                                                <span class="input-group-text" id="hoursLabel">Hours Worked</span>
+                <div class="modal-body pt-1">
+                    <!-- Add Time Modal Tabs -->
+                    <ul class="nav nav-tabs" id="addTimeTabs" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active" id="current-view-tab" data-toggle="tab" href="#current-view" role="tab" aria-controls="current-view" aria-selected="true">Search</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="recent-view-tab" data-toggle="tab" href="#recent-view" role="tab" aria-controls="recent-view" aria-selected="false">Recently Used</a>
+                    </li>
+                    </ul>
+                    <div class="tab-content" id="addTimeTabContent">
+                        <div class="tab-pane fade show active" id="current-view" role="tabpanel" aria-labelledby="current-view-tab">
+                            <!-- Current View Content -->
+                            <form id="dateForm" method="post" action="{{ url_for('timesheet.add_to_timesheet') }}">
+                                <input type="hidden" id="selectedDateInput" name="selectedDate">
+                                <input type="hidden" id="abasIDInput" name="abasID" value="{{ abasUser.EmpID }}">
+                                <input type="hidden" id="workSlipIDInput" name="workSlipID">
+                                <!-- Grid of Dates -->
+                                <div class="container">
+                                    <div class="row text-center">
+                                        {# {% for day in dateRangePrevWeek %}
+                                        <div class="col date-card-col">
+                                            <div class="date-card p-2 border rounded select-date-card
+                                                {% if day.date == today %} bg-success text-white
+                                                {% elif day.date | dateformat('%A') in ['Saturday', 'Sunday'] %} bg-light-grey
+                                                {% endif %}
+                                                {% if day.is_locked %} disabled-date-card{% endif %}"
+                                                data-date="{{ day.date }}"
+                                                data-selected="{% if day.date == today %}true{% else %}false{% endif %}"
+                                                {% if day.is_locked %}data-locked="true"{% endif %}>
+                                                <div class="day-of-week font-weight-bold">{{ day.date | dateformat('%a') }}</div>
+                                                <div class="date-value">{{ day.date | dateformat('%d') }}</div> <!-- Display only the day number -->
                                             </div>
-                                            <input type="text" class="form-control" name="hoursWorked" id="hoursWorked" placeholder="Hours Worked" aria-label="Hours Worked Input" aria-describedby="hoursLabel" required>
+                                        </div>
+                                        {% endfor %} #}
+                                    </div>
+                                    <div class="row text-center mt-2" id="selProject">
+                                        <div class="col">
+                                            <select id="projectDropdown" class="form-control selectpicker" data-live-search="true" title="Select a Project" required>
+                                                <!-- Options will be dynamically populated -->
+                                            </select>
                                         </div>
                                     </div>
-                                    <small class="text-muted font-italic mb-2 mt-0 pt-0">** Changes can take up to 10 minutes to reflect in abas.</small>
+                                    <div class="row text-center mt-2" id="selWorkOrder">
+                                        <div class="col">
+                                            <select id="workOrderDropdown" class="form-control selectpicker" data-live-search="true" title="Select a Work Order" style="display: none;" required>
+                                                <!-- Options will be dynamically populated -->
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="row text-center mt-2" id="selWorkSlip">
+                                        <div class="col d-flex align-items-center justify-content-center">
+                                            <div class="d-flex w-100 align-items-center">
+                                                <select id="workSlipDropdown" class="form-control selectpicker" data-live-search="true" title="Select an Operation" style="display: none; flex: 1 1 auto;" required>
+                                                    <!-- Options will be dynamically populated -->
+                                                </select>
+                                                <div class="form-check ml-2 d-flex align-items-center">
+                                                    <input class="form-check-input" type="checkbox" id="filterWorkSlipCheckbox">
+                                                    <label class="form-check-label" for="filterWorkSlipCheckbox">All</label>
+                                                </div>
+                                            </div>
+                                        </div>                                
+                                    </div>
+                                    <div class="row text-center mt-2">
+                                        <div class="col">
+                                            <small class="text-muted font-italic mb-2 mt-0 pt-0">** Changes can take up to 10 minutes to reflect in abas.</small>
+                                        </div>
+                                    </div>
+                                    <input type="hidden" name="week_start" id="weekStartInput" value="{{ startOfPrevWeek }}">
+                                    {# <div class="row text-center mt-2">
+                                        <div class="col">
+                                            <div class="d-flex justify-content-center">
+                                                <div class="input-group input-group-addtime">
+                                                    <div class="input-group-prepend">
+                                                        <span class="input-group-text" id="hoursLabel">Hours Worked</span>
+                                                    </div>
+                                                    <input type="text" class="form-control" name="hoursWorked" id="hoursWorked" placeholder="Hours Worked" aria-label="Hours Worked Input" aria-describedby="hoursLabel" required>
+                                                </div>
+                                            </div>
+                                            <small class="text-muted font-italic mb-2 mt-0 pt-0">** Changes can take up to 10 minutes to reflect in abas.</small>
+                                        </div>
+                                    </div> #}
+                                    <p></p>                            
                                 </div>
-                            </div> #}
-                            <p></p>                            
+                                <div class="d-flex justify-content-between">
+                                    <a class="btn btn-secondary mr-2" id="btnCopyPrev" href="{{ url_for('timesheet.copy_prev_week') }}" tabindex="-1">Copy Previous Week</a>                            
+                                    <button type="submit" class="btn btn-abas" id="btnAddTime">Add to Timesheet</button>
+                                </div>
+                            </form> 
                         </div>
-                        <div class="d-flex justify-content-between">
-                            <a class="btn btn-secondary mr-2" id="btnCopyPrev" href="{{ url_for('timesheet.copy_prev_week') }}" tabindex="-1">Copy Previous Week</a>                            
-                            <button type="submit" class="btn btn-abas" id="btnAddTime">Add to Timesheet</button>
+                        <div class="tab-pane fade" id="recent-view" role="tabpanel" aria-labelledby="recent-view-tab">
+                            <div id="recentWorkslipsContainer" class="mt-3">
+                            <p class="text-muted">Loading recently used operations...</p>
+                            
+                            </div>
                         </div>
-                    </form> 
+                    </div>
                 </div>                           
             </div>
         </div>
@@ -1703,6 +1723,52 @@
             }
         });
         $('.selectpicker').selectpicker('refresh');
+    });
+
+    $('#addTimeModal').on('shown.bs.modal', function () {
+        // Only fetch if the tab is visible
+        $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+            if (e.target.id === 'recent-view-tab') {
+                fetch('/timesheet/entry/get_recent_workslips/{{ abasUser.EmpID }}')
+                    .then(response => response.json())
+                    .then(data => {
+                        const container = document.getElementById('recentWorkslipsContainer');
+                        if (data.success && data.workslips.length > 0) {
+                            container.innerHTML = data.workslips.map(ws => `
+                                <div class="card mb-2">
+                                    <div class="card-body py-2 px-3 d-flex justify-content-between align-items-center">
+                                        <div>
+                                            ${ws.WODescription}
+                                            <br>
+                                            <small>${ws.OpName} (${ws.WSNumber})</small>
+                                        </div>
+                                        <button class="btn btn-abas btn-sm select-recent-ws" data-wsnumber="${ws.WSNumber}">Add</button>
+                                    </div>
+                                </div>
+                            `).join('');
+                            // Add event listeners for select buttons
+                            container.querySelectorAll('.select-recent-ws').forEach(btn => {
+                                btn.addEventListener('click', function() {
+                                    // Set the workSlipDropdown value and switch to the current tab
+                                    const wsNumber = this.getAttribute('data-wsnumber');
+                                    $('#current-view-tab').tab('show');
+                                    // Optionally set the dropdown value if present
+                                    const workSlipDropdown = document.getElementById('workSlipDropdown');
+                                    if (workSlipDropdown) {
+                                        workSlipDropdown.value = wsNumber;
+                                        workSlipDropdown.dispatchEvent(new Event('change'));
+                                    }
+                                });
+                            });
+                        } else {
+                            container.innerHTML = '<p class="text-muted">No recently used operations found.</p>';
+                        }
+                    })
+                    .catch(() => {
+                        document.getElementById('recentWorkslipsContainer').innerHTML = '<p class="text-danger">Failed to load recent operations.</p>';
+                    });
+            }
+        });
     });
 
 </script>

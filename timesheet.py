@@ -29,6 +29,7 @@ def entry():
     print("getUserID")
 
     abas_ID = ""
+    search_ID = ""
     abasUser = None
     error = None
     isMxEmp = False
@@ -40,6 +41,7 @@ def entry():
             button_clicked = request.form.get('button')
             startDate = request.form.get('startDate')  # Get the startDate from the form
             abas_ID = request.form['abas_ID']
+            search_ID = abas_ID  # Store the original ID for error messages
             print("selected ID: " + abas_ID)
         
             # Validate that abas_ID is an integer
@@ -78,6 +80,23 @@ def entry():
             if not abasUser:
                 error = "No user found with the given ID."
         
+        
+        if abasUser is None:
+            abas_ID = g.user.EmpID
+            print("user ID: " + str(abas_ID))
+            lookupByName = False
+            startDate = ""
+            button_clicked = ""
+            
+            abasUser = dbc.execute(
+                "SELECT e.*, s.EmpName as SupervisorName FROM employee as e "
+                "INNER JOIN employee as s ON e.Supervisor = s.Emp WHERE e.empid = ?", 
+                abas_ID
+            ).fetchone()
+            
+            error = "No user found with the given ID ('" + search_ID + "'). Please check the ID and try again."
+            flash(error)
+
         #print (abasUser)        
         if abasUser:     
             # check if logged in user matches the selected user
@@ -477,15 +496,15 @@ def save_entry():
         print("Error:", str(e))  # Debugging: Log the error
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@bp.route('/timesheet/entry/get_recent_workslips', methods=['GET'])
+@bp.route('/timesheet/entry/get_recent_workslips/<int:abas_id>', methods=['GET'])
 @login_required
-def get_recent_workslips():
+def get_recent_workslips(abas_id):
     """
     Returns all workslips that the current user has added in the last month,
     ordered by most used (highest count first).
     """
     try:
-        abas_id = g.user.EmpID
+        # abas_id = g.user.EmpID
         db = get_db()
         dbc = db.cursor()
 
@@ -499,7 +518,7 @@ def get_recent_workslips():
             INNER JOIN Operations o ON ws.OpID = o.OpID
             INNER JOIN WorkOrders wo ON ws.WONumber = wo.WONumber
             WHERE t.EmpID = ? AND t.WorkDate >= ?
-            GROUP BY ws.WSNumber, ws.WSDescription, o.OpName, o.OpNameExtended, wo.WODescription
+            GROUP BY ws.WSNumber, ws.WSDescription, o.OpName, o.OpNameExtended, wo.WODescription, o.OpCode
             ORDER BY usage_count DESC
         """, abas_id, last_month).fetchall()
 

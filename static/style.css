@@ -1474,6 +1474,14 @@ a {
     min-width: 0;
 }
 
+#recentWorkslipsContainer {
+    max-height: 75%;
+    overflow-y: auto;
+    padding-right: 8px; /* optional, for scrollbar space */
+}
+
+
+
 /* Add this to your style.css for Bootstrap 4 custom XXL breakpoint */
 @media (min-width: 1600px) {
   .row-cols-xxl-1 > * { flex: 0 0 100%; max-width: 100%; }
