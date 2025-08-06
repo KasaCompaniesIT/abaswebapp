@@ -159,7 +159,7 @@
                         {% for t in timecard_data[day.date] %}
                         <div class="d-flex justify-content-between align-items-center time-entry">
                             <p>
-                                {{ t.WODescription }}                                
+                                {{ t.WODescriptionClean }}                                
                                 <small class="card-desc">{{ t.OpName }} ({{ t.WSNumber }}) </small>
                                 <span id="OpCode" hidden>{{ t.OpCode }}</span>
                             </p>
@@ -216,7 +216,7 @@
                         {% for op in weekly_totals %}
                         <div class="d-flex justify-content-between align-items-center time-entry">
                             <p>
-                                {{ op.WODescription if op.WODescription else '' }}
+                                {{ op.WODescriptionClean }}
                                 <small class="card-desc">{{ op.OpName }} ({{ op.WSNumber }})</small>
                                 <span id="OpCode" hidden>{{ op.OpCode if op.OpCode else '' }}</span>
                             </p>

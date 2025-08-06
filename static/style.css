@@ -1090,9 +1090,6 @@ a {
     }
 }
 
-#addTimeModal .modal-dialog {
-    margin: 0.3rem;
-}
 
 /* Remove block display from tbody */
 .modal-body .table-responsive tbody {
@@ -1171,6 +1168,10 @@ a {
 
 /* Stacked table rows for finalize time modal on mobile */
 @media (max-width: 576px) {
+
+    #addTimeModal .modal-dialog {
+        margin: 0.3rem;
+    }
 
     /* Stack all table elements for mobile */
     #finalizeTimeModal #finalizeTimeTable,

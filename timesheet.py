@@ -196,19 +196,19 @@ def entry():
                 print(day["date"])
                 # Fetch timecard data for the specific date
                 timeEntryAbas = dbc.execute("""
-                            select EmpID, WorkDate, t.WSNumber, WSDescription, OpName, OpNameExtended, sum(TimeWorked) as tHoursWorked, WODescription, OpCode
+                            select EmpID, WorkDate, t.WSNumber, WSDescription, OpName, OpNameExtended, sum(TimeWorked) as tHoursWorked, WODescription, OpCode, WOPart
                             from TimeEntryAbas t
                             inner join WorkSlips ws on t.WSNumber = ws.WSNumber 
                             inner join Operations o on ws.OpID = o.OpID
                             inner join WorkOrders wo on ws.WONumber = wo.WONumber
                             where EmpID = ? and WorkDate = ? 
-                            group by EmpID, t.WSNumber, WSDescription, OpName, OpNameExtended, WorkDate, WODescription, OpCode
+                            group by EmpID, t.WSNumber, WSDescription, OpName, OpNameExtended, WorkDate, WODescription, OpCode, WOPart
                             order by EmpID, WorkDate
                             """
                             , abasUser.EmpID, day["date"]).fetchall()
                 
                 timeEntry = dbc.execute("""
-                            select EntryID, EmpID, WorkDate, t.WSNumber, WSDescription, OpName, OpNameExtended, TimeWorked as tHoursWorked, WODescription, OpCode 
+                            select EntryID, EmpID, WorkDate, t.WSNumber, WSDescription, OpName, OpNameExtended, TimeWorked as tHoursWorked, WODescription, OpCode, WOPart 
                             from TimeEntry t
                             inner join WorkSlips ws on t.WSNumber = ws.WSNumber 
                             inner join Operations o on ws.OpID = o.OpID
@@ -226,12 +226,19 @@ def entry():
 
                 # Add all entries from timeEntryAbas to the combined list
                 for entry in timeEntryAbas:
+                    wo_desc = entry.WODescription
+                    if wo_desc and wo_desc.strip() != '':
+                        wo_desc_clean = wo_desc.strip()
+                    else:
+                        wo_desc_clean = entry.WOPart
                     combined_entries.append({
                         "EmpID": entry.EmpID,
                         "WorkDate": entry.WorkDate,
                         "WSNumber": entry.WSNumber,
                         "WSDescription": entry.WSDescription,
-                        "WODescription": entry.WODescription,
+                        "WODescription": entry.WODescription,                        
+                        "WODescriptionClean": wo_desc_clean,
+                        "WOPart": entry.WOPart,
                         "OpName": entry.OpName,
                         "OpNameExtended": entry.OpNameExtended,
                         "OpCode": entry.OpCode,
@@ -242,6 +249,11 @@ def entry():
                 # Add entries from timeEntry only if they don't exist in timeEntryAbas
                 for entry in timeEntry:
                     key = (entry.EmpID, entry.WorkDate, entry.WSNumber)
+                    wo_desc = entry.WODescription
+                    if wo_desc and wo_desc.strip() != '':
+                        wo_desc_clean = wo_desc.strip()
+                    else:
+                        wo_desc_clean = entry.WOPart
                     if key not in abas_keys:
                         combined_entries.append({
                             "EmpID": entry.EmpID,
@@ -249,6 +261,8 @@ def entry():
                             "WSNumber": entry.WSNumber,
                             "WSDescription": entry.WSDescription,
                             "WODescription": entry.WODescription,
+                            "WODescriptionClean": wo_desc_clean,
+                            "WOPart": entry.WOPart,
                             "OpName": entry.OpName,
                             "OpCode": entry.OpCode,
                             "OpNameExtended": entry.OpNameExtended,
@@ -1690,6 +1704,7 @@ def get_weekly_operation_totals(timecard_data):
     for entries in timecard_data.values():
         for entry in entries:
             key = (entry['WSNumber'], entry['OpName'], entry.get('WODescription', ''), entry.get('OpCode', ''))
+            
             if key not in totals:
                 totals[key] = {
                     'WSNumber': entry['WSNumber'],
