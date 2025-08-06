@@ -1177,6 +1177,9 @@ a {
         padding: 0.2rem;
         max-height: 90vh;
         overflow-y: auto;
+        overflow: visible !important;
+        position: relative;
+        z-index: 1;
     }
 
     #addTimeModal .modal-header {
