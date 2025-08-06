@@ -1589,79 +1589,7 @@
     // Event listener for Add time form submission
     document.getElementById('dateForm').addEventListener('submit', function (event) {
         event.preventDefault(); // Prevent the default form submission
-
-        // Gather form data
-        document.getElementById('weekStartInput').value = document.getElementById('startDateInput').value;
-        const formData = new FormData(this);
-        const data = Object.fromEntries(formData.entries());
-
-        // Send the data to the server
-        fetch(this.action, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data),
-        })
-        .then(response => response.json())
-        .then(result => {
-            if (result.success && Array.isArray(result.entries)) {
-                result.entries.forEach(entry => {
-                    const cardBody = document.querySelector(`#card_${entry.WorkDate.replace(/\//g, '_')} .card-body`);
-
-                    // Remove "No data available" message if it exists
-                    const noDataMessage = cardBody.querySelector('p');
-                    if (noDataMessage && noDataMessage.textContent === 'No data available for this date.') {
-                        noDataMessage.remove();
-                    }
-
-                    // Add the new time entry to the card
-                    const timeEntryDiv = document.createElement('div');
-                    timeEntryDiv.classList.add('d-flex', 'justify-content-between', 'align-items-center', 'time-entry');
-                    timeEntryDiv.innerHTML = `
-                        <p>
-                                ${entry.WODescription}                              
-                                <small class="card-desc">${entry.OpName} (${entry.WSNumber}) </small>
-                                <span id="OpCode" hidden>${entry.OpCode}</span>
-                            </p>
-                        <h5>
-                            <span class="badge badge-secondary editable-hours"
-                                data-timeentryid="${entry.TimeEntryID}"
-                                style="cursor:pointer;">
-                                ${entry.tHoursWorked}
-                            </span>
-                        </h5>
-                        <button class="btn btn-danger btn-sm delete-entry-btn" data-timeentryid="${entry.TimeEntryID}" title="Delete Entry">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    `;
-                    cardBody.appendChild(timeEntryDiv);
-
-                    // Update the total hours in the card footer
-                    const cardFooter = cardBody.nextElementSibling; // Assuming footer is the next sibling
-                    const totalHoursElement = cardFooter.querySelector('.font-weight-bold');
-                    const currentTotal = parseFloat(totalHoursElement.textContent) || 0;
-                    const newTotal = currentTotal + parseFloat(entry.tHoursWorked);
-                    totalHoursElement.textContent = newTotal.toFixed(2);
-
-                    // Reattach event listeners for the new buttons
-                    attachDeleteEvent(timeEntryDiv.querySelector('.delete-entry-btn'));
-                    //attachCopyJobEvent(timeEntryDiv.querySelector('.copy-entry-btn'));
-                });
-
-                // Recalculate the total hours for the floating badge
-                updateTotalHours();
-
-                showSnackbar('Time entry added successfully!', 'success');
-            } else {
-                showSnackbar(result.error || 'Failed to add time entry.', 'error');
-                console.error('Error adding time entry:', result.error);
-            }
-        })
-        .catch(error => {
-            showSnackbar('Error adding time entry.', 'error');
-            console.error('Error adding time entry:', error);
-        });
+        handleAddTimeEntry(); // Call the function to handle adding time entry
     });
 
     // Attach event handler for the delete button in each day card header
@@ -1749,15 +1677,17 @@
                             // Add event listeners for select buttons
                             container.querySelectorAll('.select-recent-ws').forEach(btn => {
                                 btn.addEventListener('click', function() {
-                                    // Set the workSlipDropdown value and switch to the current tab
                                     const wsNumber = this.getAttribute('data-wsnumber');
-                                    $('#current-view-tab').tab('show');
-                                    // Optionally set the dropdown value if present
-                                    const workSlipDropdown = document.getElementById('workSlipDropdown');
-                                    if (workSlipDropdown) {
-                                        workSlipDropdown.value = wsNumber;
-                                        workSlipDropdown.dispatchEvent(new Event('change'));
-                                    }
+                                    const abasID = document.getElementById('abasIDInput').value;
+                                    const weekStart = document.getElementById('weekStartInput').value;
+
+                                    const data = {
+                                        abasID: abasID,
+                                        week_start: weekStart,
+                                        workSlipID: wsNumber
+                                    };
+
+                                    handleAddTimeEntry(data);
                                 });
                             });
                         } else {
@@ -1770,6 +1700,80 @@
             }
         });
     });
+
+    function handleAddTimeEntry(data = null) {
+        // If no data is passed, gather from the main form
+        if (!data) {
+            document.getElementById('weekStartInput').value = document.getElementById('startDateInput').value;
+            const formData = new FormData(document.getElementById('dateForm'));
+            data = Object.fromEntries(formData.entries());
+        }
+
+        fetch(document.getElementById('dateForm').action, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success && Array.isArray(result.entries)) {
+                result.entries.forEach(entry => {
+                    const cardBody = document.querySelector(`#card_${entry.WorkDate.replace(/\//g, '_')} .card-body`);
+
+                    // Remove "No data available" message if it exists
+                    const noDataMessage = cardBody.querySelector('p');
+                    if (noDataMessage && noDataMessage.textContent === 'No data available for this date.') {
+                        noDataMessage.remove();
+                    }
+
+                    // Add the new time entry to the card
+                    const timeEntryDiv = document.createElement('div');
+                    timeEntryDiv.classList.add('d-flex', 'justify-content-between', 'align-items-center', 'time-entry');
+                    timeEntryDiv.innerHTML = `
+                        <p>
+                            ${entry.WODescription}                              
+                            <small class="card-desc">${entry.OpName} (${entry.WSNumber}) </small>
+                            <span id="OpCode" hidden>${entry.OpCode}</span>
+                        </p>
+                        <h5>
+                            <span class="badge badge-secondary editable-hours"
+                                data-timeentryid="${entry.TimeEntryID}"
+                                style="cursor:pointer;">
+                                ${entry.tHoursWorked}
+                            </span>
+                        </h5>
+                        <button class="btn btn-danger btn-sm delete-entry-btn" data-timeentryid="${entry.TimeEntryID}" title="Delete Entry">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    `;
+                    cardBody.appendChild(timeEntryDiv);
+
+                    // Update the total hours in the card footer
+                    const cardFooter = cardBody.nextElementSibling; // Assuming footer is the next sibling
+                    const totalHoursElement = cardFooter.querySelector('.font-weight-bold');
+                    const currentTotal = parseFloat(totalHoursElement.textContent) || 0;
+                    const newTotal = currentTotal + parseFloat(entry.tHoursWorked);
+                    totalHoursElement.textContent = newTotal.toFixed(2);
+
+                    // Reattach event listeners for the new buttons
+                    attachDeleteEvent(timeEntryDiv.querySelector('.delete-entry-btn'));
+                    //attachCopyJobEvent(timeEntryDiv.querySelector('.copy-entry-btn'));
+                });
+
+                // Recalculate the total hours for the floating badge
+                updateTotalHours();
+
+                showSnackbar('Time entry added successfully!', 'success');
+            } else {
+                showSnackbar(result.error || 'Failed to add time entry.', 'error');
+                console.error('Error adding time entry:', result.error);
+            }
+        })
+        .catch(error => {
+            showSnackbar('Error adding time entry.', 'error');
+            console.error('Error adding time entry:', error);
+        });
+    }
 
 </script>
 {% endblock %}

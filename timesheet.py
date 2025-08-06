@@ -673,7 +673,7 @@ def add_to_timesheet():
     """
     try:
         data = request.get_json()
-        abas_id = g.user.EmpID
+        abas_id = data.get('abasID')
         ws_number = data.get('workSlipID')
         week_start_str = data.get('week_start')
 
