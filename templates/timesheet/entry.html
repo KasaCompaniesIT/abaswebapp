@@ -781,10 +781,11 @@
             // Get the date from the parent card's id
             const card = cardBody.closest('.col');
             if (!card) return;
-            const cardId = card.id; // e.g., "card_06/17/2025"
-            const workDate = cardId.replace('card_', '').replace(/_/g, '/');
+            const cardId = card.id;
+            // Exclude the weekly summary card
+            if (cardId === 'card_weekly_totals') return;
 
-            // Determine if this day is locked
+            const workDate = cardId.replace('card_', '').replace(/_/g, '/');
             const isLocked = lockedDays && lockedDays[workDate];
 
             cardBody.querySelectorAll('.time-entry').forEach(entryDiv => {
@@ -818,6 +819,39 @@
         });
         // Convert grouped object to array
         return Object.values(grouped);
+    }
+
+    function updateDaySummary(dayStr) {
+        // Find all rows for the given day
+        const tableBody = document.querySelector('#finalizeTimeModal tbody');
+        const rows = Array.from(tableBody.querySelectorAll(`tr[data-date="${dayStr}"]`));
+        let total = 0;
+        rows.forEach(row => {
+            const input = row.querySelector('input.hours-input');
+            if (input) {
+                const val = parseFloat(input.value);
+                if (!isNaN(val)) total += val;
+            }
+        });
+        // Update the summary row for this day
+        const summaryCell = tableBody.querySelector(`.day-summary-total[data-date="${dayStr}"]`);
+        if (summaryCell) {
+            summaryCell.textContent = total.toFixed(2);
+        }
+        updateFinalizeTotalHours()
+    }
+
+    function updateFinalizeTotalHours() {
+        const tableBody = document.querySelector('#finalizeTimeModal tbody');
+        let total = 0;
+        tableBody.querySelectorAll('input.hours-input').forEach(input => {
+            const val = parseFloat(input.value);
+            if (!isNaN(val)) total += val;
+        });
+        const totalHoursBadge = document.getElementById('finalizeTotalHoursCell');
+        if (totalHoursBadge) {
+            totalHoursBadge.textContent = total.toFixed(2);
+        }
     }
 
     // Render the finalize table with the fetched data
@@ -855,6 +889,7 @@
         let dayTotal = 0;
         let dayEntries = [];
         let totalHours = 0;
+        let dayRowIndex = 0; // Track row index for each day
 
         function renderDayHeader(weekdayName, dayStr, dayTotal) {
             return `
@@ -883,32 +918,8 @@
                 rowHTML += renderDaySummary(lastDay, dayTotal);
                 dayEntries = [];
                 dayTotal = 0;
+                dayRowIndex = 0; // Reset for next day
             }
-        }
-
-        function updateWeeklyTotal() {
-            let weekTotal = 0;
-            document.querySelectorAll('.day-summary-total').forEach(cell => {
-                const val = parseFloat(cell.textContent);
-                if (!isNaN(val)) weekTotal += val;
-            });
-            const totalHoursBadge = document.getElementById('finalizeTotalHoursCell');
-            if (totalHoursBadge) totalHoursBadge.textContent = weekTotal.toFixed(2);
-        }
-
-        function updateDaySummary(dayStr) {
-            const rows = document.querySelectorAll(`#finalizeTimeModal tbody tr[data-date="${dayStr}"]`);
-            let sum = 0;
-            rows.forEach(row => {
-                const input = row.querySelector('input.hours-input');
-                if (input) {
-                    const val = parseFloat(input.value);
-                    if (!isNaN(val)) sum += val;
-                }
-            });
-            const summaryCell = document.querySelector(`.day-summary-total[data-date="${dayStr}"]`);
-            if (summaryCell) summaryCell.textContent = sum.toFixed(2);
-            updateWeeklyTotal();
         }
 
         data.time_entries.forEach((entry, idx) => {
@@ -925,6 +936,9 @@
             // Determine the paychex code: use OpCode if present, else 'E1'
             const paychexCode = entry.OpCode && entry.OpCode.trim() !== '' ? entry.OpCode : 'E1';
 
+            // Disable remove button for first entry of the day
+            const disableRemove = dayRowIndex === 0 ? 'disabled' : '';
+
             dayEntries.push(`
                 <tr data-date="${workDate}" data-locked="${entry.locked}">
                     <td data-label="Pay Code">
@@ -940,12 +954,12 @@
                         <input type="text" class="form-control form-control-sm hours-input" value="${entryHours.toFixed(2)}" style="width:55px; text-align:right;" ${entry.locked ? 'readonly disabled' : ''}>
                     </td>
                     <td data-label="Actions">
-                        <div class="btn-group btn-group-sm" role="group">
+                        <div class="btn-group btn-group-sm" role="group">                            
+                            <button type="button" class="btn btn-danger remove-row-btn" data-date="${workDate}" title="Remove Row" ${entry.locked ? 'disabled' : ''} ${disableRemove}>
+                                <i class="fas fa-minus"></i>
+                            </button>
                             <button type="button" class="btn btn-success add-row-btn" data-date="${workDate}" title="Add Row" ${entry.locked ? 'disabled' : ''}>
                                 <i class="fas fa-plus"></i>
-                            </button>
-                            <button type="button" class="btn btn-danger remove-row-btn" data-date="${workDate}" title="Remove Row" ${entry.locked ? 'disabled' : ''}>
-                                <i class="fas fa-minus"></i>
                             </button>
                         </div>
                     </td>
@@ -955,6 +969,7 @@
             dayTotal += entryHours;
             totalHours += entryHours;
             lastDay = dayStr;
+            dayRowIndex++;
 
             if (idx === data.time_entries.length - 1) {
                 flushDayRows();
@@ -1003,6 +1018,12 @@
                 const hoursCell = newRow.querySelector('td[data-label="Hours"]');
                 if (hoursCell) {
                     hoursCell.innerHTML = `<input type="text" class="form-control form-control-sm hours-input" value="0.00" style="width:55px; text-align:right;">`;
+                }
+
+                // Enable the remove button in the new row
+                const removeBtn = newRow.querySelector('.remove-row-btn');
+                if (removeBtn) {
+                    removeBtn.removeAttribute('disabled');
                 }
 
                 let nextRow = lastRow.nextElementSibling;

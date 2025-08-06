@@ -37,7 +37,7 @@ a {
 
 /* .flash { margin: 1em 0; padding: 1em; background: #cae6f6; border: 1px solid #377ba8; } */
 .container-fluid {
-    padding: 0 .5rem;
+    padding: 0 .3rem;
 }
 
 .content form {
@@ -1090,6 +1090,10 @@ a {
     }
 }
 
+#addTimeModal .modal-dialog {
+    margin: 0.3rem;
+}
+
 /* Remove block display from tbody */
 .modal-body .table-responsive tbody {
     max-height: none;
@@ -1100,9 +1104,9 @@ a {
 
 /* Make the entire table scrollable */
 .modal-body .table-responsive {
-    max-height: 600px;
+    max-height: 75%;
     /* Restrict the height of the table container */
-    overflow-y: auto;
+    overflow-y: none;
     /* Enable vertical scrolling */
 }
 
@@ -1267,7 +1271,7 @@ a {
         position: static !important;
         padding-left: 8px !important;
         padding-right: 8px !important;
-        font-size: 16px !important;
+        font-size: .9rem !important;
         white-space: nowrap !important;
         background: transparent !important;
         border: none !important;
@@ -1289,7 +1293,7 @@ a {
         white-space: nowrap !important;
         vertical-align: middle !important;
         background: transparent !important;
-        font-size: 1.1em !important;
+        font-size: 1em !important;
         position: static !important;
         padding-left: 8px !important;
         padding-right: 8px !important;
@@ -1364,6 +1368,19 @@ a {
         max-width: 100px;
         margin-right: 0.5rem;
     }
+
+    #finalizeTimeModal {
+        padding-left: 0;
+    }
+
+    #finalizeTimeModal .modal-body {
+        padding: 0.2rem;
+    }
+
+    #finalizeTimeModal .table-responsive {
+        overflow-x: hidden;
+    }
+
 }
 
 /* Make the modal dialog only as wide as its content */

@@ -46,8 +46,8 @@ DONE: Add frequently used list to pick from on the add time entry screen.
 BUG: Scroll bug on mobile when adding time
 DONE: Add option to filter workslips by job title
 DOME: Add time entry to everyday with blanks like copying a day so it looks more like the abas table and remove dates and hours from time entry screen.
-BUG: Fix removal of attendance time not updating time values.  
-TODO: Don't allow the removal of the last entry for a day on the attendance screen.
+DONE: Fix removal of attendance time not updating time values.  
+DONE: Don't allow the removal of the last entry for a day on the attendance screen.
 DONE: Move copy/delete buttons on mobile to left side of screen and make them larger.
-TODO: Update mobile view to have smaller border to maximize space layout.
+DONE: Update mobile view to have smaller border to maximize space layout.
 DONE: Add weekly totals card at the end of the week.
