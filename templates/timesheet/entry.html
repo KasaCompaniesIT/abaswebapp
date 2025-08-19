@@ -1077,11 +1077,11 @@
     // Show the finalize time modal when the button is clicked
     document.getElementById('finalizeTimeButton').addEventListener('click', function () {
         //const finalizeTimeModal = new bootstrap.Modal(document.getElementById('finalizeTimeModal'));
-        var myModal = new bootstrap.Modal(document.getElementById('finalizeTimeModal'), {
+        $('#finalizeTimeModal').modal({
             backdrop: 'static',
-            keyboard: false
-        });
-        myModal.show();        
+            keyboard: false,
+            show: true
+        });       
 
         //finalizeTimeModal.show();
         //document.getElementById('finalizeTimeModalButton').disabled = false;
@@ -1126,6 +1126,7 @@
 
                     if (firstRow) {
                         comments = document.querySelector('#commentsText').value || '';
+                        comments = comments.replace(/[\r\n]+/g, ' ');
                     } else {
                         comments = '';
                     }
@@ -1180,10 +1181,16 @@
                     .then(result => {
                         if (result.success) {
                             showSnackbar('Attendance time data submitted successfully!  A copy of your timesheet will be emailed to you shortly (5-10 minutes).', 'success');
-                            document.getElementById('finalizeTimeModalButton').disabled = true;
-                            setTimeout(() => {
-                                document.getElementById('finalizeTimeModalButton').disabled = false;
-                            }, 10000); // 10 seconds
+                            //document.getElementById('finalizeTimeModalButton').disabled = true;
+                            //setTimeout(() => {
+                            //    document.getElementById('finalizeTimeModalButton').disabled = false;
+                            //}, 10000); // 10 seconds
+                            
+                            // close the modal
+                            // debug output
+                            console.log('Closing Finalize Modal');
+                            $('#finalizeTimeModal').modal('hide'); // For Bootstrap 4
+
                         } else {
                             showSnackbar('Failed to finalize time data: ' + result.error, 'error');
                             console.error('Error finalizing time data:', result.error);
@@ -1195,8 +1202,8 @@
                     });
 
                 // Remove this handler after use to prevent multiple submissions
-                document.getElementById('confirmFinalizeBtn').removeEventListener('click', finalizeFormSubmitHandler);
-                finalizeFormSubmitHandler = null;
+                //document.getElementById('confirmFinalizeBtn').removeEventListener('click', finalizeFormSubmitHandler);
+                //finalizeFormSubmitHandler = null;
             };
 
             document.getElementById('confirmFinalizeBtn').addEventListener('click', finalizeFormSubmitHandler);
@@ -1795,6 +1802,22 @@
             console.error('Error adding time entry:', error);
         });
     }
+
+    setInterval(function() {
+        fetch('/timesheet/entry', {
+            method: 'GET',
+            credentials: 'include' // ensures cookies/session are sent
+        })
+        .then(response => {
+            // Optionally check for session status
+            if (!response.ok) {
+                console.warn('Session keepalive failed:', response.status);
+            }
+        })
+        .catch(error => {
+            console.warn('Session keepalive error:', error);
+        });
+    }, 1000 * 60 * 30); // every 30 minutes
 
 </script>
 {% endblock %}
