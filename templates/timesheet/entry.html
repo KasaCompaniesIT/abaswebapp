@@ -664,6 +664,8 @@
             input.focus();
             input.select();
 
+            let isSubmitting = false;
+
             input.addEventListener('blur', saveEdit);
             input.addEventListener('keydown', function(ev) {
                 if (ev.key === 'Enter') {
@@ -675,6 +677,9 @@
             });
 
             function saveEdit() {
+                if (isSubmitting) return; // <-- Prevent duplicate calls
+                isSubmitting = true;
+
                 const newValue = input.value;
                 // Optionally: validate newValue here
                 fetch(`/timesheet/entry/update_hours/${entryId}`, {

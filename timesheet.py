@@ -495,8 +495,11 @@ def save_entry():
         if not new_entry:
             raise ValueError("Failed to fetch the newly added time entry.")
 
+        # If OpCode is not set, use "E1"
+        op_code = new_entry.OpCode if new_entry.OpCode != '' else "E1"
+
         # new_entry is already a dict!
-        response = send_timeentry_csv_to_abas(abas_id, selected_date, work_slip_id, hours_worked, "save_entry")
+        response = send_timeentry_csv_to_abas(abas_id, selected_date, work_slip_id, hours_worked, "save_entry", op_code)
 
         if response.status_code == 200:
             print("CSV file sent successfully!")
@@ -1199,13 +1202,16 @@ def update_hours(entry_id):
         )
         db.commit()
         
-        time_entry = get_time_entry(entry_id=entry_id)
+        time_entry = get_time_entry(entry_id=entry_id, full_details=True)
         print("time_entry: ", time_entry)
-        abas_id = time_entry[1]
-        entry_date = time_entry[2]
-        work_slip_id = time_entry[3]
-        time_worked = float(time_entry[4])
-        response = send_timeentry_csv_to_abas(abas_id, entry_date, work_slip_id, time_worked, "update_hours")
+        abas_id = time_entry.EmpID
+        entry_date = time_entry.WorkDate
+        work_slip_id = time_entry.WSNumber
+        time_worked = float(time_entry.tHoursWorked)
+        # If OpCode is not set, use "E1"
+        op_code = time_entry.OpCode if time_entry.OpCode != '' else "E1"
+            
+        response = send_timeentry_csv_to_abas(abas_id, entry_date, work_slip_id, time_worked, "update_hours", op_code)
         if response.status_code != 200:
             raise ValueError(f"Failed to send data for {time_entry.WorkDate}.")
                 
@@ -1409,7 +1415,7 @@ def get_time_entry(abas_id=None, work_date=None, ws_number=None, entry_id=None, 
             # Fetch the full details of the time entry
             time_entry = dbc.execute(
                 """
-                SELECT t.EntryID AS TimeEntryID, t.EmpID, t.WorkDate, t.WSNumber, ws.WSDescription, o.OpName, o.OpNameExtended, t.TimeWorked AS tHoursWorked, wo.WODescription
+                SELECT t.EntryID AS TimeEntryID, t.EmpID, t.WorkDate, t.WSNumber, ws.WSDescription, o.OpName, o.OpNameExtended, t.TimeWorked AS tHoursWorked, wo.WODescription, o.OpCode
                 FROM TimeEntry t
                 INNER JOIN WorkSlips ws ON t.WSNumber = ws.WSNumber
                 INNER JOIN Operations o ON ws.OpID = o.OpID
@@ -1434,7 +1440,7 @@ def get_time_entry(abas_id=None, work_date=None, ws_number=None, entry_id=None, 
             # Fetch the full details of the time entry
             time_entry = dbc.execute(
                 """
-                SELECT t.EntryID AS TimeEntryID, t.EmpID, t.WorkDate, t.WSNumber, ws.WSDescription, o.OpName, o.OpNameExtended, t.TimeWorked AS tHoursWorked, wo.WODescription
+                SELECT t.EntryID AS TimeEntryID, t.EmpID, t.WorkDate, t.WSNumber, ws.WSDescription, o.OpName, o.OpNameExtended, t.TimeWorked AS tHoursWorked, wo.WODescription, o.OpCode
                 FROM TimeEntry t
                 INNER JOIN WorkSlips ws ON t.WSNumber = ws.WSNumber
                 INNER JOIN Operations o ON ws.OpID = o.OpID
@@ -1456,7 +1462,7 @@ def get_time_entry(abas_id=None, work_date=None, ws_number=None, entry_id=None, 
 
     return time_entry
 
-def send_timeentry_csv_to_abas(abas_id, work_date, work_slip_id, hours_worked, export_source=None):
+def send_timeentry_csv_to_abas(abas_id, work_date, work_slip_id, hours_worked, export_source=None, paychex_code=None):
     # Define the API endpoint
     url = "http://abas.kasa.kasacontrols.com:8000/jobtime_entry"
 
@@ -1471,7 +1477,8 @@ def send_timeentry_csv_to_abas(abas_id, work_date, work_slip_id, hours_worked, e
         "EmpID": abas_id,
         "WorkDate": work_date_str,  # Format the date as MM/DD/YY
         "WSNumber": work_slip_id,
-        "HoursWorked": hours_worked
+        "HoursWorked": hours_worked,
+        "PaychexCode": paychex_code
     }
 
     # Send the POST request
@@ -1506,7 +1513,7 @@ def send_timeentry_csv_to_abas(abas_id, work_date, work_slip_id, hours_worked, e
             emp_id=abas_id,
             work_date=work_date_str,
             time_worked=hours_worked,
-            paychex_code=None,  # Assuming no Paychex code for job time entries
+            paychex_code=paychex_code,
             work_slip=work_slip_id
         )
     except Exception as e:
