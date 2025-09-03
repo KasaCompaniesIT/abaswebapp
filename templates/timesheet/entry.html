@@ -627,6 +627,23 @@
             }
             opTotals[key].total_hours += hours;
         });
+        // Gather the holiday hours
+        document.querySelectorAll('.card-body:not(#card_weekly_totals .card-body) .holiday .badge.font-italic').forEach(badge => {
+            const hours = parseFloat(badge.textContent) || 0;
+            //if (hours > 0) {
+                const key = `HOLIDAY|HOLIDAY|Holiday Hours|HOLIDAY`;
+                if (!opTotals[key]) {
+                    opTotals[key] = {
+                        WSNumber: 'HOLIDAY',
+                        OpName: 'HOLIDAY',
+                        WODescription: 'Holiday Hours',
+                        OpCode: 'HOLIDAY',
+                        total_hours: 0
+                    };
+                }
+                opTotals[key].total_hours += hours;
+            //}
+        });
 
         // Update the weekly totals card
         const weeklyTotalsBody = document.querySelector('#card_weekly_totals .card-body');
@@ -636,26 +653,50 @@
             const totalsArr = Object.values(opTotals);
             if (totalsArr.length > 0) {
                 totalsArr.forEach(op => {
-                    html += `
-                    <div class="d-flex justify-content-between align-items-center time-entry">
-                        <p>
-                            ${op.WODescription}
-                            <small class="card-desc">${op.OpName} (${op.WSNumber})</small>
-                            <span id="OpCode" hidden>${op.OpCode}</span>
-                        </p>
-                        <h5>
-                            <span class="badge badge-dark">
-                                ${op.total_hours.toFixed(2)}
-                            </span>
-                        </h5>
-                    </div>
-                    `;
+                    if(op.OpCode != 'HOLIDAY'){
+                        html += `
+                        <div class="d-flex justify-content-between align-items-center time-entry">
+                            <p>
+                                ${op.WODescription}
+                                <small class="card-desc">${op.OpName} (${op.WSNumber})</small>
+                                <span id="OpCode" hidden>${op.OpCode}</span>
+                            </p>
+                            <h5>
+                                <span class="badge badge-dark">
+                                    ${op.total_hours.toFixed(2)}
+                                </span>
+                            </h5>
+                        </div>
+                        `;
+                    } else {
+                        html += `
+                        <div class="d-flex justify-content-between align-items-center time-entry">
+                            <p class="font-italic">
+                                ${op.WODescription}                                
+                            </p>
+                            <h5>
+                                <span class="badge badge-dark font-italic">
+                                    ${op.total_hours.toFixed(2)}
+                                </span>
+                            </h5>
+                        </div>
+                        `;
+                    }
                     grandTotal += op.total_hours;
                 });
             } else {
                 html = '<p>No operation totals available for this week.</p>';
             }
             weeklyTotalsBody.innerHTML = html;
+
+            // get holiday hours
+            //const holidayHours = document.querySelectorAll('.card-header.bg-warning + .card-body .badge.font-italic');
+            //holidayHours.forEach(badge => {
+            //    const hours = parseFloat(badge.textContent);
+            //    if (!isNaN(hours)) {
+            //        grandTotal += hours;
+            //    }
+            //});
 
             // Update the card footer total
             const weeklyTotalsFooter = document.querySelector('#card_weekly_totals .card-footer .font-weight-bold');
