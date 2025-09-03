@@ -157,37 +157,47 @@
                     {% set ns = namespace(total_hours=0) %} <!-- Create a mutable namespace object -->
                     {% if timecard_data[day.date] %}
                         {% for t in timecard_data[day.date] %}
-                        <div class="d-flex justify-content-between align-items-center time-entry">
-                            <p>
-                                {{ t.WODescriptionClean }}                                
-                                <small class="card-desc">{{ t.OpName }} ({{ t.WSNumber }}) </small>
-                                <span id="OpCode" hidden>{{ t.OpCode }}</span>
-                            </p>
-                            <h5>
-                                <span class="badge badge-secondary editable-hours {% if not can_add_or_finalize or day.is_locked %}disabled-badge{% endif %}"
-                                    data-timeentryid="{{ t.TimeEntryID }}"
-                                    style="cursor:pointer;"
-                                    {% if not can_add_or_finalize or day.is_locked %} aria-disabled="true" tabindex="-1" {% endif %}>
-                                    {{ t.tHoursWorked }}
-                                </span>
-                            </h5>
-                            {% if t.TimeEntryID and can_add_or_finalize %}
-                            {# <button class="btn btn-abas2 btn-sm copy-entry-btn" data-timeentryid="{{ t.TimeEntryID }}" title="Copy Entry">
-                                <i class="fas fa-copy"></i>
-                            </button> #}
-                            <button class="btn btn-danger btn-sm delete-entry-btn me-2{% if day.is_locked %} disabled{% endif %}"
-                                    data-timeentryid="{{ t.TimeEntryID }}"
-                                    title="Delete Entry"
-                                    {% if day.is_locked %}disabled aria-disabled="true"{% endif %}>
-                                <i class="fas fa-trash"></i>
-                            </button>
+                            <div class="d-flex justify-content-between align-items-center time-entry">
+                                <p>
+                                    {{ t.WODescriptionClean }}                                
+                                    <small class="card-desc">{{ t.OpName }} ({{ t.WSNumber }}) </small>
+                                    <span id="OpCode" hidden>{{ t.OpCode }}</span>
+                                </p>
+                                <h5>
+                                    <span class="badge badge-secondary editable-hours {% if not can_add_or_finalize or day.is_locked %}disabled-badge{% endif %}"
+                                        data-timeentryid="{{ t.TimeEntryID }}"
+                                        style="cursor:pointer;"
+                                        {% if not can_add_or_finalize or day.is_locked %} aria-disabled="true" tabindex="-1" {% endif %}>
+                                        {{ t.tHoursWorked }}
+                                    </span>
+                                </h5>
+                                {% if t.TimeEntryID and can_add_or_finalize %}
+                                {# <button class="btn btn-abas2 btn-sm copy-entry-btn" data-timeentryid="{{ t.TimeEntryID }}" title="Copy Entry">
+                                    <i class="fas fa-copy"></i>
+                                </button> #}
+                                <button class="btn btn-danger btn-sm delete-entry-btn me-2{% if day.is_locked %} disabled{% endif %}"
+                                        data-timeentryid="{{ t.TimeEntryID }}"
+                                        title="Delete Entry"
+                                        {% if day.is_locked %}disabled aria-disabled="true"{% endif %}>
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                            {% set ns.total_hours = ns.total_hours + t.tHoursWorked %} <!-- Accumulate the total -->
+                            <!-- Show holiday hours if the total_hours is 0 -->                            
+                            {% if day.isHoliday %}
+                                <div class="d-flex justify-content-between holiday">
+                                    <p class="font-italic">Holiday Hours</p>
+                                    <h5><span class="badge badge-secondary font-italic">{% if ns.total_hours == 0 %}8.00{% else %}0.00{% endif %}</span></h5>
+                                    {% if ns.total_hours == 0 %}
+                                        {% set ns.total_hours = ns.total_hours + 8 %} <!-- Accumulate the total -->
+                                    {% endif %}
+                                </div>
                             {% endif %}
-                        </div>
-                        {% set ns.total_hours = ns.total_hours + t.tHoursWorked %} <!-- Accumulate the total -->
                         {% endfor %}
                     {% else %}
                         {% if day.isHoliday %}
-                            <div class="d-flex justify-content-between">
+                            <div class="d-flex justify-content-between holiday">
                                 <p class="font-italic">Holiday Hours</p>
                                 <h5><span class="badge badge-secondary font-italic">8.00</span></h5>
                                 {% set ns.total_hours = ns.total_hours + 8.00 %} <!-- Accumulate the total -->
@@ -564,7 +574,25 @@
                 cardTotal += hours;
             }
         });
+        
+        // Find the card for this entry
+        //const cardBody = badge.closest('.card-body');
         const card = cardBody.closest('.card');
+        const cardHeader = card.querySelector('.card-header');
+        // Check if this is a holiday card
+        const isHoliday = cardHeader.classList.contains('bg-warning');
+        if (isHoliday) {
+            // If total job hours > 0, set holiday hours badge to 0                            
+            const holidayBadge = cardBody.querySelector('.badge.font-italic');
+            if (holidayBadge) {
+                const holidayHours = parseFloat(holidayBadge.textContent);
+                if (!isNaN(holidayHours)) {
+                    cardTotal += holidayHours;
+                }
+            }
+        }
+
+        //const card = cardBody.closest('.card');
         if (card) {
             const cardFooter = card.querySelector('.card-footer');
             if (cardFooter) {
@@ -692,6 +720,34 @@
                     if (result.success) {
                         badge.textContent = result.hoursWorked;
                         input.replaceWith(badge);
+
+                        // Find the card for this entry
+                        const cardBody = badge.closest('.card-body');
+                        const card = cardBody.closest('.card');
+                        const cardHeader = card.querySelector('.card-header');
+                        // Check if this is a holiday card
+                        const isHoliday = cardHeader.classList.contains('bg-warning');
+                        if (isHoliday) {
+                            // Calculate total job hours (excluding holiday hours)
+                            let totalJobHours = 0;
+                            cardBody.querySelectorAll('.time-entry .badge').forEach(badgeEl => {
+                                // Only sum non-holiday badges
+                                if (!badgeEl.classList.contains('holiday')) {
+                                    const hours = parseFloat(badgeEl.textContent);
+                                    if (!isNaN(hours)) totalJobHours += hours;
+                                }
+                            });
+                            // If total job hours > 0, set holiday hours badge to 0                            
+                            const holidayBadge = cardBody.querySelector('.badge.font-italic');
+                            if (holidayBadge) {
+                                if (totalJobHours > 0) {
+                                    holidayBadge.textContent = '0.00';
+                                } else {
+                                    holidayBadge.textContent = '8.00';
+                                }
+                            }
+                        }
+
                         updateCardFooterTotal(badge.closest('.card-body'));
                         updateTotalHours();
                         showSnackbar('Hours updated!', 'success');
