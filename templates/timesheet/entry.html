@@ -184,17 +184,18 @@
                                 {% endif %}
                             </div>
                             {% set ns.total_hours = ns.total_hours + t.tHoursWorked %} <!-- Accumulate the total -->
-                            <!-- Show holiday hours if the total_hours is 0 -->                            
-                            {% if day.isHoliday %}
-                                <div class="d-flex justify-content-between holiday">
-                                    <p class="font-italic">Holiday Hours</p>
-                                    <h5><span class="badge badge-secondary font-italic">{% if ns.total_hours == 0 %}8.00{% else %}0.00{% endif %}</span></h5>
-                                    {% if ns.total_hours == 0 %}
-                                        {% set ns.total_hours = ns.total_hours + 8 %} <!-- Accumulate the total -->
-                                    {% endif %}
-                                </div>
-                            {% endif %}
+                            
                         {% endfor %}
+                        <!-- Show holiday hours if the total_hours is 0 -->                            
+                        {% if day.isHoliday %}
+                            <div class="d-flex justify-content-between holiday">
+                                <p class="font-italic">Holiday Hours</p>
+                                <h5><span class="badge badge-secondary font-italic">{% if ns.total_hours == 0 %}8.00{% else %}0.00{% endif %}</span></h5>
+                                {% if ns.total_hours == 0 %}
+                                    {% set ns.total_hours = ns.total_hours + 8 %} <!-- Accumulate the total -->
+                                {% endif %}
+                            </div>
+                        {% endif %}
                     {% else %}
                         {% if day.isHoliday %}
                             <div class="d-flex justify-content-between holiday">
