@@ -566,14 +566,15 @@ def delete_time_entry(time_entry_id):
 
     try:
         # Fetch the entry being deleted
-        entry = dbc.execute(
-            """
-            SELECT EmpID, WorkDate, WSNumber, TimeWorked
-            FROM TimeEntry
-            WHERE EntryID = ?
-            """,
-            (time_entry_id,)
-        ).fetchone()
+        entry = get_time_entry(entry_id=time_entry_id)
+        # entry = dbc.execute(
+        #     """
+        #     SELECT EmpID, WorkDate, WSNumber, TimeWorked
+        #     FROM TimeEntry
+        #     WHERE EntryID = ?
+        #     """,
+        #     (time_entry_id,)
+        # ).fetchone()
         if entry:
             entry_date = entry.WorkDate
             abas_id = entry.EmpID
@@ -583,27 +584,37 @@ def delete_time_entry(time_entry_id):
             week_start = entry_date - timedelta(days=entry_date.weekday())
             week_end = week_start + timedelta(days=6)
 
-            entries_to_delete = dbc.execute(
-                """
-                SELECT EntryID, EmpID, WorkDate, WSNumber, TimeWorked
-                FROM TimeEntry
-                WHERE EmpID = ? AND WorkDate BETWEEN ? AND ? AND WSNumber = ?
-                """,
-                (abas_id, week_start, week_end, work_slip_id)
-            ).fetchall()
+            # entries_to_delete = dbc.execute(
+            #     """
+            #     SELECT EntryID
+            #     FROM TimeEntry
+            #     WHERE EmpID = ? AND WorkDate BETWEEN ? AND ? AND WSNumber = ?
+            #     """,
+            #     (abas_id, week_start, week_end, work_slip_id)
+            # ).fetchall()
+            
+            # Find all entries for the week with the same EmpID and WSNumber
+            entries_to_delete = []
+            for i in range(7):
+                day = week_start + timedelta(days=i)
+                entry = get_time_entry(abas_id, day, work_slip_id, full_details=True)
+                if entry:
+                    entries_to_delete.append(entry)
 
             if entries_to_delete:
                 # If there are entries to delete, process them
                 for entry in entries_to_delete:
-                    dbc.execute("DELETE FROM TimeEntry WHERE EntryID = ?", (entry.EntryID,))
-                    if entry.TimeWorked > 0:
+                    dbc.execute("DELETE FROM TimeEntry WHERE EntryID = ?", (entry.TimeEntryID,))
+                    if entry.tHoursWorked > 0:
                         abas_id = entry.EmpID
                         selected_date = entry.WorkDate
                         work_date = selected_date.strftime('%m/%d/%y')
                         work_slip_id = entry.WSNumber
                         hours_worked = 0 # entry.TimeWorked
-                    
-                        response = send_timeentry_csv_to_abas(abas_id, work_date, work_slip_id, hours_worked, "delete_time_entry")
+                        # If OpCode is not set, use "E1"
+                        op_code = entry.OpCode if entry.OpCode != '' else "E1"
+
+                        response = send_timeentry_csv_to_abas(abas_id, work_date, work_slip_id, hours_worked, "delete_time_entry", op_code)
                         if response.status_code == 200:
                             db.commit()
                             print("CSV file sent successfully!")                            
