@@ -403,6 +403,9 @@
                                     <!-- Table rows will be dynamically populated here -->
                                 </tbody>
                                 <tfoot>
+                                    <div id="finalizeFooterTotals">
+                                    
+                                    </div>
                                     <tr>
                                         <td  id="finalizeTotalHoursLabel" colspan="2" class="text-right font-weight-bold">Total Attendance Hours for Week:</td>
                                         <td class="font-weight-bold text-left" id="finalizeTotalHoursCell">00</td>                                        
@@ -1145,6 +1148,44 @@
         });
 
         tableBody.innerHTML = rowHTML;
+
+        //// Calculate totals for each paycode
+        //const paycodeTotals = {};
+        //tableBody.querySelectorAll('tr').forEach(row => {
+        //    const paycodeSelect = row.querySelector('select');
+        //    const hoursInput = row.querySelector('input.hours-input');
+        //    if (paycodeSelect && hoursInput) {
+        //        const paycode = paycodeSelect.options[paycodeSelect.selectedIndex].text.split(' ')[0]; // e.g., "E1"
+        //        const hours = parseFloat(hoursInput.value);
+        //       if (!isNaN(hours)) {
+        //            paycodeTotals[paycode] = (paycodeTotals[paycode] || 0) + hours;
+        //        }
+        //    }
+        //});
+        //
+        //// Find the footer container
+        //const tableFooter = document.querySelector('#finalizeFooterTotals');
+        //
+        //// Start with the total hours row
+        //let footerHTML = `
+        //   <tr>
+        //        <td id="finalizeTotalHoursLabel" colspan="2" class="text-right font-weight-bold">Total Attendance Hours for Week:</td>
+        //       <td class="font-weight-bold text-left" id="finalizeTotalHoursCell">${totalHours.toFixed(2)}</td>
+        //    </tr>
+        //`;
+        //
+        //// Add a new row for each paycode total
+        //Object.entries(paycodeTotals).forEach(([paycode, total]) => {
+        //    footerHTML += `
+        //        <tr>
+        //            <td colspan="2" class="text-right font-weight-bold">Total for ${paycode}:</td>
+        //            <td class="font-weight-bold text-left">${total.toFixed(2)}</td>
+        //        </tr>
+        //    `;
+        //});
+        //
+        //tableFooter.innerHTML = footerHTML;
+
         totalHoursBadge.textContent = totalHours.toFixed(2);
 
         // event listeners for input changes in the hours fields
