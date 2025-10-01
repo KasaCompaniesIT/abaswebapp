@@ -51,3 +51,10 @@ DONE: Don't allow the removal of the last entry for a day on the attendance scre
 DONE: Move copy/delete buttons on mobile to left side of screen and make them larger.
 DONE: Update mobile view to have smaller border to maximize space layout.
 DONE: Add weekly totals card at the end of the week.
+DONE: Only add entry on attandance screen for that if it the value is greater than 0
+TODO: Add totals at the bottom of attandance screen for each type of entry.
+DONE: Fix time entry overflow issue for long entries.
+DONE: Allow time entry and attendance submission for future weeks
+DONE: When submitting attendance and adding/submitting Salary Plus, regular attendance time also get submitted in duplicate for that day
+DONE: Make attendance windows float the footer/button to always show.
+TODO: Save attendance export and load the saved values on reopen of window.
