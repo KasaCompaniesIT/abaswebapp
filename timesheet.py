@@ -137,6 +137,8 @@ def entry():
             # True if viewing the current week
             is_current_week = (startOfPrevWeek == this_week_start)
             
+            is_future_week = (startOfPrevWeek > this_week_start)
+            
             # True if viewing the previous week, and it's Monday before noon
             is_previous_week_allowed = (
                 startOfPrevWeek == last_week_start and
@@ -144,7 +146,7 @@ def entry():
                 now.hour < 12
             )
 
-            can_add_or_finalize = is_current_week or is_previous_week_allowed
+            can_add_or_finalize = is_current_week or is_previous_week_allowed or is_future_week
 
 
             # Generate a list of dates for the previous week
@@ -784,7 +786,7 @@ def get_final_time_entries():
         db = get_db()
         dbc = db.cursor()
 
-            # Fetch time entries for the given date range of a salaried employee
+        # Fetch time entries for the given date range of a salaried employee        
         time_entries = dbc.execute(
             """
             SELECT WorkDate, sum(TimeWorked) as sTimeWorked
@@ -822,6 +824,72 @@ def get_final_time_entries():
     except Exception as e:
         print("Error fetching time entries:", str(e))  # Debugging: Log the error
         return jsonify({"success": False, "error": str(e)}), 500    
+
+@bp.route('/timesheet/entry/get_payroll_export', methods=['GET'])
+@login_required
+def get_payroll_export(abas_id, workweek):
+    db = get_db()
+    dbc = db.cursor()
+    # get last payroll export from PayrollExport table.
+    last_export = dbc.execute(
+        """
+        SELECT exportDate, WorkWeek, HoursWorked, DateWorked, PayChexID, EmpID, PayChex
+        FROM PayrollExport p
+        INNER JOIN PayChex c on p.PayChexID = c.PayChexID
+        WHERE EmpID = ? AND WorkWeek = ?
+        ORDER BY exportDate DESC
+        """,
+        (abas_id, workweek)
+    ).fetchall()
+
+    # return all of the entries for each day worked for the workweek as a list of dicts
+    if last_export:
+        return [
+            {
+                "exportDate": row.exportDate,
+                "workWeek": row.WorkWeek,
+                "hoursWorked": row.HoursWorked,
+                "dateWorked": row.DateWorked,
+                "paychexID": row.PayChexID,
+                "paychexCode": row.PayChex,
+                "empID": row.EmpID
+            }
+            for row in last_export
+        ]   
+    
+    else:
+        return None
+
+def save_payroll_export(abas_id, workweek, hours_worked, date_worked, paychex_id):
+    db = get_db()
+    dbc = db.cursor()
+    try:
+        export_date = datetime.now()  # Current date and time
+
+        # delete any existing records for the workdate and workweek
+        dbc.execute(
+            """
+            DELETE FROM PayrollExport
+            WHERE EmpID = ? AND WorkWeek = ? AND DateWorked = ?
+            """,
+            (abas_id, workweek, date_worked)
+        )
+
+        dbc.execute(
+            """
+            INSERT INTO PayrollExport (EmpID, WorkWeek, HoursWorked, DateWorked, PayChexID, exportDate)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (abas_id, workweek, hours_worked, date_worked, paychex_id, export_date)
+        )
+
+        db.commit()
+        print("PayrollExport entry added successfully.")
+        return True
+    except Exception as e:
+        db.rollback()
+        print("Error saving PayrollExport:", str(e))
+        return False
 
 
 @bp.route('/timesheet/payroll_export', methods=['POST'])
