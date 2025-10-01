@@ -164,7 +164,7 @@
                                     <span id="OpCode" hidden>{{ t.OpCode }}</span>
                                 </p>
                                 <h5>
-                                    <span class="badge badge-secondary editable-hours {% if not can_add_or_finalize or day.is_locked %}disabled-badge{% endif %}"
+                                    <span class="badge badge-dark editable-hours {% if not can_add_or_finalize or day.is_locked %}disabled-badge{% endif %}"
                                         data-timeentryid="{{ t.TimeEntryID }}"
                                         style="cursor:pointer;"
                                         {% if not can_add_or_finalize or day.is_locked %} aria-disabled="true" tabindex="-1" {% endif %}>
@@ -190,7 +190,7 @@
                         {% if day.isHoliday %}
                             <div class="d-flex justify-content-between holiday">
                                 <p class="font-italic">Holiday Hours</p>
-                                <h5><span class="badge badge-secondary font-italic">{% if ns.total_hours == 0 %}8.00{% else %}0.00{% endif %}</span></h5>
+                                <h5><span class="badge badge-dark font-italic">{% if ns.total_hours == 0 %}8.00{% else %}0.00{% endif %}</span></h5>
                                 {% if ns.total_hours == 0 %}
                                     {% set ns.total_hours = ns.total_hours + 8 %} <!-- Accumulate the total -->
                                 {% endif %}
@@ -200,15 +200,15 @@
                         {% if day.isHoliday %}
                             <div class="d-flex justify-content-between holiday">
                                 <p class="font-italic">Holiday Hours</p>
-                                <h5><span class="badge badge-secondary font-italic">8.00</span></h5>
+                                <h5><span class="badge badge-dark font-italic">8.00</span></h5>
                                 {% set ns.total_hours = ns.total_hours + 8.00 %} <!-- Accumulate the total -->
                             </div>
                         {% else %}
-                            <p>No data available for this date.</p>
+                            <p class="no-time-entry">No data available for this date.</p>
                         {% endif %}
                     {% endif %}
                 </div>
-                <div class="card-footer compact-card-footer text-right">
+                <div class="card-footer compact-card-footer bg-dark3 text-right">
                     <small>Total Hours: <span class="font-weight-bold">{{ ns.total_hours }}</span></small> <!-- Display the total hours -->
                 </div>
             </div>
@@ -239,7 +239,7 @@
                         </div>
                         {% endfor %}
                     {% else %}
-                        <p>No operation totals available for this week.</p>
+                        <p class="no-time-entry">No operation totals available for this week.</p>
                     {% endif %}
                 </div>
                 <div class="card-footer compact-card-footer text-right bg-dark2 text-light">
@@ -410,7 +410,7 @@
                                 </tfoot>
                             </table>
                         </div>
-                        <div class="d-flex justify-content-between">
+                        <div class="d-flex justify-content-between att-footer-floating">
                             <span>
                                 <small class="text-muted font-italic">** Changes can take up to 10 minutes to reflect in abas.</small>
                             </span>
@@ -512,20 +512,75 @@
 {% endblock %} <!-- end content block -->
 {% block script %}
 <script>
-    const WEEKDAY_START = {{ weekday_start|default(0) }};
+        const WEEKDAY_START = {{ weekday_start|default(0) }};
     // Make the modal draggable by its header
-    $('#addTimeModal').draggable({
-        handle: ".modal-header"
-    });
+    //$('#addTimeModal').draggable({
+    //    handle: ".modal-header"
+    //});
 
     $('#finalizeTimeModal').draggable({
         handle: ".modal-header"
     });
 
-    $('#copyJobConfirmModal').draggable({
-        handle: ".modal-header"
-    });
+    //$('#copyJobConfirmModal').draggable({
+    //    handle: ".modal-header"
+    //});
     
+    let unlockSequence = [];
+    const unlockKeys = ['o'];
+
+    document.addEventListener('DOMContentLoaded', function () {
+        document.getElementById('adminOverrideBanner').style.display = 'none';
+    });
+
+    document.addEventListener('keydown', function(e) {
+        // Only start tracking if Ctrl+Shift are held
+        if (e.ctrlKey && e.altKey) {
+            // Only track 'u', 'l', 'k' keys in order
+            if (['o'].includes(e.key.toLowerCase())) {
+                unlockSequence.push(e.key.toLowerCase());
+                // Check if the sequence matches
+                if (unlockSequence.join('') === unlockKeys.join('')) {
+                    // Unlock the buttons
+                    const finalizeBtn = document.getElementById('finalizeTimeButton');
+                    const addTimeBtn = document.getElementById('addTimeButton');
+                    if (finalizeBtn) {
+                        finalizeBtn.disabled = false;
+                        finalizeBtn.removeAttribute('aria-disabled');
+                    }
+                    if (addTimeBtn) {
+                        addTimeBtn.disabled = false;
+                        addTimeBtn.removeAttribute('aria-disabled');
+                    }
+                    // Show the admin override banner
+                    document.getElementById('adminOverrideBanner').style.display = 'block';
+                    showSnackbar('Buttons unlocked!', 'success');
+                    unlockSequence = [];
+                }
+            } else {
+                // Reset if a wrong key is pressed
+                unlockSequence = [];
+            }
+        } else {
+            // Reset if Ctrl+Shift are not held
+            unlockSequence = [];
+        }
+    });
+
+    function applyAltRowColors() {
+        document.querySelectorAll('.card-body').forEach(cardBody => {
+            const entries = cardBody.querySelectorAll('.time-entry');
+            entries.forEach((entry, idx) => {
+                entry.classList.toggle('alt-row', idx % 2 === 1);
+            });
+        });
+    }
+
+    // Call this after updating time entries
+    document.addEventListener('DOMContentLoaded', function () {
+        applyAltRowColors();
+    });
+
     document.getElementById('commentsText').addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
             e.preventDefault();
@@ -564,6 +619,7 @@
 
         // Update weekly totals card
         updateWeeklyTotalsCard();
+        applyAltRowColors();
     }
     
     // update card footer total hours
@@ -686,7 +742,7 @@
                     grandTotal += op.total_hours;
                 });
             } else {
-                html = '<p>No operation totals available for this week.</p>';
+                html = '<p class="no-time-entry">No operation totals available for this week.</p>';
             }
             weeklyTotalsBody.innerHTML = html;
 
@@ -959,6 +1015,22 @@
 
     // Render the finalize table with the fetched data
     function renderFinalizeTable(data) {
+        // get payroll export data from /timesheet/entry/get_payroll_export
+        const abasID = document.getElementById('abasIDInput').value;
+        const startDate = document.getElementById('startDateInput').value;
+        let payrollExportData = null;
+        fetch(`/timesheet/entry/get_payroll_export?abas_id=${abasID}&workweek=${startDate}`)
+            .then(response => response.json())
+            .then(payrollData => {
+                // Store payroll export data for use in rendering
+                payrollExportData = payrollData;
+            })
+            .catch(error => {
+                console.error('Error fetching payroll export data:', error);
+                // Proceed to render table without payroll data
+                payrollExportData = null;
+            });
+        
         const finalizeTimeMButton = document.getElementById('finalizeTimeModalButton');
         const tableBody = document.querySelector('#finalizeTimeModal tbody');
         tableBody.innerHTML = ''; // Clear existing rows
@@ -1040,40 +1112,46 @@
             const paychexCode = entry.OpCode && entry.OpCode.trim() !== '' ? entry.OpCode : 'E1';
 
             // Disable remove button for first entry of the day
-            const disableRemove = dayRowIndex === 0 ? 'disabled' : '';
+            const disableRemove = dayRowIndex === 0 ? 'disabled' : ''; 
 
-            dayEntries.push(`
-                <tr data-date="${workDate}" data-locked="${entry.locked}">
-                    <td data-label="Pay Code">
-                        <select name="paychex_code_${entry.WorkDate}" class="form-control"  ${entry.locked ? 'disabled' : ''}>
-                            ${payrollPaychex_list.map(paychex => `
-                                <option value="${paychex.id}" ${paychex.code === paychexCode ? 'selected' : ''}>
-                                    ${paychex.code} - ${paychex.description}
-                                </option>
-                            `).join('')}
-                        </select>
-                    </td>
-                    <td data-label="Hours" class="text-right">
-                        <input type="text" class="form-control form-control-sm hours-input" value="${entryHours.toFixed(2)}" style="width:55px; text-align:right;" ${entry.locked ? 'readonly disabled' : ''}>
-                    </td>
-                    <td data-label="Actions">
-                        <div class="btn-group btn-group-sm" role="group">                            
-                            <button type="button" class="btn btn-danger remove-row-btn" data-date="${workDate}" title="Remove Row" ${entry.locked ? 'disabled' : ''} ${disableRemove}>
-                                <i class="fas fa-minus"></i>
-                            </button>
-                            <button type="button" class="btn btn-success add-row-btn" data-date="${workDate}" title="Add Row" ${entry.locked ? 'disabled' : ''}>
-                                <i class="fas fa-plus"></i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-            `);
+            if(entryHours > 0) {
+                // if payrollExportData exists for the workdate use that data instead of entry data
+                const payrollEntry = payrollExportData ? payrollExportData.find(entry => entry.WorkDate === workDate) : null;
+                const hoursToUse = payrollEntry ? payrollEntry.HoursWorked : entryHours;
+                const paychexCodeToUse = payrollEntry ? payrollEntry.PayChex : paychexCode;
 
-            dayTotal += entryHours;
-            totalHours += entryHours;
-            lastDay = dayStr;
-            dayRowIndex++;
+                dayEntries.push(`
+                    <tr data-date="${workDate}" data-locked="${entry.locked}">
+                        <td data-label="Pay Code">
+                            <select name="paychex_code_${entry.WorkDate}" class="form-control"  ${entry.locked ? 'disabled' : ''}>
+                                ${payrollPaychex_list.map(paychex => `
+                                    <option value="${paychex.id}" ${paychex.code === paychexCodeToUse ? 'selected' : ''}>
+                                        ${paychex.code} - ${paychex.description}
+                                    </option>
+                                `).join('')}
+                            </select>
+                        </td>
+                        <td data-label="Hours" class="text-right">
+                            <input type="text" class="form-control form-control-sm hours-input" value="${hoursToUse.toFixed(2)}" style="width:55px; text-align:right;" ${entry.locked ? 'readonly disabled' : ''}>
+                        </td>
+                        <td data-label="Actions">
+                            <div class="btn-group btn-group-sm" role="group">                            
+                                <button type="button" class="btn btn-danger remove-row-btn" data-date="${workDate}" title="Remove Row" ${entry.locked ? 'disabled' : ''} ${disableRemove}>
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                <button type="button" class="btn btn-success add-row-btn" data-date="${workDate}" title="Add Row" ${entry.locked ? 'disabled' : ''}>
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `);
 
+                dayTotal += hoursToUse;
+                totalHours += hoursToUse;
+                lastDay = dayStr;
+                dayRowIndex++;
+            }
             if (idx === data.time_entries.length - 1) {
                 flushDayRows();
             }
@@ -1606,7 +1684,7 @@
                                 <small class="card-desc">(${result.data.WODescription})</small>
                             </p>
                             <h5>
-                                <span class="badge badge-secondary editable-hours"
+                                <span class="badge badge-dark editable-hours"
                                     data-timeentryid="${result.data.TimeEntryID}"
                                     style="cursor:pointer;">
                                     ${result.data.tHoursWorked}
@@ -1867,7 +1945,7 @@
                             <span id="OpCode" hidden>${entry.OpCode}</span>
                         </p>
                         <h5>
-                            <span class="badge badge-secondary editable-hours"
+                            <span class="badge badge-dark editable-hours"
                                 data-timeentryid="${entry.TimeEntryID}"
                                 style="cursor:pointer;">
                                 ${entry.tHoursWorked}
