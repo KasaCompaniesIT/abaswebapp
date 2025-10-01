@@ -827,38 +827,47 @@ def get_final_time_entries():
 
 @bp.route('/timesheet/entry/get_payroll_export', methods=['GET'])
 @login_required
-def get_payroll_export(abas_id, workweek):
-    db = get_db()
-    dbc = db.cursor()
-    # get last payroll export from PayrollExport table.
-    last_export = dbc.execute(
-        """
-        SELECT exportDate, WorkWeek, HoursWorked, DateWorked, PayChexID, EmpID, PayChex
-        FROM PayrollExport p
-        INNER JOIN PayChex c on p.PayChexID = c.PayChexID
-        WHERE EmpID = ? AND WorkWeek = ?
-        ORDER BY exportDate DESC
-        """,
-        (abas_id, workweek)
-    ).fetchall()
+def get_payroll_export():
+    try:
 
-    # return all of the entries for each day worked for the workweek as a list of dicts
-    if last_export:
-        return [
-            {
-                "exportDate": row.exportDate,
-                "workWeek": row.WorkWeek,
-                "hoursWorked": row.HoursWorked,
-                "dateWorked": row.DateWorked,
-                "paychexID": row.PayChexID,
-                "paychexCode": row.PayChex,
-                "empID": row.EmpID
-            }
-            for row in last_export
-        ]   
-    
-    else:
-        return None
+        abas_id = request.args.get('abas_id')
+        workweek = request.args.get('workweek')
+
+        db = get_db()
+        dbc = db.cursor()
+        # get last payroll export from PayrollExport table.
+        last_export = dbc.execute(
+            """
+            SELECT exportDate, WorkWeek, HoursWorked, DateWorked, PayID, EmpID, PayChex
+            FROM PayrollExport p
+            INNER JOIN PayChex c on p.PayChexID = c.PayID
+            WHERE EmpID = ? AND WorkWeek = ?
+            ORDER BY exportDate DESC
+            """,
+            (abas_id, workweek)
+        ).fetchall()
+
+        # return a JSON of all of the entries for each day worked for the workweek as a list of dicts
+        # return JSON
+        if last_export:
+            export_list = []
+            for entry in last_export:
+                export_list.append({
+                    "exportDate": entry.exportDate.strftime('%m/%d/%y'),  # Format the date as MM/DD/YY
+                    "WorkWeek": entry.WorkWeek.strftime('%m/%d/%y'),  # Format the date as MM/DD/YY
+                    "HoursWorked": entry.HoursWorked,
+                    "DateWorked": entry.DateWorked.strftime('%m/%d/%y'),  # Format the date as MM/DD/YY
+                    "PayChexID": entry.PayID,
+                    "EmpID": entry.EmpID,
+                    "PayChex": entry.PayChex
+                })
+            return jsonify({"success": True, "payrollExport": export_list})
+        
+        else:
+            return jsonify({"success": True, "payrollExport": None}), 200
+    except Exception as e:
+        print("Error fetching payroll entries:", str(e))  # Debugging: Log the error
+        return jsonify({"success": False, "error": str(e)}), 500    
 
 def save_payroll_export(abas_id, workweek, hours_worked, date_worked, paychex_id):
     db = get_db()
@@ -968,6 +977,12 @@ def payroll_export():
                 paychex_code=entry["paychexCode"],
                 work_slip=None,
                 comments=entry["comments"]
+            )
+            save_payroll_export(abas_id=abas_id,
+                                workweek=export_work_week,
+                                hours_worked=float(entry["hours"]) if entry["hours"] is not None else None,
+                                date_worked=datetime.strptime(entry["date"], "%m/%d/%Y").date(),
+                                paychex_id=lookup_paychex_id(entry["paychexCode"])
             )
 
         if response.status_code == 200:
@@ -1418,19 +1433,19 @@ def get_paychex_codes():
     # Convert PayID to PayChex code mapping
     paychex_mapping = {row.PayID: row.PayChex for row in paychex_codes}
 
-    return paychex_mapping
+    return paychex_mapping    
 
-def lookup_paychex_id(paychex_id):
+def lookup_paychex_id(paychex_code):
     db = get_db()
     dbc = db.cursor()
 
     paychex_code = dbc.execute(
-        "SELECT PayID, PayChex, PayDescription FROM paychex WHERE PayID = ? ORDER BY PayChex", paychex_id
+        "SELECT PayID, PayChex, PayDescription FROM paychex WHERE PayChex = ? ORDER BY PayChex", paychex_code
     ).fetchone()
 
-    paycode = paychex_code.PayChex if paychex_code else None
+    paycode_id = paychex_code.PayID if paychex_code else None
 
-    return paycode
+    return paycode_id
 
 def create_time_entry(abas_id, work_date, ws_number, time_worked=None):
     try:
