@@ -1014,23 +1014,7 @@
     }
 
     // Render the finalize table with the fetched data
-    function renderFinalizeTable(data) {
-        // get payroll export data from /timesheet/entry/get_payroll_export
-        const abasID = document.getElementById('abasIDInput').value;
-        const startDate = document.getElementById('startDateInput').value;
-        let payrollExportData = null;
-        fetch(`/timesheet/entry/get_payroll_export?abas_id=${abasID}&workweek=${startDate}`)
-            .then(response => response.json())
-            .then(payrollData => {
-                // Store payroll export data for use in rendering
-                payrollExportData = payrollData;
-            })
-            .catch(error => {
-                console.error('Error fetching payroll export data:', error);
-                // Proceed to render table without payroll data
-                payrollExportData = null;
-            });
-        
+    function renderFinalizeTable(data, payrollExportData) {        
         const finalizeTimeMButton = document.getElementById('finalizeTimeModalButton');
         const tableBody = document.querySelector('#finalizeTimeModal tbody');
         tableBody.innerHTML = ''; // Clear existing rows
@@ -1116,9 +1100,12 @@
 
             if(entryHours > 0) {
                 // if payrollExportData exists for the workdate use that data instead of entry data
-                const payrollEntry = payrollExportData ? payrollExportData.find(entry => entry.WorkDate === workDate) : null;
-                const hoursToUse = payrollEntry ? payrollEntry.HoursWorked : entryHours;
+                const payrollArray = payrollExportData && Array.isArray(payrollExportData.payrollExport) ? payrollExportData.payrollExport : [];
+                const payrollEntry = payrollArray.find(entry => entry.DateWorked === workDate);
+                //console.log('Payroll entry for date', workDate, ':', payrollEntry);
+                const hoursToUse = parseFloat(payrollEntry ? payrollEntry.HoursWorked : entryHours);
                 const paychexCodeToUse = payrollEntry ? payrollEntry.PayChex : paychexCode;
+                //console.log('Using payroll entry for date', workDate, 'Hours:', hoursToUse, 'PayChex:', paychexCodeToUse);
 
                 dayEntries.push(`
                     <tr data-date="${workDate}" data-locked="${entry.locked}">
@@ -1266,10 +1253,28 @@
 
         //finalizeTimeModal.show();
         //document.getElementById('finalizeTimeModalButton').disabled = false;
+        
+        // get payroll export data from /timesheet/entry/get_payroll_export
+        const abasID = document.getElementById('abasIDInput').value;
+        const startDate = document.getElementById('startDateInput').value;      
 
         const timeEntries = getTimeEntriesFromTimecards();
         const groupedEntries = groupEntriesByDayAndOpCode(timeEntries);
-        renderFinalizeTable({ time_entries: groupedEntries });
+        let payrollExportData = null;
+        fetch(`/timesheet/entry/get_payroll_export?abas_id=${abasID}&workweek=${startDate}`)
+            .then(response => response.json())
+            .then(payrollData => {
+                // Store payroll export data for use in rendering
+                payrollExportData = payrollData;
+                //console.log('Payroll export data:', payrollExportData);
+                renderFinalizeTable({ time_entries: groupedEntries }, payrollExportData);
+            })
+            .catch(error => {
+                console.error('Error fetching payroll export data:', error);
+                // Proceed to render table without payroll data
+                payrollExportData = null;
+                renderFinalizeTable({ time_entries: groupedEntries }, payrollExportData);
+            });
     });
 
     // Event listener for Finalize Time Modal form submission
