@@ -165,9 +165,10 @@ def entry():
                         ((startOfPrevWeek + timedelta(days=i)).strftime("%Y-%m-%d"),)
                     ).fetchone() is not None,
                     "is_locked": (
-                        # If today is the 1st and before 10am, unlock all previous month days for this week
+                        # If today is the 1st and not monday and not the weekend and before 10am, unlock all previous month days for this week
                         not (
-                            now.day == 1 and now.hour < 10 and
+                            #Not Monday, not weekend, and before 10am on the 1st day of the month
+                            now.weekday() > 0 and now.weekday() < 5 and now.day == 1 and now.hour < 10 and
                             (startOfPrevWeek + timedelta(days=i)).month < current_month
                         )
                         and
