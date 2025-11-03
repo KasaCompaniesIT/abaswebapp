@@ -168,7 +168,7 @@ def entry():
                         # If today is the 1st and before 10am, unlock all previous month days for this week
                         not (
                             #if the 1st day of the month falls on the weekend, then do not lock the previous month days
-                            ((now.weekday() in [5,6] and now.day in [1,2]) or 
+                            ((now.weekday() in [0,5,6] and now.day in [1,2,3]) or 
                             (now.day == 1 and now.hour < 10)) and
                             #(now.day == 1 and now.hour < 10 if now.weekday() > 0 else now.hour < 12)) and
                             (startOfPrevWeek + timedelta(days=i)).month < current_month
