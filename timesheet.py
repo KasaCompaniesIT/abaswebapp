@@ -165,18 +165,21 @@ def entry():
                         ((startOfPrevWeek + timedelta(days=i)).strftime("%Y-%m-%d"),)
                     ).fetchone() is not None,
                     "is_locked": (
-                        # If today is the 1st and before 10am, unlock all previous month days for this week
-                        not (
-                            #if the 1st day of the month falls on the weekend, then do not lock the previous month days
-                            ((now.weekday() in [0,5,6] and now.day in [1,2,3]) or 
-                            (now.day == 1 and now.hour < 10)) and
-                            #(now.day == 1 and now.hour < 10 if now.weekday() > 0 else now.hour < 12)) and
-                            (startOfPrevWeek + timedelta(days=i)).month < current_month
+                        # Don't lock any days if viewing a future week
+                        False if is_future_week else
+                        (
+                            # If today is the 1st and before 10am, unlock all previous month days for this week
+                            not (
+                                #if the 1st day of the month falls on the weekend, then do not lock the previous month days
+                                ((now.weekday() in [0,5,6] and now.day in [1,2,3]) or 
+                                (now.day == 1 and now.hour < 10)) and
+                                #(now.day == 1 and now.hour < 10 if now.weekday() > 0 else now.hour < 12)) and
+                                (startOfPrevWeek + timedelta(days=i)).month < current_month
+                            )
+                            and
+                            # Otherwise, lock previous month days as usual as long as the 1st of the month is not a weekend day
+                            (startOfPrevWeek + timedelta(days=i)).month != current_month and (startOfPrevWeek + timedelta(days=i)).month < current_month
                         )
-                        and
-                        # Otherwise, lock previous month days as usual as long as the 1st of the month is not a weekend day
-                        (startOfPrevWeek + timedelta(days=i)).month != current_month and (startOfPrevWeek + timedelta(days=i)).month < current_month
-                        
                     
                         #old logic                        
                         # Lock if not in current month (existing rule)
