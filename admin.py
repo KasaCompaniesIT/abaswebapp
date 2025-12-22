@@ -9,6 +9,7 @@ from werkzeug.exceptions import abort
 
 from auth import login_required
 from db import get_db
+from timesheet import get_week_start
 
 bp = Blueprint('admin', __name__)
 
@@ -435,8 +436,8 @@ def view_export_logs():
         where_clauses.append(f"exportType IN ({','.join(['?']*len(export_type))})")
         params.extend(export_type)
     if week_start:
-        where_clauses.append(f"exportWorkWeek IN ({','.join(['?']*len(week_start))})")
-        params.extend(week_start)
+        where_clauses.append("exportWorkWeek = ?")
+        params.append(week_start)
     if date_from:
         where_clauses.append("exportDate >= ?")
         params.append(date_from)
@@ -514,6 +515,12 @@ def usage_statistics():
     db = get_db()
     dbc = db.cursor()
 
+    # Calculate current week start (week starts on Monday, weekday_start=0)
+    from datetime import datetime, timedelta
+    now = datetime.now()
+    current_week_start = get_week_start(now.date(), week_start_day=0)
+    previous_week_start = current_week_start - timedelta(days=7)
+
     # Fetch distinct values for dropdowns
     empid_choices = dbc.execute(
             "SELECT DISTINCT ExportLog.EmpID, Employee.EmpName FROM ExportLog LEFT JOIN Employee ON ExportLog.EmpID = Employee.EmpID ORDER BY ExportLog.EmpID"
@@ -526,9 +533,43 @@ def usage_statistics():
     emp_id = request.args.getlist('emp_id')
     status = request.args.getlist('status')
     export_type = request.args.getlist('type')
-    week_start = request.args.getlist('week_start')
+    week_start_param = request.args.get('week_start', 'CURRENT_WEEK')  # Default to current week
     date_from = request.args.get('date_from')
     date_to = request.args.get('date_to')
+    
+    # Handle special week filter values
+    week_start = week_start_param
+    week_start_filter_type = 'exact'  # Can be 'exact', 'month', 'year', or None
+    display_title = ""
+    
+    if week_start_param == 'ALL':
+        week_start = None  # Don't filter by week
+        display_title = "All Time"
+    elif week_start_param == 'CURRENT_WEEK':
+        week_start = str(current_week_start)
+        week_end = current_week_start + timedelta(days=6)
+        display_title = f"Current Week ({current_week_start.strftime('%b %d')} - {week_end.strftime('%b %d, %Y')})"
+    elif week_start_param == 'PREVIOUS_WEEK':
+        week_start = str(previous_week_start)
+        week_end = previous_week_start + timedelta(days=6)
+        display_title = f"Previous Week ({previous_week_start.strftime('%b %d')} - {week_end.strftime('%b %d, %Y')})"
+    elif week_start_param == 'CURRENT_MONTH':
+        week_start_filter_type = 'month'
+        week_start = now  # Store datetime for month/year extraction
+        display_title = now.strftime('%B %Y')
+    elif week_start_param == 'CURRENT_YEAR':
+        week_start_filter_type = 'year'
+        week_start = now  # Store datetime for year extraction
+        display_title = now.strftime('%Y')
+    else:
+        # Specific week selected
+        try:
+            from datetime import datetime as dt
+            week_date = dt.strptime(week_start_param, '%Y-%m-%d').date()
+            week_end = week_date + timedelta(days=6)
+            display_title = f"Week of {week_date.strftime('%b %d')} - {week_end.strftime('%b %d, %Y')}"
+        except:
+            display_title = f"Week of {week_start_param}"
 
     # Build WHERE clause dynamically
     where_clauses = []
@@ -544,8 +585,16 @@ def usage_statistics():
         where_clauses.append(f"exportType IN ({','.join(['?']*len(export_type))})")
         params.extend(export_type)
     if week_start:
-        where_clauses.append(f"exportWorkWeek IN ({','.join(['?']*len(week_start))})")
-        params.extend(week_start)
+        if week_start_filter_type == 'exact':
+            where_clauses.append("exportWorkWeek = ?")
+            params.append(week_start)
+        elif week_start_filter_type == 'month':
+            where_clauses.append("MONTH(exportWorkWeek) = ? AND YEAR(exportWorkWeek) = ?")
+            params.append(week_start.month)
+            params.append(week_start.year)
+        elif week_start_filter_type == 'year':
+            where_clauses.append("YEAR(exportWorkWeek) = ?")
+            params.append(week_start.year)
     if date_from:
         where_clauses.append("exportDate >= ?")
         params.append(date_from)
@@ -624,8 +673,16 @@ def usage_statistics():
         timesheet_where_clauses.append(f"ExportLog.EmpID IN ({','.join(['?']*len(emp_id))})")
         timesheet_params.extend(emp_id)
     if week_start:
-        timesheet_where_clauses.append(f"exportWorkWeek IN ({','.join(['?']*len(week_start))})")
-        timesheet_params.extend(week_start)
+        if week_start_filter_type == 'exact':
+            timesheet_where_clauses.append("exportWorkWeek = ?")
+            timesheet_params.append(week_start)
+        elif week_start_filter_type == 'month':
+            timesheet_where_clauses.append("MONTH(exportWorkWeek) = ? AND YEAR(exportWorkWeek) = ?")
+            timesheet_params.append(week_start.month)
+            timesheet_params.append(week_start.year)
+        elif week_start_filter_type == 'year':
+            timesheet_where_clauses.append("YEAR(exportWorkWeek) = ?")
+            timesheet_params.append(week_start.year)
     if date_from:
         timesheet_where_clauses.append("exportDate >= ?")
         timesheet_params.append(date_from)
@@ -660,8 +717,16 @@ def usage_statistics():
         payroll_where_clauses.append(f"ExportLog.EmpID IN ({','.join(['?']*len(emp_id))})")
         payroll_params.extend(emp_id)
     if week_start:
-        payroll_where_clauses.append(f"exportWorkWeek IN ({','.join(['?']*len(week_start))})")
-        payroll_params.extend(week_start)
+        if week_start_filter_type == 'exact':
+            payroll_where_clauses.append("exportWorkWeek = ?")
+            payroll_params.append(week_start)
+        elif week_start_filter_type == 'month':
+            payroll_where_clauses.append("MONTH(exportWorkWeek) = ? AND YEAR(exportWorkWeek) = ?")
+            payroll_params.append(week_start.month)
+            payroll_params.append(week_start.year)
+        elif week_start_filter_type == 'year':
+            payroll_where_clauses.append("YEAR(exportWorkWeek) = ?")
+            payroll_params.append(week_start.year)
     if date_from:
         payroll_where_clauses.append("exportDate >= ?")
         payroll_params.append(date_from)
@@ -698,12 +763,14 @@ def usage_statistics():
             "type": export_type,
             "date_from": date_from,
             "date_to": date_to,
-            "week_start": week_start
+            "week_start": week_start_param
         },
         empid_choices=empid_choices,
         status_choices=status_choices,
         type_choices=type_choices,
-        weekstart_choices=weekstart_choices
+        weekstart_choices=weekstart_choices,
+        current_week_start=str(current_week_start),
+        display_title=display_title
     )
 
 def existingProject(project):

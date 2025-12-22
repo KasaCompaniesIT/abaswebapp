@@ -23,9 +23,9 @@
 
 {% block content %}
 <form method="get" class="mb-3" id="usageStatsFilterForm">
-    <div class="form-row align-items-end">
+    <div class="form-row justify-content-center justify-content-md-end align-items-center">
         <!-- EmpID Checklist -->
-        <div class="col-12 col-md-4 mb-3 mb-md-0">
+        {# <div class="col-12 col-md-4 mb-3 mb-md-0">
             <label for="emp_id">EmpID</label>
             <select name="emp_id" id="emp_id" class="form-control selectpicker"
                     multiple data-live-search="true"
@@ -38,9 +38,9 @@
                 </option>
                 {% endfor %}
             </select>
-        </div>
+        </div> #}
         <!-- Type Checklist -->
-        <div class="col-12 col-md-3 mb-3 mb-md-0">
+        {# <div class="col-12 col-md-3 mb-3 mb-md-0">
             <label for="type">Type</label>
             <select name="type" id="type" class="form-control selectpicker" 
                     multiple data-live-search="true"
@@ -51,16 +51,18 @@
                 <option value="{{ t }}" {% if filters.type and t|string in filters.type %}selected{% endif %}>{{ t }}</option>
                 {% endfor %}
             </select>
-        </div>
-        <div class="col-12 col-md-5 mb-3 mb-md-0">
-            <label for="week_start">Week Start</label>
-            <select name="week_start" id="week_start" class="form-control selectpicker"
-                    multiple data-live-search="true"
-                    data-selected-text-format="count > 1"
-                    data-none-selected-text="All"
-                    data-width="100%">
+        </div> #}
+        <div class="col-auto">
+            {# <label for="week_start" class="mr-2 mb-0">Work Week:</label> #}
+            <select name="week_start" id="week_start" class="form-control d-inline-block" style="width: auto;">
+                <option value="ALL" {% if filters.week_start == 'ALL' %}selected{% endif %}>All</option>
+                <option value="CURRENT_WEEK" {% if not filters.week_start or filters.week_start == 'CURRENT_WEEK' %}selected{% endif %}>Current Week</option>
+                <option value="PREVIOUS_WEEK" {% if filters.week_start == 'PREVIOUS_WEEK' %}selected{% endif %}>Previous Week</option>
+                <option value="CURRENT_MONTH" {% if filters.week_start == 'CURRENT_MONTH' %}selected{% endif %}>Current Month</option>
+                <option value="CURRENT_YEAR" {% if filters.week_start == 'CURRENT_YEAR' %}selected{% endif %}>Current Year</option>
+                <option disabled>──────────</option>
                 {% for ws in weekstart_choices %}
-                <option value="{{ ws }}" {% if filters.week_start and ws|string in filters.week_start %}selected{% endif %}>{{ ws }}</option>
+                <option value="{{ ws }}" {% if filters.week_start and ws|string == filters.week_start %}selected{% endif %}>{{ ws }}</option>
                 {% endfor %}
             </select>
         </div>
@@ -68,6 +70,13 @@
 </form>
 
 <div class="container-fluid" style="max-width: 1400px;">
+    <!-- Display Title -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <h3 class="text-center">{{ display_title }}</h3>
+        </div>
+    </div>
+    
     <!-- Summary Cards -->
     <div class="row mb-4">
         <div class="col-md-12">
