@@ -11,7 +11,7 @@
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="{{ url_for('home') }}">Home</a></li>
             <li class="breadcrumb-item"><a href="{{ url_for('admin.index') }}">Admin</a></li>
-            <li class="breadcrumb-item active" aria-current="page">Usage Statistics</li>
+            <li class="breadcrumb-item active" aria-current="page">Stats</li>
         </ol>
         {% if g.user %}
         <span class="text-muted pr-2">{{ g.user.EmpName.title() }}</span>
