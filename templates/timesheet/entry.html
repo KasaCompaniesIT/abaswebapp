@@ -164,7 +164,7 @@
                                     <span id="OpCode" hidden>{{ t.OpCode }}</span>
                                 </p>
                                 <h5>
-                                    <span class="badge badge-dark editable-hours {% if not can_add_or_finalize or day.is_locked %}disabled-badge{% endif %}"
+                                    <span class="badge badge-dark editable-hours {% if not can_add_or_finalize or day.is_locked %}disabled-badge{% endif %}{% if t.tHoursWorked == 0 %} zero-hours{% endif %}"
                                         data-timeentryid="{{ t.TimeEntryID }}"
                                         style="cursor:pointer;"
                                         {% if not can_add_or_finalize or day.is_locked %} aria-disabled="true" tabindex="-1" {% endif %}>
@@ -820,6 +820,14 @@
                 .then(result => {
                     if (result.success) {
                         badge.textContent = result.hoursWorked;
+                        
+                        // Toggle zero-hours class based on value
+                        if (parseFloat(result.hoursWorked) === 0) {
+                            badge.classList.add('zero-hours');
+                        } else {
+                            badge.classList.remove('zero-hours');
+                        }
+                        
                         input.replaceWith(badge);
 
                         // Find the card for this entry
