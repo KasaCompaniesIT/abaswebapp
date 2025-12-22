@@ -1,0 +1,265 @@
+{% extends 'base.html' %}
+{% block nav_admin %}active{% endblock %}
+{% block header %}
+<div class="navbar-brand navbar-text">{% block title %}Usage Statistics{% endblock %}</div>
+
+{% endblock %}
+
+{% block subheader %}
+<nav aria-label="breadcrumb" class="breadcrumb-bg">
+    <div class="d-flex justify-content-between align-items-center">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('home') }}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('admin.index') }}">Admin</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Usage Statistics</li>
+        </ol>
+        {% if g.user %}
+        <span class="text-muted pr-2">{{ g.user.EmpName.title() }}</span>
+        {% endif %}
+    </div>
+</nav>
+<p></p>
+{% endblock %}
+
+{% block content %}
+<form method="get" class="mb-3" id="usageStatsFilterForm">
+    <div class="form-row align-items-end">
+        <!-- EmpID Checklist -->
+        <div class="col-12 col-md-4 mb-3 mb-md-0">
+            <label for="emp_id">EmpID</label>
+            <select name="emp_id" id="emp_id" class="form-control selectpicker"
+                    multiple data-live-search="true"
+                    data-selected-text-format="count > 1"
+                    data-none-selected-text="All"
+                    data-width="100%">
+                {% for eid, name in empid_choices %}
+                <option value="{{ eid }}" {% if filters.emp_id and eid|string in filters.emp_id %}selected{% endif %}>
+                    {{ eid }}{% if name %} - {{ name }}{% endif %}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <!-- Type Checklist -->
+        <div class="col-12 col-md-3 mb-3 mb-md-0">
+            <label for="type">Type</label>
+            <select name="type" id="type" class="form-control selectpicker" 
+                    multiple data-live-search="true"
+                    data-selected-text-format="count > 1"
+                    data-none-selected-text="All"
+                    data-width="100%">
+                {% for t in type_choices %}
+                <option value="{{ t }}" {% if filters.type and t|string in filters.type %}selected{% endif %}>{{ t }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-12 col-md-5 mb-3 mb-md-0">
+            <label for="week_start">Week Start</label>
+            <select name="week_start" id="week_start" class="form-control selectpicker"
+                    multiple data-live-search="true"
+                    data-selected-text-format="count > 1"
+                    data-none-selected-text="All"
+                    data-width="100%">
+                {% for ws in weekstart_choices %}
+                <option value="{{ ws }}" {% if filters.week_start and ws|string in filters.week_start %}selected{% endif %}>{{ ws }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+</form>
+
+<div class="container-fluid" style="max-width: 1400px;">
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h4 class="text-center mb-3">Export Summary</h4>
+        </div>
+        {% for stat in export_stats %}
+        <div class="col-12 col-md-4 mb-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title">{{ stat[0] }}</h5>
+                    <h2 class="card-text text-primary">{{ stat[1] }}</h2>
+                    <p class="card-text text-muted">Total Exports</p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Unique Employee Summary -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h4 class="text-center mb-3">Unique Employees</h4>
+        </div>
+        {% for stat in unique_employee_stats %}
+        <div class="col-12 col-md-4 mb-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title">{{ stat[0] }}</h5>
+                    <h2 class="card-text text-success">{{ stat[1] }}</h2>
+                    <p class="card-text text-muted">Unique Employees</p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Weekly Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h4 class="text-center mb-3">Weekly Export Statistics</h4>
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped table-sm responsive-table">
+                    <thead>
+                        <tr>
+                            <th class="px-2">Week Start</th>
+                            <th class="px-2 text-center">JobTime Entry</th>
+                            <th class="px-2 text-center">Finalized Attendance</th>
+                            <th class="px-2 text-center">Comments</th>
+                            <th class="px-2 text-center">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for stat in weekly_stats %}
+                        <tr class="weekly-mobile">
+                            <td class="px-3">Payroll Week of {{ stat[0] }}</td>
+                            <td class="px-1 text-center" data-label="Time">{{ stat[1] }}</td>
+                            <td class="px-1 text-center" data-label="Att">{{ stat[2] }}</td>
+                            <td class="px-1 text-center" data-label="Cmt">{{ stat[4] }}</td>
+                            <td class="px-1 text-center" data-label="Total">{{ stat[3] }}</td>
+                        </tr>
+                        {% endfor %}
+                        {% if not weekly_stats %}
+                        <tr>
+                            <td colspan="5" class="text-muted text-center">No data available for the selected filters</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Employee Export Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h4 class="text-center mb-3">Employee Export Statistics</h4>
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped table-sm responsive-table">
+                    <thead>
+                        <tr>
+                            <th class="px-2">EmpID</th>
+                            <th class="px-2">Employee Name</th>
+                            <th class="px-2 text-center">JobTime Entry</th>
+                            <th class="px-2 text-center">Finalized Attendance</th>
+                            <th class="px-2 text-center">Comments</th>
+                            <th class="px-2 text-center">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for stat in employee_stats %}
+                        <tr class="employee-mobile">
+                            <td class="px-3">{{ stat[0] }} - {{ stat[1] }}</td>
+                            <td class="px-1 d-none d-md-table-cell">{{ stat[1] }}</td>
+                            <td class="px-1 text-center" data-label="Time">{{ stat[2] }}</td>
+                            <td class="px-1 text-center" data-label="Att">{{ stat[3] }}</td>
+                            <td class="px-1 text-center" data-label="Cmt">{{ stat[5] }}</td>
+                            <td class="px-1 text-center" data-label="Tot">{{ stat[4] }}</td>
+                        </tr>
+                        {% endfor %}
+                        {% if not employee_stats %}
+                        <tr>
+                            <td colspan="6" class="text-muted text-center">No data available for the selected filters</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Timesheet Entry Details -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h4 class="text-center mb-3">Timesheet Entry Details</h4>
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped table-sm responsive-table">
+                    <thead>
+                        <tr>
+                            <th class="px-2">Week Start</th>
+                            <th class="px-2">EmpID</th>
+                            <th class="px-2">Employee Name</th>
+                            <th class="px-2 text-center">Export Count</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in timesheet_entries %}
+                        <tr class="details-mobile">
+                            <td class="px-3">{{ entry[2] }}</td>
+                            <td class="px-3" data-label="ID">{{ entry[0] }}</td>
+                            <td class="px-3" data-label="Emp">{{ entry[1] }}</td>
+                            <td class="px-3 text-center" data-label="Count">{{ entry[3] }}</td>
+                        </tr>
+                        {% endfor %}
+                        {% if not timesheet_entries %}
+                        <tr>
+                            <td colspan="4" class="text-muted text-center">No timesheet data available for the selected filters</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payroll Entry Details -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h4 class="text-center mb-3">Payroll Entry Details</h4>
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped table-sm responsive-table">
+                    <thead>
+                        <tr>
+                            <th class="px-2">Week Start</th>
+                            <th class="px-2">EmpID</th>
+                            <th class="px-2">Employee Name</th>
+                            <th class="px-2 text-center">Export Count</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in payroll_entries %}
+                        <tr class="details-mobile">
+                            <td class="px-3">{{ entry[2] }}</td>
+                            <td class="px-3" data-label="ID">{{ entry[0] }}</td>
+                            <td class="px-3" data-label="Emp">{{ entry[1] }}</td>
+                            <td class="px-3 text-center" data-label="Count">{{ entry[3] }}</td>
+                        </tr>
+                        {% endfor %}
+                        {% if not payroll_entries %}
+                        <tr>
+                            <td colspan="4" class="text-muted text-center">No payroll data available for the selected filters</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+{% block script %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize selectpicker
+        $('.selectpicker').selectpicker();
+        
+        // Auto-submit on any filter change
+        document.querySelectorAll('#usageStatsFilterForm select').forEach(function(el) {
+            el.addEventListener('change', function() {
+                document.getElementById('usageStatsFilterForm').submit();
+            });
+        });
+    });
+</script>
+{% endblock %}

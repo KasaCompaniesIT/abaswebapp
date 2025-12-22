@@ -972,6 +972,13 @@ a {
     /* Ensure the button is not clipped */
 }
 
+.holiday {
+    position: relative;
+    overflow: visible;
+    padding: 0 0.75rem;
+    /* Ensure the button is not clipped */
+}
+
 /* Hide the delete button by default */
 .delete-entry-btn {
     display: none;
@@ -1667,4 +1674,107 @@ body.modal-open #finalizeTimeModal.modal {
   .col-xxxl-10 { flex: 0 0 83.333333%; max-width: 83.333333%; }
   .col-xxxl-11 { flex: 0 0 91.666667%; max-width: 91.666667%; }
   .col-xxxl-12 { flex: 0 0 100%; max-width: 100%; }
+}
+
+/* Grey out time entry badges when hours are zero */
+.badge.zero-hours {
+  /* opacity: 0.5; */
+  color: #999 !important;
+}
+
+/* Mobile-friendly table styles - 2 line layout */
+@media (max-width: 768px) {
+    .responsive-table thead {
+        display: none;
+    }
+    
+    .responsive-table tbody tr {
+        display: block;
+        margin-bottom: 0.75rem;
+        border: 1px solid #dee2e6;
+        border-radius: 0.25rem;
+        background: white;
+        padding: 0.5rem;
+    }
+    
+    /* Remove striping on mobile */
+    .responsive-table tbody tr:nth-of-type(odd) {
+        background-color: white;
+    }
+    
+    .responsive-table tbody td {
+        display: inline-block;
+        border: none;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    /* Weekly and Employee Stats - 2 lines */
+    .weekly-mobile td:nth-child(1) {
+        display: block;
+        font-weight: bold;
+        background-color: #e9ecef;
+        margin: -0.5rem -0.5rem 0.25rem -0.5rem;
+        padding: 0.5rem;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .weekly-mobile td:nth-child(2):before,
+    .weekly-mobile td:nth-child(3):before,
+    .weekly-mobile td:nth-child(4):before,
+    .weekly-mobile td:nth-child(5):before {
+        content: attr(data-label) ": ";
+        font-weight: bold;
+        color: #6c757d;
+    }
+    
+    /* Employee Stats - 2 lines */
+    .employee-mobile td:nth-child(1) {
+        display: block;
+        font-weight: bold;
+        background-color: #e9ecef;
+        margin: -0.5rem -0.5rem 0.25rem -0.5rem;
+        padding: 0.5rem;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .employee-mobile td:nth-child(2) {
+        display: none;
+    }
+    
+    .employee-mobile td:nth-child(3):before,
+    .employee-mobile td:nth-child(4):before,
+    .employee-mobile td:nth-child(5):before,
+    .employee-mobile td:nth-child(6):before {
+        content: attr(data-label) ": ";
+        font-weight: bold;
+        color: #6c757d;
+    }
+    
+    /* Timesheet/Payroll Details - 2 lines */
+    .details-mobile td:nth-child(1) {
+        display: block;
+        font-weight: bold;
+        background-color: #e9ecef;
+        margin: -0.5rem -0.5rem 0.25rem -0.5rem;
+        padding: 0.25rem;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .details-mobile td:nth-child(2):before {
+        content: attr(data-label) ": ";
+        font-weight: bold;
+        color: #6c757d;
+    }
+    
+    .details-mobile td:nth-child(3):before {
+        content: attr(data-label) ": ";
+        font-weight: bold;
+        color: #6c757d;
+    }
+    
+    .details-mobile td:nth-child(4):before {
+        content: attr(data-label) ": ";
+        font-weight: bold;
+        color: #6c757d;
+    }
 }

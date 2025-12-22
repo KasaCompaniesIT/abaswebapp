@@ -505,6 +505,207 @@ def export_log_details_modal(export_id):
     """, (export_id,)).fetchall()
     return render_template('admin/export_log_details_modal.html', details=details)
 
+@bp.route('/admin/usage_statistics', methods=['GET'])
+@login_required
+def usage_statistics():
+    if not getattr(g.user, 'isAdmin', False):
+        return abort(403)
+
+    db = get_db()
+    dbc = db.cursor()
+
+    # Fetch distinct values for dropdowns
+    empid_choices = dbc.execute(
+            "SELECT DISTINCT ExportLog.EmpID, Employee.EmpName FROM ExportLog LEFT JOIN Employee ON ExportLog.EmpID = Employee.EmpID ORDER BY ExportLog.EmpID"
+        ).fetchall()
+    status_choices = [row[0] for row in dbc.execute("SELECT DISTINCT exportStatus FROM ExportLog ORDER BY exportStatus").fetchall()]
+    type_choices = [row[0] for row in dbc.execute("SELECT DISTINCT exportType FROM ExportLog ORDER BY exportType").fetchall()]
+    weekstart_choices = [row[0] for row in dbc.execute("SELECT DISTINCT exportWorkWeek FROM ExportLog ORDER BY exportWorkWeek DESC").fetchall()]
+
+    # Filtering options
+    emp_id = request.args.getlist('emp_id')
+    status = request.args.getlist('status')
+    export_type = request.args.getlist('type')
+    week_start = request.args.getlist('week_start')
+    date_from = request.args.get('date_from')
+    date_to = request.args.get('date_to')
+
+    # Build WHERE clause dynamically
+    where_clauses = []
+    params = []
+
+    if emp_id:
+        where_clauses.append(f"ExportLog.EmpID IN ({','.join(['?']*len(emp_id))})")
+        params.extend(emp_id)
+    if status:
+        where_clauses.append(f"exportStatus IN ({','.join(['?']*len(status))})")
+        params.extend(status)
+    if export_type:
+        where_clauses.append(f"exportType IN ({','.join(['?']*len(export_type))})")
+        params.extend(export_type)
+    if week_start:
+        where_clauses.append(f"exportWorkWeek IN ({','.join(['?']*len(week_start))})")
+        params.extend(week_start)
+    if date_from:
+        where_clauses.append("exportDate >= ?")
+        params.append(date_from)
+    if date_to:
+        where_clauses.append("exportDate <= ?")
+        params.append(date_to)
+
+    where_sql = "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
+
+    # Get overall export statistics by type
+    export_stats = dbc.execute(
+        f"""
+        SELECT exportType, COUNT(*) as count
+        FROM ExportLog
+        {where_sql}
+        GROUP BY exportType
+        ORDER BY exportType
+        """,
+        params
+    ).fetchall()
+
+    # Get unique employee counts by type
+    unique_employee_stats = dbc.execute(
+        f"""
+        SELECT exportType, COUNT(DISTINCT EmpID) as unique_employees
+        FROM ExportLog
+        {where_sql}
+        GROUP BY exportType
+        ORDER BY exportType
+        """,
+        params
+    ).fetchall()
+
+    # Get export statistics by employee and type
+    employee_stats = dbc.execute(
+        f"""
+        SELECT ExportLog.EmpID, Employee.EmpName,
+               SUM(CASE WHEN exportType = 'JobTimeEntry' THEN 1 ELSE 0 END) as timesheet_count,
+               SUM(CASE WHEN exportType = 'Payroll' THEN 1 ELSE 0 END) as payroll_count,
+               COUNT(*) as total_count,
+               SUM(CASE WHEN exportType = 'Comments' THEN 1 ELSE 0 END) as comments_count
+        FROM ExportLog
+        LEFT JOIN Employee ON ExportLog.EmpID = Employee.EmpID
+        {where_sql}
+        GROUP BY ExportLog.EmpID, Employee.EmpName
+        ORDER BY Employee.EmpName
+        """,
+        params
+    ).fetchall()
+
+    # Get export statistics by week
+    weekly_stats = dbc.execute(
+        f"""
+        SELECT exportWorkWeek,
+               SUM(CASE WHEN exportType = 'JobTimeEntry' THEN 1 ELSE 0 END) as timesheet_count,
+               SUM(CASE WHEN exportType = 'Payroll' THEN 1 ELSE 0 END) as payroll_count,
+               COUNT(*) as total_count,
+               SUM(CASE WHEN exportType = 'Comments' THEN 1 ELSE 0 END) as comments_count
+        FROM ExportLog
+        {where_sql}
+        GROUP BY exportWorkWeek
+        ORDER BY exportWorkWeek DESC
+        """,
+        params
+    ).fetchall()
+
+    # Get time entry statistics - employees who submitted timesheets (distinct by week)
+    timesheet_where_clauses = []
+    timesheet_params = []
+    
+    # Add base filter for JobTimeEntry type
+    timesheet_where_clauses.append("exportType = ?")
+    timesheet_params.append('JobTimeEntry')
+    
+    if emp_id:
+        timesheet_where_clauses.append(f"ExportLog.EmpID IN ({','.join(['?']*len(emp_id))})")
+        timesheet_params.extend(emp_id)
+    if week_start:
+        timesheet_where_clauses.append(f"exportWorkWeek IN ({','.join(['?']*len(week_start))})")
+        timesheet_params.extend(week_start)
+    if date_from:
+        timesheet_where_clauses.append("exportDate >= ?")
+        timesheet_params.append(date_from)
+    if date_to:
+        timesheet_where_clauses.append("exportDate <= ?")
+        timesheet_params.append(date_to)
+    
+    timesheet_where_sql = "WHERE " + " AND ".join(timesheet_where_clauses)
+
+    timesheet_entries = dbc.execute(
+        f"""
+        SELECT ExportLog.EmpID, Employee.EmpName, ExportLog.exportWorkWeek, 
+               COUNT(DISTINCT ExportLog.exportID) as export_count
+        FROM ExportLog
+        LEFT JOIN Employee ON ExportLog.EmpID = Employee.EmpID
+        {timesheet_where_sql}
+        GROUP BY ExportLog.EmpID, Employee.EmpName, ExportLog.exportWorkWeek
+        ORDER BY ExportLog.exportWorkWeek DESC, Employee.EmpName
+        """,
+        timesheet_params
+    ).fetchall()
+
+    # Get payroll statistics - employees who submitted payroll (distinct by week)
+    payroll_where_clauses = []
+    payroll_params = []
+    
+    # Add base filter for payroll type (case-insensitive)
+    payroll_where_clauses.append("LOWER(exportType) LIKE ?")
+    payroll_params.append('%payroll%')
+    
+    if emp_id:
+        payroll_where_clauses.append(f"ExportLog.EmpID IN ({','.join(['?']*len(emp_id))})")
+        payroll_params.extend(emp_id)
+    if week_start:
+        payroll_where_clauses.append(f"exportWorkWeek IN ({','.join(['?']*len(week_start))})")
+        payroll_params.extend(week_start)
+    if date_from:
+        payroll_where_clauses.append("exportDate >= ?")
+        payroll_params.append(date_from)
+    if date_to:
+        payroll_where_clauses.append("exportDate <= ?")
+        payroll_params.append(date_to)
+    
+    payroll_where_sql = "WHERE " + " AND ".join(payroll_where_clauses)
+
+    payroll_entries = dbc.execute(
+        f"""
+        SELECT ExportLog.EmpID, Employee.EmpName, ExportLog.exportWorkWeek,
+               COUNT(DISTINCT ExportLog.exportID) as export_count
+        FROM ExportLog
+        LEFT JOIN Employee ON ExportLog.EmpID = Employee.EmpID
+        {payroll_where_sql}
+        GROUP BY ExportLog.EmpID, Employee.EmpName, ExportLog.exportWorkWeek
+        ORDER BY ExportLog.exportWorkWeek DESC, Employee.EmpName
+        """,
+        payroll_params
+    ).fetchall()
+
+    return render_template(
+        'admin/usage_statistics.html',
+        export_stats=export_stats,
+        unique_employee_stats=unique_employee_stats,
+        employee_stats=employee_stats,
+        weekly_stats=weekly_stats,
+        timesheet_entries=timesheet_entries,
+        payroll_entries=payroll_entries,
+        filters={
+            "emp_id": emp_id,
+            "status": status,
+            "type": export_type,
+            "date_from": date_from,
+            "date_to": date_to,
+            "week_start": week_start
+        },
+        empid_choices=empid_choices,
+        status_choices=status_choices,
+        type_choices=type_choices,
+        weekstart_choices=weekstart_choices
+    )
+
 def existingProject(project):
     db = get_db()
     dbc = db.cursor()
