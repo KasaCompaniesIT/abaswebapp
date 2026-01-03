@@ -156,6 +156,7 @@ def entry():
             # ]
             today = datetime.now().date()
             current_month = today.month
+            first_day_of_current_month = today.replace(day=1)
 
             dateRangePrevWeek = [
                 {
@@ -174,11 +175,11 @@ def entry():
                                 ((now.weekday() in [0,5,6] and now.day in [1,2,3]) or 
                                 (now.day == 1 and now.hour < 10)) and
                                 #(now.day == 1 and now.hour < 10 if now.weekday() > 0 else now.hour < 12)) and
-                                (startOfPrevWeek + timedelta(days=i)).month < current_month
+                                (startOfPrevWeek + timedelta(days=i)) < first_day_of_current_month
                             )
                             and
                             # Otherwise, lock previous month days as usual as long as the 1st of the month is not a weekend day
-                            (startOfPrevWeek + timedelta(days=i)).month != current_month and (startOfPrevWeek + timedelta(days=i)).month < current_month
+                            (startOfPrevWeek + timedelta(days=i)).month != current_month and ((startOfPrevWeek + timedelta(days=i)) < first_day_of_current_month)
                         )
                     
                         #old logic                        
@@ -1028,7 +1029,8 @@ def copy_prev_week():
         curr_start = data.get('curr_start')
         
         curr_start = datetime.strptime(curr_start, "%Y-%m-%d").date()
-        curr_month = datetime.now().month  # The month of the current week
+        today = datetime.now().date()
+        first_day_of_current_month = today.replace(day=1)
 
         # Calculate the start and end of the week
         prev_start = curr_start - timedelta(days=7)
@@ -1050,7 +1052,7 @@ def copy_prev_week():
             # Delete entries for the current week
             for entry in curr_week_entries:
                 entry_date = entry.WorkDate if isinstance(entry.WorkDate, date) else datetime.strptime(entry.WorkDate, "%Y-%m-%d").date()
-                if entry_date.month >= curr_month: 
+                if entry_date >= first_day_of_current_month: 
                     dbc = get_db().cursor()
                     dbc.execute("DELETE FROM TimeEntry WHERE EntryID = ?", (entry.EntryID,))
                     dbc.commit()
@@ -1070,7 +1072,7 @@ def copy_prev_week():
             for entry in prev_entries:
                 for i in range(7):
                     day_date = curr_start + timedelta(days=i)
-                    if day_date.month < curr_month:
+                    if day_date < first_day_of_current_month:
                         continue  # Skip copying to locked days (previous month)
                     existing_entry = get_time_entry(abas_id, day_date, entry.WSNumber)
                     if not existing_entry:
