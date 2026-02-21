@@ -1024,8 +1024,235 @@
         }
     }
 
+    // Apply Salary Plus Algorithm
+    function applySalaryPlusAlgorithm(data, spThreshold, payrollExportData, holidayDates, weekStartDate, weekEndDate) {
+        // Group entries by date to process day by day
+        const entriesByDate = {};
+        data.time_entries.forEach(entry => {
+            if (!entriesByDate[entry.WorkDate]) {
+                entriesByDate[entry.WorkDate] = [];
+            }
+            entriesByDate[entry.WorkDate].push({...entry});
+        });
+
+        // Get all dates in the week range (not just dates with entries)
+        const allDates = [];
+        const start = new Date(weekStartDate);
+        const end = new Date(weekEndDate);
+        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+            allDates.push(new Date(d).toLocaleDateString('en-US', {month: '2-digit', day: '2-digit', year: '2-digit'}).replace(/\//g, '/'));
+        }
+
+        // Sort dates to process in chronological order
+        const sortedDates = allDates.sort((a, b) => new Date(a) - new Date(b));
+
+        let weeklyE1Total = 0;  // Track E1 hours (not including EH)
+        let weeklyE1PlusEHTotal = 0;  // Track E1+EH hours
+        let weeklyJobHoursTotal = 0;  // Track total job hours (excluding holidays/indirect)
+        let hasHolidayInWeek = false;
+        let hasSUorSTBYInWeek = false;
+
+        const processedEntries = [];
+
+        // First pass: identify week characteristics
+        sortedDates.forEach(date => {
+            // Check if this date is a holiday
+            if (holidayDates.includes(date)) {
+                hasHolidayInWeek = true;
+            }
+            
+            const dayEntries = entriesByDate[date] || [];
+            dayEntries.forEach(entry => {
+                const opName = (entry.OpName || '').toUpperCase();
+                
+                if (opName.includes('SU') || opName.includes('STBY') || opName.includes('STANDBY')) {
+                    hasSUorSTBYInWeek = true;
+                }
+            });
+        });
+
+        // Second pass: process each day's entries
+        sortedDates.forEach(date => {
+            const dayEntries = entriesByDate[date] || [];
+            const isHoliday = holidayDates.includes(date);
+            const isLocked = dayEntries.length > 0 ? dayEntries[0].locked : false;
+            let dayJobHours = 0;
+            let dayIndirectJuryHours = 0;
+            let dayIndirectBLHours = 0;
+            let dayIndirectEVHours = 0;
+            let dayIndirectEPTHours = 0;
+
+            // Calculate totals for the day
+            dayEntries.forEach(entry => {
+                const hours = parseFloat(entry.tHoursWorked || 0);
+                const opCode = (entry.OpCode || '').toUpperCase();
+                const opName = (entry.OpName || '').toUpperCase();
+
+                if (opCode === 'EJ' || opName.includes('JURYDUTY') || opName.includes('JURY DUTY')) {
+                    dayIndirectJuryHours += hours;
+                } else if (opCode === 'EBL' || opName.includes('INDIRECT-BL') || opName.includes('BEREAVEMENT')) {
+                    dayIndirectBLHours += hours;
+                } else if (opCode === 'EV' || opName.includes('VACATION')) {
+                    dayIndirectEVHours += hours;
+                } else if (opCode === 'EPT' || opName.includes('PAID TIME-OFF') || opName.includes('PTO')) {
+                    dayIndirectEPTHours += hours;
+                } else {
+                    // Regular job hours
+                    dayJobHours += hours;
+                }
+            });
+
+            // Rule 2: Keep Holiday Job Time and Holiday Attendance Time auto-populated
+            if (isHoliday) {
+                // Add 8 hours of EH for holiday (regardless of job time)
+                processedEntries.push({
+                    WorkDate: date,
+                    tHoursWorked: 8.00,
+                    OpCode: 'EH',
+                    OpName: 'Holiday',
+                    locked: false
+                });
+                weeklyE1PlusEHTotal += 8;
+                
+                // If no job time on holiday, skip to next day
+                if (dayJobHours === 0) {
+                    return;
+                }
+            }
+
+            // Rule 3 & 3a: Auto-populate E1 Attendance Time to match Job Time until 40 hours
+            if (dayJobHours > 0) {
+                let remainingJobHours = dayJobHours;
+                
+                // Determine the E1 threshold
+                let e1Threshold = 40;
+                if (hasHolidayInWeek && hasSUorSTBYInWeek) {
+                    // Rule 3a: Count separately - need 40hrs E1 (not E1+EH) plus 8hr EH per holiday
+                    e1Threshold = 40;
+                    let e1HoursToAdd = Math.min(remainingJobHours, e1Threshold - weeklyE1Total);
+                    
+                    if (e1HoursToAdd > 0) {
+                        processedEntries.push({
+                            WorkDate: date,
+                            tHoursWorked: e1HoursToAdd,
+                            OpCode: 'E1',
+                            OpName: 'Regular Time',
+                            locked: isLocked
+                        });
+                        weeklyE1Total += e1HoursToAdd;
+                        weeklyE1PlusEHTotal += e1HoursToAdd;
+                        remainingJobHours -= e1HoursToAdd;
+                    }
+                } else {
+                    // Normal case: Count E1+EH together up to 40
+                    let e1HoursToAdd = Math.min(remainingJobHours, 40 - weeklyE1PlusEHTotal);
+                    
+                    if (e1HoursToAdd > 0) {
+                        processedEntries.push({
+                            WorkDate: date,
+                            tHoursWorked: e1HoursToAdd,
+                            OpCode: 'E1',
+                            OpName: 'Regular Time',
+                            locked: isLocked
+                        });
+                        weeklyE1Total += e1HoursToAdd;
+                        weeklyE1PlusEHTotal += e1HoursToAdd;
+                        remainingJobHours -= e1HoursToAdd;
+                    }
+                }
+
+                weeklyJobHoursTotal += dayJobHours;
+
+                // Rule 5 & 6: Handle hours between 40 and SP threshold, and beyond
+                if (remainingJobHours > 0 && spThreshold) {
+                    if (weeklyJobHoursTotal > spThreshold) {
+                        // Once we exceed SP threshold, add E50 for only the hours beyond the threshold
+                        let hoursOverThreshold = weeklyJobHoursTotal - spThreshold;
+                        let e50Hours = Math.min(remainingJobHours, hoursOverThreshold);
+                        
+                        if (e50Hours > 0) {
+                            processedEntries.push({
+                                WorkDate: date,
+                                tHoursWorked: e50Hours,
+                                OpCode: 'E50',
+                                OpName: 'Overtime',
+                                locked: isLocked
+                            });
+                        }
+                    }
+                    // else: Hours between 40 and SP threshold get no attendance time (Rule 5)
+                }
+            }
+
+            // Rule 4: Handle INDIRECT operations
+            if (dayIndirectJuryHours > 0) {
+                let ejHours = Math.min(dayIndirectJuryHours, Math.max(0, 40 - weeklyE1PlusEHTotal));
+                if (ejHours > 0) {
+                    processedEntries.push({
+                        WorkDate: date,
+                        tHoursWorked: ejHours,
+                        OpCode: 'EJ',
+                        OpName: 'Jury Duty',
+                        locked: isLocked
+                    });
+                    weeklyE1PlusEHTotal += ejHours;
+                }
+            }
+
+            if (dayIndirectBLHours > 0) {
+                let eblHours = Math.min(dayIndirectBLHours, Math.max(0, 40 - weeklyE1PlusEHTotal));
+                if (eblHours > 0) {
+                    processedEntries.push({
+                        WorkDate: date,
+                        tHoursWorked: eblHours,
+                        OpCode: 'EBL',
+                        OpName: 'Bereavement Leave',
+                        locked: isLocked
+                    });
+                    weeklyE1PlusEHTotal += eblHours;
+                }
+            }
+
+            if (dayIndirectEVHours > 0) {
+                let evHours = Math.min(dayIndirectEVHours, Math.max(0, 40 - weeklyE1PlusEHTotal));
+                if (evHours > 0) {
+                    processedEntries.push({
+                        WorkDate: date,
+                        tHoursWorked: evHours,
+                        OpCode: 'EV',
+                        OpName: 'Vacation',
+                        locked: isLocked
+                    });
+                    weeklyE1PlusEHTotal += evHours;
+                }
+            }
+
+            if (dayIndirectEPTHours > 0) {
+                let eptHours = Math.min(dayIndirectEPTHours, Math.max(0, 40 - weeklyE1PlusEHTotal));
+                if (eptHours > 0) {
+                    processedEntries.push({
+                        WorkDate: date,
+                        tHoursWorked: eptHours,
+                        OpCode: 'EPT',
+                        OpName: 'Paid Time Off',
+                        locked: isLocked
+                    });
+                    weeklyE1PlusEHTotal += eptHours;
+                }
+            }
+        });
+
+        return {
+            time_entries: processedEntries,
+            totalHoursWorked: data.totalHoursWorked
+        };
+    }
+
     // Render the finalize table with the fetched data
     function renderFinalizeTable(data, payrollExportData) {        
+        const salaryPlusStart = {{ abasUser.SalaryPlusStart if abasUser and abasUser.SalaryPlusStart else 'null' }};
+        const isHourly = {{ 'true' if abasUser and abasUser.isHourly else 'false' }};
+        const isMxEmp = {{ 'true' if abasUser and abasUser.isMxEmp else 'false' }};
         const finalizeTimeMButton = document.getElementById('finalizeTimeModalButton');
         const tableBody = document.querySelector('#finalizeTimeModal tbody');
         tableBody.innerHTML = ''; // Clear existing rows
@@ -1053,6 +1280,16 @@
         const payrollPaychex_list = {{ paychex_list | tojson }};
         const totalHoursBadge = document.getElementById('finalizeTotalHoursCell');
         totalHoursBadge.textContent = '0'; // Reset the total hours badge
+
+        // Apply SP algorithm if salaryPlusStart is set and user is not hourly
+        if (salaryPlusStart && !isHourly) {
+            // Build holiday dates array
+            const holidayDates = {{ dateRangePrevWeek | selectattr('isHoliday') | map(attribute='date') | list | tojson }};
+            const weekStart = document.getElementById('startDateInput').value;
+            const weekEnd = document.getElementById('endDateInput').value;
+            
+            data = applySalaryPlusAlgorithm(data, salaryPlusStart, payrollExportData, holidayDates, weekStart, weekEnd);
+        }
 
         let rowHTML = '';
         let lastDay = null;
