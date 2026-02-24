@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+{% block nav_admin %}active{% endblock %}
+{% block header %}
+<div class="navbar-brand navbar-text">{% block title %}Manage Projects, WorkOrders, and WorkSlips{% endblock %}</div>
+
+{% endblock %}
+
+{% block head %}
+<style>
+    .project-data-table {
+        width: auto !important;
+        table-layout: auto;
+    }
+
+    .project-data-table th,
+    .project-data-table td {
+        white-space: nowrap;
+        width: auto;
+        vertical-align: middle;
+    }
+
+    .project-data-table .form-control {
+        display: inline-block;
+        width: auto;
+        min-width: 90px;
+    }
+
+    .project-data-table .col-description {
+        min-width: 420px;
+    }
+
+    .project-data-table .col-description .form-control {
+        min-width: 420px;
+    }
+
+    .section-anchor {
+        scroll-margin-top: 90px;
+    }
+</style>
+{% endblock %}
+
+{% block subheader %}
+<nav aria-label="breadcrumb" class="breadcrumb-bg">
+    <div class="d-flex justify-content-between align-items-center">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('home') }}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('admin.index') }}">Admin</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Project Data</li>
+        </ol>
+        {% if g.user %}
+        <span class="text-muted pr-2">{{ g.user.EmpName.title() }}</span>
+        {% endif %}
+    </div>
+</nav>
+<p></p>
+{% endblock %}
+
+{% block content %}
+<h5 id="projects" class="section-anchor">Projects</h5>
+<form method="get" action="{{ url_for('admin.manage_project_data') }}#projects" class="form-inline mb-2">
+    <input type="text" name="project_q" class="form-control form-control-sm mr-2" placeholder="Search projects" value="{{ project_q }}">
+    <input type="hidden" name="project_page" value="1">
+    <input type="hidden" name="workorder_q" value="{{ workorder_q }}">
+    <input type="hidden" name="workorder_page" value="{{ workorder_page }}">
+    <input type="hidden" name="workslip_q" value="{{ workslip_q }}">
+    <input type="hidden" name="workslip_page" value="{{ workslip_page }}">
+    <button type="submit" class="btn btn-abas btn-sm">Search</button>
+    <a class="btn btn-secondary btn-sm ml-2" href="{{ url_for('admin.manage_project_data', project_q='', project_page=1, workorder_q=workorder_q, workorder_page=workorder_page, workslip_q=workslip_q, workslip_page=workslip_page) }}#projects">Clear</a>
+    <span class="ml-3 text-muted small">{{ total_projects }} total</span>
+</form>
+<table class="table table-bordered table-striped table-sm w-auto project-data-table">
+    <thead>
+        <tr>
+            <th>Project ID</th>
+            <th>Project Number</th>
+            <th class="col-description">Description</th>
+            <th>Complete</th>            
+            <th>Complete Date</th>
+            <th>Hide From Use</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for project in projects %}
+        <tr>
+            <form method="post">
+                <input type="hidden" name="entity" value="project">
+                <td><input type="number" name="ProjectID" class="form-control form-control-sm" value="{{ project.ProjectID }}" readonly></td>
+                <td><input type="text" name="ProjectNumber" class="form-control form-control-sm" value="{{ project.ProjectNumber|trim }}" required></td>
+                <td class="col-description"><input type="text" name="ProjectDescription" class="form-control form-control-sm" value="{{ project.ProjectDescription or '' }}"></td>
+                <td class="text-center"><input type="checkbox" name="ProjectComplete" {% if project.ProjectComplete %}checked{% endif %}></td>                
+                <td><input type="text" name="ProjectCompleteDate" class="form-control form-control-sm" value="{{ project.ProjectCompleteDate|trim if project.ProjectCompleteDate else '' }}" placeholder="MM/DD/YY"></td>
+                <td class="text-center"><input type="checkbox" name="hideFromUse" {% if project.hideFromUse %}checked{% endif %}></td>
+                <td>
+                    <button name="action" value="update" class="btn btn-primary btn-sm">Update</button>
+                    <button name="action" value="delete" class="btn btn-danger btn-sm" onclick="return confirm('Delete this project?')">Delete</button>
+                </td>
+            </form>
+        </tr>
+        {% endfor %}
+        <tr>
+            <form method="post">
+                <input type="hidden" name="entity" value="project">
+                <td><input type="number" name="ProjectID" class="form-control form-control-sm" required></td>
+                <td><input type="text" name="ProjectNumber" class="form-control form-control-sm" required></td>
+                <td class="col-description"><input type="text" name="ProjectDescription" class="form-control form-control-sm"></td>
+                <td class="text-center"><input type="checkbox" name="ProjectComplete"></td>
+                <td><input type="text" name="ProjectCompleteDate" class="form-control form-control-sm" placeholder="MM/DD/YY"></td>
+                <td class="text-center"><input type="checkbox" name="hideFromUse"></td>
+                <td>
+                    <button name="action" value="add" class="btn btn-success btn-sm">Add</button>
+                </td>
+            </form>
+        </tr>
+    </tbody>
+</table>
+<div class="d-flex align-items-center mb-4">
+    <a class="btn btn-outline-secondary btn-sm mr-2 {% if project_page <= 1 %}disabled{% endif %}"
+    href="{{ url_for('admin.manage_project_data', project_q=project_q, project_page=project_page-1, workorder_q=workorder_q, workorder_page=workorder_page, workslip_q=workslip_q, workslip_page=workslip_page) }}#projects">Previous</a>
+    <span class="small">Page {{ project_page }} of {{ project_total_pages }}</span>
+    <a class="btn btn-outline-secondary btn-sm ml-2 {% if project_page >= project_total_pages %}disabled{% endif %}"
+    href="{{ url_for('admin.manage_project_data', project_q=project_q, project_page=project_page+1, workorder_q=workorder_q, workorder_page=workorder_page, workslip_q=workslip_q, workslip_page=workslip_page) }}#projects">Next</a>
+</div>
+
+<h5 id="workorders" class="mt-4 section-anchor">WorkOrders</h5>
+<form method="get" action="{{ url_for('admin.manage_project_data') }}#workorders" class="form-inline mb-2">
+    <input type="hidden" name="project_q" value="{{ project_q }}">
+    <input type="hidden" name="project_page" value="{{ project_page }}">
+    <input type="text" name="workorder_q" class="form-control form-control-sm mr-2" placeholder="Search workorders" value="{{ workorder_q }}">
+    <input type="hidden" name="workorder_page" value="1">
+    <input type="hidden" name="workslip_q" value="{{ workslip_q }}">
+    <input type="hidden" name="workslip_page" value="{{ workslip_page }}">
+    <button type="submit" class="btn btn-abas btn-sm">Search</button>
+    <a class="btn btn-secondary btn-sm ml-2" href="{{ url_for('admin.manage_project_data', project_q=project_q, project_page=project_page, workorder_q='', workorder_page=1, workslip_q=workslip_q, workslip_page=workslip_page) }}#workorders">Clear</a>
+    <span class="ml-3 text-muted small">{{ total_workorders }} total</span>
+</form>
+<table class="table table-bordered table-striped table-sm w-auto project-data-table">
+    <thead>
+        <tr>
+            <th>Project ID</th>
+            <th>WO Number</th>
+            <th class="col-description">Description</th>
+            <th>Part</th>
+            <th>Hide From Use</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for wo in workorders %}
+        <tr>
+            <form method="post">
+                <input type="hidden" name="entity" value="workorder">
+                <td><input type="number" name="ProjectID" class="form-control form-control-sm" value="{{ wo.ProjectID }}" required></td>
+                <td><input type="number" name="WONumber" class="form-control form-control-sm" value="{{ wo.WONumber }}" readonly></td>
+                <td class="col-description"><input type="text" name="WODescription" class="form-control form-control-sm" value="{{ wo.WODescription or '' }}"></td>
+                <td><input type="text" name="WOPart" class="form-control form-control-sm" value="{{ wo.WOPart or '' }}"></td>
+                <td class="text-center"><input type="checkbox" name="hideFromUse" {% if wo.hideFromUse %}checked{% endif %}></td>
+                <td>
+                    <button name="action" value="update" class="btn btn-primary btn-sm">Update</button>
+                    <button name="action" value="delete" class="btn btn-danger btn-sm" onclick="return confirm('Delete this workorder?')">Delete</button>
+                </td>
+            </form>
+        </tr>
+        {% endfor %}
+        <tr>
+            <form method="post">
+                <input type="hidden" name="entity" value="workorder">
+                <td><input type="number" name="ProjectID" class="form-control form-control-sm" required></td>
+                <td><input type="number" name="WONumber" class="form-control form-control-sm" required></td>
+                <td class="col-description"><input type="text" name="WODescription" class="form-control form-control-sm"></td>
+                <td><input type="text" name="WOPart" class="form-control form-control-sm"></td>
+                <td class="text-center"><input type="checkbox" name="hideFromUse"></td>
+                <td>
+                    <button name="action" value="add" class="btn btn-success btn-sm">Add</button>
+                </td>
+            </form>
+        </tr>
+    </tbody>
+</table>
+<div class="d-flex align-items-center mb-4">
+    <a class="btn btn-outline-secondary btn-sm mr-2 {% if workorder_page <= 1 %}disabled{% endif %}"
+    href="{{ url_for('admin.manage_project_data', project_q=project_q, project_page=project_page, workorder_q=workorder_q, workorder_page=workorder_page-1, workslip_q=workslip_q, workslip_page=workslip_page) }}#workorders">Previous</a>
+    <span class="small">Page {{ workorder_page }} of {{ workorder_total_pages }}</span>
+    <a class="btn btn-outline-secondary btn-sm ml-2 {% if workorder_page >= workorder_total_pages %}disabled{% endif %}"
+    href="{{ url_for('admin.manage_project_data', project_q=project_q, project_page=project_page, workorder_q=workorder_q, workorder_page=workorder_page+1, workslip_q=workslip_q, workslip_page=workslip_page) }}#workorders">Next</a>
+</div>
+
+<h5 id="workslips" class="mt-4 section-anchor">WorkSlips</h5>
+<form method="get" action="{{ url_for('admin.manage_project_data') }}#workslips" class="form-inline mb-2">
+    <input type="hidden" name="project_q" value="{{ project_q }}">
+    <input type="hidden" name="project_page" value="{{ project_page }}">
+    <input type="hidden" name="workorder_q" value="{{ workorder_q }}">
+    <input type="hidden" name="workorder_page" value="{{ workorder_page }}">
+    <input type="text" name="workslip_q" class="form-control form-control-sm mr-2" placeholder="Search workslips" value="{{ workslip_q }}">
+    <input type="hidden" name="workslip_page" value="1">
+    <button type="submit" class="btn btn-abas btn-sm">Search</button>
+    <a class="btn btn-secondary btn-sm ml-2" href="{{ url_for('admin.manage_project_data', project_q=project_q, project_page=project_page, workorder_q=workorder_q, workorder_page=workorder_page, workslip_q='', workslip_page=1) }}#workslips">Clear</a>
+    <span class="ml-3 text-muted small">{{ total_workslips }} total</span>
+</form>
+<table class="table table-bordered table-striped table-sm w-auto project-data-table">
+    <thead>
+        <tr>
+            <th>WS Number</th>
+            <th>WO Number</th>
+            <th class="col-description">Description</th>
+            <th>Dock Date</th>
+            <th>Op ID</th>
+            <th>Hide From Use</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for ws in workslips %}
+        <tr>
+            <form method="post">
+                <input type="hidden" name="entity" value="workslip">
+                <td><input type="number" name="WSNumber" class="form-control form-control-sm" value="{{ ws.WSNumber }}" readonly></td>
+                <td><input type="number" name="WONumber" class="form-control form-control-sm" value="{{ ws.WONumber }}" required></td>
+                <td class="col-description"><input type="text" name="WSDescription" class="form-control form-control-sm" value="{{ ws.WSDescription or '' }}"></td>
+                <td><input type="text" name="WSDockDate" class="form-control form-control-sm" value="{{ ws.WSDockDate|trim if ws.WSDockDate else '' }}" placeholder="MM/DD/YY"></td>
+                <td><input type="number" name="OpID" class="form-control form-control-sm" value="{{ ws.OpID }}" required></td>
+                <td class="text-center"><input type="checkbox" name="hideFromUse" {% if ws.hideFromUse %}checked{% endif %}></td>
+                <td>
+                    <button name="action" value="update" class="btn btn-primary btn-sm">Update</button>
+                    <button name="action" value="delete" class="btn btn-danger btn-sm" onclick="return confirm('Delete this workslip?')">Delete</button>
+                </td>
+            </form>
+        </tr>
+        {% endfor %}
+        <tr>
+            <form method="post">
+                <input type="hidden" name="entity" value="workslip">
+                <td><input type="number" name="WSNumber" class="form-control form-control-sm" required></td>
+                <td><input type="number" name="WONumber" class="form-control form-control-sm" required></td>
+                <td class="col-description"><input type="text" name="WSDescription" class="form-control form-control-sm"></td>
+                <td><input type="text" name="WSDockDate" class="form-control form-control-sm" placeholder="MM/DD/YY"></td>
+                <td><input type="number" name="OpID" class="form-control form-control-sm" required></td>
+                <td class="text-center"><input type="checkbox" name="hideFromUse"></td>
+                <td>
+                    <button name="action" value="add" class="btn btn-success btn-sm">Add</button>
+                </td>
+            </form>
+        </tr>
+    </tbody>
+</table>
+<div class="d-flex align-items-center mb-4">
+    <a class="btn btn-outline-secondary btn-sm mr-2 {% if workslip_page <= 1 %}disabled{% endif %}"
+    href="{{ url_for('admin.manage_project_data', project_q=project_q, project_page=project_page, workorder_q=workorder_q, workorder_page=workorder_page, workslip_q=workslip_q, workslip_page=workslip_page-1) }}#workslips">Previous</a>
+    <span class="small">Page {{ workslip_page }} of {{ workslip_total_pages }}</span>
+    <a class="btn btn-outline-secondary btn-sm ml-2 {% if workslip_page >= workslip_total_pages %}disabled{% endif %}"
+    href="{{ url_for('admin.manage_project_data', project_q=project_q, project_page=project_page, workorder_q=workorder_q, workorder_page=workorder_page, workslip_q=workslip_q, workslip_page=workslip_page+1) }}#workslips">Next</a>
+</div>
+{% endblock %}

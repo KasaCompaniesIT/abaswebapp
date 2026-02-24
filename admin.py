@@ -397,6 +397,276 @@ def manage_operations():
     ).fetchall()
     return render_template('admin/operations.html', operations=operations)
 
+@bp.route('/admin/project_data', methods=['GET', 'POST'])
+@login_required
+def manage_project_data():
+    if not getattr(g.user, 'isAdmin', False):
+        return abort(403)
+
+    db = get_db()
+    dbc = db.cursor()
+
+    if request.method == 'POST':
+        entity = request.form.get('entity')
+        action = request.form.get('action')
+
+        try:
+            if entity == 'project':
+                project_id = request.form.get('ProjectID', '').strip()
+                project_number = request.form.get('ProjectNumber', '').strip()
+                project_description = request.form.get('ProjectDescription', '').strip()
+                project_complete = 1 if request.form.get('ProjectComplete') == 'on' else 0
+                project_complete_date = request.form.get('ProjectCompleteDate', '').strip()
+                hide_from_use = 1 if request.form.get('hideFromUse') == 'on' else 0
+                # project_closed = 1 if request.form.get('ProjectClosed') == 'on' else 0
+                # project_closed_date = request.form.get('ProjectClosedDate', '').strip()
+
+                if action == 'add':
+                    dbc.execute(
+                        """
+                        INSERT INTO Projects (
+                            ProjectID, ProjectNumber, ProjectDescription, ProjectComplete,
+                            ProjectCompleteDate, hideFromUse
+                        ) VALUES (?, ?, ?, ?, ?, ?)
+                        """,
+                        (
+                            int(project_id),
+                            project_number,
+                            project_description or None,
+                            project_complete,
+                            project_complete_date or None,
+                            hide_from_use,
+                        )
+                    )
+                    flash(f'Project {project_id} added.', 'success')
+                elif action == 'update':
+                    dbc.execute(
+                        """
+                        UPDATE Projects
+                        SET ProjectNumber = ?, ProjectDescription = ?, ProjectComplete = ?,
+                            ProjectCompleteDate = ?, hideFromUse = ?
+                        WHERE ProjectID = ?
+                        """,
+                        (
+                            project_number,
+                            project_description or None,
+                            project_complete,
+                            project_complete_date or None,
+                            hide_from_use,
+                            int(project_id),
+                        )
+                    )
+                    flash(f'Project {project_id} updated.', 'success')
+                elif action == 'delete':
+                    dbc.execute("DELETE FROM Projects WHERE ProjectID = ?", (int(project_id),))
+                    flash(f'Project {project_id} deleted.', 'success')
+
+            elif entity == 'workorder':
+                project_id = request.form.get('ProjectID', '').strip()
+                wo_number = request.form.get('WONumber', '').strip()
+                wo_description = request.form.get('WODescription', '').strip()
+                wo_part = request.form.get('WOPart', '').strip()
+                hide_from_use = 1 if request.form.get('hideFromUse') == 'on' else 0
+
+                if action == 'add':
+                    dbc.execute(
+                        """
+                        INSERT INTO WorkOrders (ProjectID, WONumber, WODescription, WOPart, hideFromUse)
+                        VALUES (?, ?, ?, ?, ?)
+                        """,
+                        (int(project_id), int(wo_number), wo_description or None, wo_part or None, hide_from_use)
+                    )
+                    flash(f'WorkOrder {wo_number} added.', 'success')
+                elif action == 'update':
+                    dbc.execute(
+                        """
+                        UPDATE WorkOrders
+                        SET ProjectID = ?, WODescription = ?, WOPart = ?, hideFromUse = ?
+                        WHERE WONumber = ?
+                        """,
+                        (int(project_id), wo_description or None, wo_part or None, hide_from_use, int(wo_number))
+                    )
+                    flash(f'WorkOrder {wo_number} updated.', 'success')
+                elif action == 'delete':
+                    dbc.execute("DELETE FROM WorkOrders WHERE WONumber = ?", (int(wo_number),))
+                    flash(f'WorkOrder {wo_number} deleted.', 'success')
+
+            elif entity == 'workslip':
+                ws_number = request.form.get('WSNumber', '').strip()
+                wo_number = request.form.get('WONumber', '').strip()
+                ws_description = request.form.get('WSDescription', '').strip()
+                ws_dock_date = request.form.get('WSDockDate', '').strip()
+                op_id = request.form.get('OpID', '').strip()
+                hide_from_use = 1 if request.form.get('hideFromUse') == 'on' else 0
+
+                if action == 'add':
+                    dbc.execute(
+                        """
+                        INSERT INTO WorkSlips (WSNumber, WONumber, WSDescription, WSDockDate, OpID, hideFromUse)
+                        VALUES (?, ?, ?, ?, ?, ?)
+                        """,
+                        (int(ws_number), int(wo_number), ws_description or None, ws_dock_date or None, int(op_id), hide_from_use)
+                    )
+                    flash(f'WorkSlip {ws_number} added.', 'success')
+                elif action == 'update':
+                    dbc.execute(
+                        """
+                        UPDATE WorkSlips
+                        SET WONumber = ?, WSDescription = ?, WSDockDate = ?, OpID = ?, hideFromUse = ?
+                        WHERE WSNumber = ?
+                        """,
+                        (int(wo_number), ws_description or None, ws_dock_date or None, int(op_id), hide_from_use, int(ws_number))
+                    )
+                    flash(f'WorkSlip {ws_number} updated.', 'success')
+                elif action == 'delete':
+                    dbc.execute("DELETE FROM WorkSlips WHERE WSNumber = ?", (int(ws_number),))
+                    flash(f'WorkSlip {ws_number} deleted.', 'success')
+
+            db.commit()
+        except (ValueError, TypeError):
+            db.rollback()
+            flash('Invalid input values. Please check numeric fields.', 'danger')
+        except pyodbc.DatabaseError as err:
+            db.rollback()
+            flash(f'Database error: {err}', 'danger')
+
+        section_anchor_map = {
+            'project': 'projects',
+            'workorder': 'workorders',
+            'workslip': 'workslips'
+        }
+        section_anchor = section_anchor_map.get(entity, 'projects')
+
+        redirect_url = url_for(
+            'admin.manage_project_data',
+            project_q=request.args.get('project_q', ''),
+            project_page=request.args.get('project_page', 1),
+            workorder_q=request.args.get('workorder_q', ''),
+            workorder_page=request.args.get('workorder_page', 1),
+            workslip_q=request.args.get('workslip_q', ''),
+            workslip_page=request.args.get('workslip_page', 1)
+        )
+        return redirect(f"{redirect_url}#{section_anchor}")
+
+    def parse_page(value):
+        try:
+            page_value = int(value)
+            return page_value if page_value > 0 else 1
+        except (TypeError, ValueError):
+            return 1
+
+    per_page = 25
+
+    project_q = request.args.get('project_q', '').strip()
+    workorder_q = request.args.get('workorder_q', '').strip()
+    workslip_q = request.args.get('workslip_q', '').strip()
+
+    project_page = parse_page(request.args.get('project_page', 1))
+    workorder_page = parse_page(request.args.get('workorder_page', 1))
+    workslip_page = parse_page(request.args.get('workslip_page', 1))
+
+    project_where = []
+    project_params = []
+    if project_q:
+        project_where.append("(CAST(ProjectID AS NVARCHAR(20)) LIKE ? OR ProjectNumber LIKE ? OR ProjectDescription LIKE ?)")
+        project_like = f"%{project_q}%"
+        project_params.extend([project_like, project_like, project_like])
+    project_where_sql = f"WHERE {' AND '.join(project_where)}" if project_where else ""
+
+    total_projects = dbc.execute(
+        f"SELECT COUNT(*) FROM Projects {project_where_sql}",
+        project_params
+    ).fetchone()[0]
+    project_total_pages = max(1, (total_projects + per_page - 1) // per_page)
+    project_page = min(project_page, project_total_pages)
+    project_offset = (project_page - 1) * per_page
+
+    projects = dbc.execute(
+        f"""
+         SELECT ProjectID, ProjectNumber, ProjectDescription, ProjectComplete,
+             hideFromUse,
+               ProjectCompleteDate, ProjectClosed, ProjectClosedDate
+        FROM Projects
+        {project_where_sql}
+        ORDER BY ProjectID
+        OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+        """,
+        project_params + [project_offset, per_page]
+    ).fetchall()
+
+    workorder_where = []
+    workorder_params = []
+    if workorder_q:
+        workorder_where.append("(CAST(ProjectID AS NVARCHAR(20)) LIKE ? OR CAST(WONumber AS NVARCHAR(20)) LIKE ? OR WODescription LIKE ? OR WOPart LIKE ?)")
+        workorder_like = f"%{workorder_q}%"
+        workorder_params.extend([workorder_like, workorder_like, workorder_like, workorder_like])
+    workorder_where_sql = f"WHERE {' AND '.join(workorder_where)}" if workorder_where else ""
+
+    total_workorders = dbc.execute(
+        f"SELECT COUNT(*) FROM WorkOrders {workorder_where_sql}",
+        workorder_params
+    ).fetchone()[0]
+    workorder_total_pages = max(1, (total_workorders + per_page - 1) // per_page)
+    workorder_page = min(workorder_page, workorder_total_pages)
+    workorder_offset = (workorder_page - 1) * per_page
+
+    workorders = dbc.execute(
+        f"""
+        SELECT ProjectID, WONumber, WODescription, WOPart, hideFromUse
+        FROM WorkOrders
+        {workorder_where_sql}
+        ORDER BY WONumber
+        OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+        """,
+        workorder_params + [workorder_offset, per_page]
+    ).fetchall()
+
+    workslip_where = []
+    workslip_params = []
+    if workslip_q:
+        workslip_where.append("(CAST(WSNumber AS NVARCHAR(20)) LIKE ? OR CAST(WONumber AS NVARCHAR(20)) LIKE ? OR WSDescription LIKE ? OR WSDockDate LIKE ? OR CAST(OpID AS NVARCHAR(20)) LIKE ?)")
+        workslip_like = f"%{workslip_q}%"
+        workslip_params.extend([workslip_like, workslip_like, workslip_like, workslip_like, workslip_like])
+    workslip_where_sql = f"WHERE {' AND '.join(workslip_where)}" if workslip_where else ""
+
+    total_workslips = dbc.execute(
+        f"SELECT COUNT(*) FROM WorkSlips {workslip_where_sql}",
+        workslip_params
+    ).fetchone()[0]
+    workslip_total_pages = max(1, (total_workslips + per_page - 1) // per_page)
+    workslip_page = min(workslip_page, workslip_total_pages)
+    workslip_offset = (workslip_page - 1) * per_page
+
+    workslips = dbc.execute(
+        f"""
+        SELECT WSNumber, WONumber, WSDescription, WSDockDate, OpID, hideFromUse
+        FROM WorkSlips
+        {workslip_where_sql}
+        ORDER BY WSNumber
+        OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+        """,
+        workslip_params + [workslip_offset, per_page]
+    ).fetchall()
+
+    return render_template(
+        'admin/project_data.html',
+        projects=projects,
+        workorders=workorders,
+        workslips=workslips,
+        project_q=project_q,
+        workorder_q=workorder_q,
+        workslip_q=workslip_q,
+        project_page=project_page,
+        workorder_page=workorder_page,
+        workslip_page=workslip_page,
+        project_total_pages=project_total_pages,
+        workorder_total_pages=workorder_total_pages,
+        workslip_total_pages=workslip_total_pages,
+        total_projects=total_projects,
+        total_workorders=total_workorders,
+        total_workslips=total_workslips
+    )
+
 @bp.route('/admin/export_logs', methods=['GET', 'POST'])
 @login_required
 def view_export_logs():
