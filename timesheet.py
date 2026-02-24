@@ -439,7 +439,7 @@ def getWS():
         woDesc = project_wo.WODescription
         print(projectDesc)
 
-    workslips = dbc.execute("select WSNumber, WONumber, WSDescription, Operations.OpID, OpCode, OpName, OpNameExtended from workslips inner join operations on WorkSlips.OpID = operations.OpID where wonumber = ? and operations.isEnabled = 1 order by WSDescription", selected_wo)
+    workslips = dbc.execute("select WSNumber, WONumber, WSDescription, Operations.OpID, OpCode, OpName, OpNameExtended from workslips inner join operations on WorkSlips.OpID = operations.OpID where wonumber = ? and hideFromUse = 0 and operations.isEnabled = 1 order by WSDescription", selected_wo)
     # print(workslips)
     return render_template('timesheet/_ws.html', workslips=workslips, project=project, projectDesc=projectDesc, wo=wo, woDesc=woDesc)
 
@@ -450,7 +450,7 @@ def getProjects():
     db = get_db()
     dbc = db.cursor()
 
-    projects = dbc.execute("select ProjectID, ProjectNumber, ProjectDescription from projects where projectcomplete = 0 and projectclosed = 0 order by projectnumber").fetchall()
+    projects = dbc.execute("select ProjectID, ProjectNumber, ProjectDescription from projects where projectcomplete = 0 and hideFromUse = 0 order by projectnumber").fetchall()
     # print(projects)
     return jsonify({'projects': [{'id': row.ProjectID, 'number': row.ProjectNumber, 'desc': row.ProjectDescription} for row in projects]})
 
@@ -463,7 +463,7 @@ def getWorkOrders():
     db = get_db()
     dbc = db.cursor()
 
-    workorders = dbc.execute("select WONumber, WODescription, WOPart from workorders where projectid = ? order by wonumber", project_id).fetchall()
+    workorders = dbc.execute("select WONumber, WODescription, WOPart from workorders where projectid = ? and hideFromUse = 0 order by wonumber", project_id).fetchall()
     # print(workorders)
     return jsonify({'workOrders': [{'id': row.WONumber, 'desc': row.WODescription, 'part': row.WOPart } for row in workorders]})
 
@@ -476,7 +476,7 @@ def getWorkSlips():
     db = get_db()
     dbc = db.cursor()
 
-    workslips = dbc.execute("select WSNumber, WSDescription, Operations.OpID, OpCode, OpName, OpNameExtended, OpWageGroup from workslips inner join operations on WorkSlips.OpID = operations.OpID where wonumber = ? and Operations.isEnabled = 1 order by WSDescription", work_order_id).fetchall()
+    workslips = dbc.execute("select WSNumber, WSDescription, Operations.OpID, OpCode, OpName, OpNameExtended, OpWageGroup from workslips inner join operations on WorkSlips.OpID = operations.OpID where wonumber = ? and hideFromUse = 0 and Operations.isEnabled = 1 order by WSDescription", work_order_id).fetchall()
     # print(workslips)
     return jsonify({'workSlips': [{'id': row.WSNumber, 'name': row.OpName, 'nameExtended': row.OpNameExtended, 'wageGroup': row.OpWageGroup} for row in workslips]})
 
