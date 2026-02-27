@@ -377,19 +377,69 @@ def manage_operations():
     dbc = db.cursor()
 
     if request.method == 'POST':
-        # Update OpCode and isEnabled for all rows in the form
-        for key, value in request.form.items():
-            if key.startswith('OpCode_'):
-                op_id = key.split('_')[1]
-                op_code = value
-                is_enabled = 1 if request.form.get(f'isEnabled_{op_id}') == 'on' else 0
-                op_wage_group = request.form.get(f'OpWageGroup_{op_id}', '')
+        action = request.form.get('action')
+
+        if action == 'add':
+            op_id_raw = request.form.get('OpID', '').strip()
+            op_name = request.form.get('OpName', '').strip()
+            op_name_extended = request.form.get('OpNameExtended', '').strip()
+            op_code = request.form.get('OpCode', '').strip()
+            op_wage_group = request.form.get('OpWageGroup', '').strip()
+            is_enabled = 1 if request.form.get('isEnabled_new') == 'on' else 0
+
+            if request.form.get('isEnabled') is not None:
+                is_enabled = 1 if request.form.get('isEnabled') == 'on' else 0
+
+            if not op_name:
+                flash('Operation Name is required to add a new entry.', 'danger')
+                return redirect(url_for('admin.manage_operations'))
+
+            try:
+                if op_id_raw:
+                    dbc.execute(
+                        """
+                        INSERT INTO Operations (OpID, OpName, OpNameExtended, OpCode, OpWageGroup, isEnabled)
+                        VALUES (?, ?, ?, ?, ?, ?)
+                        """,
+                        (int(op_id_raw), op_name, op_name_extended, op_code, op_wage_group, is_enabled)
+                    )
+                else:
+                    dbc.execute(
+                        """
+                        INSERT INTO Operations (OpName, OpNameExtended, OpCode, OpWageGroup, isEnabled)
+                        VALUES (?, ?, ?, ?, ?)
+                        """,
+                        (op_name, op_name_extended, op_code, op_wage_group, is_enabled)
+                    )
+                db.commit()
+                flash('Operation added successfully.', 'success')
+            except (ValueError, pyodbc.DatabaseError) as err:
+                db.rollback()
+                flash(f'Unable to add operation: {err}', 'danger')
+        elif action == 'update_row':
+            try:
+                op_id_raw = request.form.get('OpID', '').strip()
+                if not op_id_raw.isdigit():
+                    flash('Invalid Operation ID for row update.', 'danger')
+                    return redirect(url_for('admin.manage_operations'))
+
+                op_code = request.form.get('OpCode', '').strip()
+                op_wage_group = request.form.get('OpWageGroup', '').strip()
+                is_enabled = 1 if request.form.get('isEnabled') == 'on' else 0
+
                 dbc.execute(
                     "UPDATE Operations SET OpCode=?, OpWageGroup=?, isEnabled=? WHERE OpID=?",
-                    (op_code, op_wage_group, is_enabled, op_id)
+                    (op_code, op_wage_group, is_enabled, int(op_id_raw))
                 )
-        db.commit()
-        flash('Operations updated successfully.', 'success')
+
+                db.commit()
+                flash(f'Operation {op_id_raw} updated successfully.', 'success')
+            except (ValueError, pyodbc.DatabaseError) as err:
+                db.rollback()
+                flash(f'Unable to update operation: {err}', 'danger')
+        else:
+            flash('Unknown action for operations form.', 'danger')
+
         return redirect(url_for('admin.manage_operations'))
 
     operations = dbc.execute(

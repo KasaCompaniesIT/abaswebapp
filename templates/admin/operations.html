@@ -22,8 +22,6 @@
 {% endblock %}
 
 {% block content %}
-
-<form method="post">
   <table class="table table-bordered table-striped table-sm mx-auto w-auto">
     <thead>
       <tr>
@@ -33,34 +31,49 @@
         <th>Op Code</th>
         <th>Op WageGroup</th>
         <th>Enabled</th>
+        <th>Actions</th>
       </tr>
     </thead>
     <tbody>
       {% for op in operations %}
       <tr>
-        <td>{{ op.OpID }}</td>
-        <td>{{ op.OpName }}</td>
-        <td>{{ op.OpNameExtended }}</td>
-        <td>
-          <input type="text" name="OpCode_{{ op.OpID }}" value="{{ op.OpCode or '' }}" class="form-control" />
-        </td>
-        <td>
-          <input type="text" name="OpWageGroup_{{ op.OpID }}" value="{{ op.OpWageGroup or '' }}" class="form-control" />
-        </td>
-        <td>
-          <input type="checkbox" name="isEnabled_{{ op.OpID }}" {% if op.isEnabled %}checked{% endif %} />
-        </td>
+        <form method="post">
+          <input type="hidden" name="action" value="update_row">
+          <input type="hidden" name="OpID" value="{{ op.OpID }}">
+          <td>{{ op.OpID }}</td>
+          <td>{{ op.OpName }}</td>
+          <td>{{ op.OpNameExtended }}</td>
+          <td>
+            <input type="text" name="OpCode" value="{{ op.OpCode or '' }}" class="form-control" />
+          </td>
+          <td>
+            <input type="text" name="OpWageGroup" value="{{ op.OpWageGroup or '' }}" class="form-control" />
+          </td>
+          <td class="text-center">
+            <input type="checkbox" name="isEnabled" {% if op.isEnabled %}checked{% endif %} />
+          </td>
+          <td>
+            <button type="submit" class="btn btn-primary btn-sm">Save</button>
+          </td>
+        </form>
       </tr>
       {% endfor %}
+      <tr>
+        <form method="post">
+          <input type="hidden" name="action" value="add">
+          <td><input type="number" name="OpID" class="form-control" placeholder="(auto)"></td>
+          <td><input type="text" name="OpName" class="form-control" placeholder="Required"></td>
+          <td><input type="text" name="OpNameExtended" class="form-control"></td>
+          <td><input type="text" name="OpCode" class="form-control" /></td>
+          <td><input type="text" name="OpWageGroup" class="form-control" /></td>
+          <td class="text-center">
+            <input type="checkbox" name="isEnabled" checked />
+          </td>
+          <td>
+            <button type="submit" class="btn btn-success btn-sm">Add</button>
+          </td>
+        </form>
+      </tr>
     </tbody>
   </table>
-    <div class="d-flex justify-content-end" style="position:relative;">
-    <button type="submit" class="btn btn-abas shadow rounded-circle" title="Save Changes"
-      style="position:fixed; bottom:32px; right:32px; width:56px; height:56px; z-index:1050; display:flex; align-items:center; justify-content:center; font-size:1.5rem;">
-      <span class="sr-only">Save Changes</span>
-      <i class="fas fa-save"></i>
-    </button>
-  </div>
-</form>
-</form>
 {% endblock %}
