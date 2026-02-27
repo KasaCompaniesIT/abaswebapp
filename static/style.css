@@ -372,7 +372,7 @@ a {
 }
 
 .compact-info-panel {
-    padding: 0.75rem;
+    padding: 0.5rem 0.75rem;
     /* Reduce the padding inside the card body */
 }
 
