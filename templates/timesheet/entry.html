@@ -1288,7 +1288,7 @@
 
         // Apply attendance algorithm for all non-hourly users.
         // If Salary Plus is not set, the logic still caps attendance at 40 hours.
-        if (!isHourly) {
+        if (!isHourly) {            
             // Build holiday dates array
             const holidayDates = {{ dateRangePrevWeek | selectattr('isHoliday') | map(attribute='date') | list | tojson }};
             const weekStart = document.getElementById('startDateInput').value;
