@@ -1031,6 +1031,32 @@
 
     // Apply Salary Plus Algorithm
     function applySalaryPlusAlgorithm(data, spThreshold, payrollExportData, holidayDates, weekStartDate, weekEndDate) {
+        function parseDateString(dateStr) {
+            if (!dateStr) return null;
+
+            // Handle YYYY-MM-DD (from hidden inputs)
+            if (dateStr.includes('-')) {
+                const [year, month, day] = dateStr.split('-').map(Number);
+                return new Date(year, month - 1, day);
+            }
+
+            // Handle MM/DD/YY (from WorkDate values)
+            if (dateStr.includes('/')) {
+                const [month, day, yearPart] = dateStr.split('/').map(Number);
+                const year = yearPart < 100 ? 2000 + yearPart : yearPart;
+                return new Date(year, month - 1, day);
+            }
+
+            return new Date(dateStr);
+        }
+
+        function toMMDDYY(dateObj) {
+            const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const dd = String(dateObj.getDate()).padStart(2, '0');
+            const yy = String(dateObj.getFullYear()).slice(-2);
+            return `${mm}/${dd}/${yy}`;
+        }
+
         // Group entries by date to process day by day
         const entriesByDate = {};
         data.time_entries.forEach(entry => {
@@ -1042,14 +1068,14 @@
 
         // Get all dates in the week range (not just dates with entries)
         const allDates = [];
-        const start = new Date(weekStartDate);
-        const end = new Date(weekEndDate);
+        const start = parseDateString(weekStartDate);
+        const end = parseDateString(weekEndDate);
         for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-            allDates.push(new Date(d).toLocaleDateString('en-US', {month: '2-digit', day: '2-digit', year: '2-digit'}).replace(/\//g, '/'));
+            allDates.push(toMMDDYY(d));
         }
 
         // Sort dates to process in chronological order
-        const sortedDates = allDates.sort((a, b) => new Date(a) - new Date(b));
+        const sortedDates = allDates.sort((a, b) => parseDateString(a) - parseDateString(b));
 
         let weeklyE1Total = 0;  // Track E1 hours (not including EH)
         let weeklyE1PlusEHTotal = 0;  // Track E1+EH hours
@@ -1254,7 +1280,24 @@
     }
 
     // Render the finalize table with the fetched data
-    function renderFinalizeTable(data, payrollExportData) {        
+    function renderFinalizeTable(data, payrollExportData) {
+        function parseFinalizeDate(dateStr) {
+            if (!dateStr) return null;
+
+            if (dateStr.includes('/')) {
+                const [month, day, yearPart] = dateStr.split('/').map(Number);
+                const year = yearPart < 100 ? 2000 + yearPart : yearPart;
+                return new Date(year, month - 1, day);
+            }
+
+            if (dateStr.includes('-')) {
+                const [year, month, day] = dateStr.split('-').map(Number);
+                return new Date(year, month - 1, day);
+            }
+
+            return new Date(dateStr);
+        }
+
         const salaryPlusStart = {{ abasUser.SalaryPlusStart if abasUser and abasUser.SalaryPlusStart else 'null' }};
         const isHourly = {{ 'true' if abasUser and abasUser.isHourly else 'false' }};
         const isMxEmp = {{ 'true' if abasUser and abasUser.isMxEmp else 'false' }};
@@ -1324,7 +1367,7 @@
 
         function flushDayRows() {
             if (dayEntries.length > 0 && lastDay) {
-                const lastDateObj = new Date(lastDay);
+                const lastDateObj = parseFinalizeDate(lastDay);
                 const lastWeekdayName = lastDateObj.toLocaleDateString('en-US', { weekday: 'long' });
                 rowHTML += renderDayHeader(lastWeekdayName, lastDay, dayTotal);
                 rowHTML += dayEntries.join('');
@@ -1338,7 +1381,7 @@
         data.time_entries.forEach((entry, idx) => {
             const entryHours = parseFloat(entry.tHoursWorked);
             const workDate = entry.WorkDate;
-            const dateObj = new Date(workDate);
+            const dateObj = parseFinalizeDate(workDate);
             const weekdayName = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
             const dayStr = workDate;
 
