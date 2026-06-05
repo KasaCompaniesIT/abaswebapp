@@ -195,9 +195,20 @@
                         {% if day.isHoliday %}
                             <div class="d-flex justify-content-between holiday">
                                 <p class="font-italic">Holiday Hours</p>
-                                <h5><span class="badge badge-dark font-italic">{% if ns.total_hours == 0 %}8.00{% else %}0.00{% endif %}</span></h5>
+                                <h5><span class="badge badge-dark font-italic">
+                                    {% if ns.total_hours == 0 %}
+                                        8.00
+                                    {% elif abasUser.SalaryPlusStart %}
+                                        {{ [[(8 - (40 - ns.total_hours)|float), 0]|max, 8]|min | round(2) }}
+                                    {% else %}
+                                        0.00
+                                    {% endif %}
+                                </span></h5>
                                 {% if ns.total_hours == 0 %}
                                     {% set ns.total_hours = ns.total_hours + 8 %} <!-- Accumulate the total -->
+                                {% elif abasUser.SalaryPlusStart %}
+                                    {% set eh = [[8 - (40 - ns.total_hours), 0]|max, 8]|min %}
+                                    {% set ns.total_hours = ns.total_hours + eh %}
                                 {% endif %}
                             </div>
                         {% endif %}
@@ -851,13 +862,17 @@
                                     if (!isNaN(hours)) totalJobHours += hours;
                                 }
                             });
-                            // If total job hours > 0, set holiday hours badge to 0                            
+                            // If total job hours > 0, set holiday hours badge to 0
                             const holidayBadge = cardBody.querySelector('.badge.font-italic');
                             if (holidayBadge) {
-                                if (totalJobHours > 0) {
-                                    holidayBadge.textContent = '0.00';
-                                } else {
+                                if (totalJobHours <= 0) {
                                     holidayBadge.textContent = '8.00';
+                                } else if (salaryPlusStart) {
+                                    // Engineering Holiday Pay: show only the Salary+ EH portion
+                                    const ehHours = Math.max(0, 8 - Math.max(0, 40 - totalJobHours));
+                                    holidayBadge.textContent = ehHours.toFixed(2);
+                                } else {
+                                    holidayBadge.textContent = '0.00';
                                 }
                             }
                         }
@@ -1029,6 +1044,25 @@
         }
     }
 
+    /*
+     * Engineering Holiday Pay — Policy Examples
+     * Applies when spThreshold is set (Salary+ / Engineering employees only).
+     *
+     * Formula: EH (Salary+) hours = max(0, 8 - max(0, 40 - hoursWorkedThisWeek))
+     *
+     * Example 1: CE works 45 hrs — already at/above 40
+     *   gap to 40 = 0  →  EH = 8, E1 holiday = 0
+     *   Result: regular weekly salary + 8 EH (Salary+)  ✓
+     *
+     * Example 2: SCE works 38 hrs — 2 hrs short of 40
+     *   gap to 40 = 2  →  EH = 6, E1 holiday = 2
+     *   Result: regular weekly salary + 2 E1 (fills to 40) + 6 EH (Salary+)  ✓
+     *
+     * Example 3: PE works 51 hrs — already above 40
+     *   gap to 40 = 0  →  EH = 8, E1 holiday = 0
+     *   Result: regular weekly salary + 8 EH (Salary+)
+     *           + E50 for job hours beyond spThreshold (separate rule)  ✓
+     */
     // Apply Salary Plus Algorithm
     function applySalaryPlusAlgorithm(data, spThreshold, payrollExportData, holidayDates, weekStartDate, weekEndDate) {
         function parseDateString(dateStr) {
@@ -1135,16 +1169,50 @@
 
             // Rule 2: Keep Holiday Job Time and Holiday Attendance Time auto-populated
             if (isHoliday) {
-                // Add 8 hours of EH for holiday (regardless of job time)
-                processedEntries.push({
-                    WorkDate: date,
-                    tHoursWorked: 8.00,
-                    OpCode: 'EH',
-                    OpName: 'Holiday',
-                    locked: false
-                });
-                weeklyE1PlusEHTotal += 8;
-                
+                if (spThreshold) {
+                    // Engineering Holiday Pay:
+                    // Holiday hours fill the gap to 40 first; remainder is Salary+ (EH).
+                    // Formula: Salary+ EH hours = max(0, 8 - max(0, 40 - hoursWorkedThisWeek))
+                    const hoursToFillTo40 = Math.max(0, 40 - weeklyJobHoursTotal);
+                    const ehHours = Math.max(0, 8 - hoursToFillTo40);
+                    const e1HolidayHours = 8 - ehHours;
+
+                    if (e1HolidayHours > 0) {
+                        processedEntries.push({
+                            WorkDate: date,
+                            tHoursWorked: e1HolidayHours,
+                            OpCode: 'E1',
+                            OpName: 'Regular Time (Holiday)',
+                            locked: false
+                        });
+                        weeklyE1Total += e1HolidayHours;
+                        weeklyE1PlusEHTotal += e1HolidayHours;
+                    }
+
+                    if (ehHours > 0) {
+                        processedEntries.push({
+                            WorkDate: date,
+                            tHoursWorked: ehHours,
+                            OpCode: 'EH',
+                            OpName: 'Holiday (Salary+)',
+                            locked: false
+                        });
+                        weeklyE1PlusEHTotal += ehHours;
+                    }
+                } else {
+                    // Non-Salary+ (non-Engineering) employees:
+                    // Office workers do not qualify for Engineering Holiday Pay.
+                    // Flat 8 EH hours regardless of hours worked — unchanged behaviour.
+                    processedEntries.push({
+                        WorkDate: date,
+                        tHoursWorked: 8.00,
+                        OpCode: 'EH',
+                        OpName: 'Holiday',
+                        locked: false
+                    });
+                    weeklyE1PlusEHTotal += 8;
+                }
+
                 // If no job time on holiday, skip to next day
                 if (dayJobHours === 0) {
                     return;
