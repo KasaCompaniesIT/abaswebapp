@@ -58,3 +58,5 @@ DONE: Allow time entry and attendance submission for future weeks
 DONE: When submitting attendance and adding/submitting Salary Plus, regular attendance time also get submitted in duplicate for that day
 DONE: Make attendance windows float the footer/button to always show.
 DONE: Save attendance export and load the saved values on reopen of window.
+TODO: Security - Cast SalaryPlusStart to int before rendering into <script> block in entry.html to prevent script injection.
+TODO: Security - Add @login_required decorator to payroll_export route in timesheet.py.
