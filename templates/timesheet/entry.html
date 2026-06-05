@@ -1045,23 +1045,31 @@
     }
 
     /*
-     * Engineering Holiday Pay — Policy Examples
+     * Engineering Holiday Pay — Policy and Examples
      * Applies when spThreshold is set (Salary+ / Engineering employees only).
      *
-     * Formula: EH (Salary+) hours = max(0, 8 - max(0, 40 - hoursWorkedThisWeek))
+     * E1/EH split formula (uses TOTAL weekly job hours, not the running cumulative,
+     * so Monday holidays are handled correctly):
+     *   EH  = max(0, 8 - max(0, 40 - totalWeeklyJobHours))
+     *   E1h = 8 - EH
      *
-     * Example 1: CE works 45 hrs — already at/above 40
-     *   gap to 40 = 0  →  EH = 8, E1 holiday = 0
+     * E50 from EH: when totalWeeklyJobHours > spThreshold, the EH hours also generate
+     * an E50 entry. Without this, EH displaces E1 capacity and those displaced hours
+     * silently fall into the 40-to-spThreshold gap, shorting the employee's E50.
+     *
+     * Example 1: CE works 45 hrs — above 40, below spThreshold
+     *   EH = 8, E1h = 0; 45 <= spThreshold → no EH E50
      *   Result: regular weekly salary + 8 EH (Salary+)  ✓
      *
      * Example 2: SCE works 38 hrs — 2 hrs short of 40
-     *   gap to 40 = 2  →  EH = 6, E1 holiday = 2
+     *   EH = 6, E1h = 2; 38 <= spThreshold → no EH E50
      *   Result: regular weekly salary + 2 E1 (fills to 40) + 6 EH (Salary+)  ✓
      *
-     * Example 3: PE works 51 hrs — already above 40
-     *   gap to 40 = 0  →  EH = 8, E1 holiday = 0
+     * Example 3: PE works 51 hrs — above spThreshold (e.g. 48)
+     *   EH = 8, E1h = 0; 51 > spThreshold → EH also generates 8 E50
      *   Result: regular weekly salary + 8 EH (Salary+)
-     *           + E50 for job hours beyond spThreshold (separate rule)  ✓
+     *           + E50 for startup hours beyond spThreshold
+     *           + E50 for EH hours (on-holiday premium above threshold)  ✓
      */
     // Apply Salary Plus Algorithm
     function applySalaryPlusAlgorithm(data, spThreshold, payrollExportData, holidayDates, weekStartDate, weekEndDate) {
@@ -1116,22 +1124,35 @@
         let weeklyJobHoursTotal = 0;  // Track total job hours (excluding holidays/indirect)
         let hasHolidayInWeek = false;
         let hasSUorSTBYInWeek = false;
+        let totalWeeklyJobHours = 0;  // Pre-calculated total job hours for the full week
 
         const processedEntries = [];
 
-        // First pass: identify week characteristics
+        // First pass: identify week characteristics and pre-sum all job hours.
+        // totalWeeklyJobHours is needed for the Engineering Holiday Pay E1/EH split so
+        // that a Monday holiday (running total = 0 at processing time) is handled correctly.
         sortedDates.forEach(date => {
             // Check if this date is a holiday
             if (holidayDates.includes(date)) {
                 hasHolidayInWeek = true;
             }
-            
+
             const dayEntries = entriesByDate[date] || [];
             dayEntries.forEach(entry => {
+                const hours = parseFloat(entry.tHoursWorked || 0);
+                const opCode = (entry.OpCode || '').toUpperCase();
                 const opName = (entry.OpName || '').toUpperCase();
-                
+
                 if (opName.includes('SU') || opName.includes('STBY') || opName.includes('STANDBY')) {
                     hasSUorSTBYInWeek = true;
+                }
+
+                // Same categorization as the second pass — only count regular job hours
+                if (opCode !== 'EJ' && !opName.includes('JURYDUTY') && !opName.includes('JURY DUTY') &&
+                    opCode !== 'EBL' && !opName.includes('INDIRECT-BL') && !opName.includes('BEREAVEMENT') &&
+                    opCode !== 'EV' && !opName.includes('VACATION') &&
+                    opCode !== 'EPT' && !opName.includes('PAID TIME-OFF') && !opName.includes('PTO')) {
+                    totalWeeklyJobHours += hours;
                 }
             });
         });
@@ -1170,10 +1191,10 @@
             // Rule 2: Keep Holiday Job Time and Holiday Attendance Time auto-populated
             if (isHoliday) {
                 if (spThreshold) {
-                    // Engineering Holiday Pay:
-                    // Holiday hours fill the gap to 40 first; remainder is Salary+ (EH).
-                    // Formula: Salary+ EH hours = max(0, 8 - max(0, 40 - hoursWorkedThisWeek))
-                    const hoursToFillTo40 = Math.max(0, 40 - weeklyJobHoursTotal);
+                    // Engineering Holiday Pay: use totalWeeklyJobHours (pre-calculated) so that
+                    // a Monday holiday is handled correctly — the running total is 0 at that point.
+                    // Formula: EH = max(0, 8 - max(0, 40 - totalWeeklyJobHours))
+                    const hoursToFillTo40 = Math.max(0, 40 - totalWeeklyJobHours);
                     const ehHours = Math.max(0, 8 - hoursToFillTo40);
                     const e1HolidayHours = 8 - ehHours;
 
@@ -1198,6 +1219,20 @@
                             locked: false
                         });
                         weeklyE1PlusEHTotal += ehHours;
+
+                        // When total hours for the week already exceed spThreshold, the EH
+                        // holiday hours represent paid time earned above threshold and also
+                        // generate E50 — without this, EH displaces E1 capacity and the
+                        // displaced hours silently fall into the 40-to-spThreshold gap.
+                        if (totalWeeklyJobHours > spThreshold) {
+                            processedEntries.push({
+                                WorkDate: date,
+                                tHoursWorked: ehHours,
+                                OpCode: 'E50',
+                                OpName: 'Overtime',
+                                locked: false
+                            });
+                        }
                     }
                 } else {
                     // Non-Salary+ (non-Engineering) employees:
