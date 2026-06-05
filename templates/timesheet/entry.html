@@ -196,19 +196,14 @@
                             <div class="d-flex justify-content-between holiday">
                                 <p class="font-italic">Holiday Hours</p>
                                 <h5><span class="badge badge-dark font-italic">
-                                    {% if ns.total_hours == 0 %}
+                                    {% if ns.total_hours == 0 or abasUser.SalaryPlusStart %}
                                         8.00
-                                    {% elif abasUser.SalaryPlusStart %}
-                                        {{ [[(8 - (40 - ns.total_hours)|float), 0]|max, 8]|min | round(2) }}
                                     {% else %}
                                         0.00
                                     {% endif %}
                                 </span></h5>
-                                {% if ns.total_hours == 0 %}
+                                {% if ns.total_hours == 0 or abasUser.SalaryPlusStart %}
                                     {% set ns.total_hours = ns.total_hours + 8 %} <!-- Accumulate the total -->
-                                {% elif abasUser.SalaryPlusStart %}
-                                    {% set eh = [[8 - (40 - ns.total_hours), 0]|max, 8]|min %}
-                                    {% set ns.total_hours = ns.total_hours + eh %}
                                 {% endif %}
                             </div>
                         {% endif %}
@@ -868,9 +863,11 @@
                                 if (totalJobHours <= 0) {
                                     holidayBadge.textContent = '8.00';
                                 } else if (salaryPlusStart) {
-                                    // Engineering Holiday Pay: show only the Salary+ EH portion
-                                    const ehHours = Math.max(0, 8 - Math.max(0, 40 - totalJobHours));
-                                    holidayBadge.textContent = ehHours.toFixed(2);
+                                    // Salary+ employees always show 8.00 — the badge only has
+                                    // access to that day's hours, not the weekly total needed
+                                    // to compute the EH/E1 split. The algorithm handles the
+                                    // correct split at finalize time.
+                                    holidayBadge.textContent = '8.00';
                                 } else {
                                     holidayBadge.textContent = '0.00';
                                 }
@@ -1499,9 +1496,12 @@
             const disableRemove = dayRowIndex === 0 ? 'disabled' : ''; 
 
             if(entryHours > 0) {
-                // if payrollExportData exists for the workdate use that data instead of entry data
+                // if payrollExportData exists for the workdate+code use that data instead of entry data.
+                // Match by BOTH date AND code so that each generated entry (EH, E50, E1) uses its own
+                // stored values — matching by date alone would apply the first stored entry's hours and
+                // code to every entry on that date, causing duplicate/incorrect rows.
                 const payrollArray = payrollExportData && Array.isArray(payrollExportData.payrollExport) ? payrollExportData.payrollExport : [];
-                const payrollEntry = payrollArray.find(entry => entry.DateWorked === workDate);
+                const payrollEntry = payrollArray.find(p => p.DateWorked === workDate && p.PayChex === paychexCode);
                 //console.log('Payroll entry for date', workDate, ':', payrollEntry);
                 const hoursToUse = parseFloat(payrollEntry ? payrollEntry.HoursWorked : entryHours);
                 const paychexCodeToUse = payrollEntry ? payrollEntry.PayChex : paychexCode;
